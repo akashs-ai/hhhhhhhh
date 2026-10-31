@@ -476,3 +476,23 @@ CREATE TABLE IF NOT EXISTS calendar_event_mappings (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE (schedule_version_id, event_type, local_id)
 );
+
+-- ----------------------------------------------------------------------------
+-- 11. VENUE WAITLIST
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS venue_waitlist (
+    id VARCHAR(64) PRIMARY KEY,
+    student_id VARCHAR(64) NOT NULL REFERENCES users(id),
+    student_name VARCHAR(128) NOT NULL,
+    student_email VARCHAR(128),
+    venue_id VARCHAR(32) NOT NULL REFERENCES rooms(id) ON DELETE CASCADE,
+    day VARCHAR(3) NOT NULL CHECK (day IN ('MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN')),
+    period INT NOT NULL CHECK (period BETWEEN 1 AND 13),
+    date VARCHAR(32),
+    purpose TEXT,
+    status VARCHAR(32) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'fulfilled', 'cancelled')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_venue_waitlist_unique ON venue_waitlist(student_id, venue_id, day, period);
+CREATE INDEX IF NOT EXISTS idx_venue_waitlist_student ON venue_waitlist(student_id);

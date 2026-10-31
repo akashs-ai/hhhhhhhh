@@ -6,6 +6,8 @@ import {
   DisruptionRecord,
   UserRecord,
   AuditLogEntry,
+  MaintenanceBlock,
+  WaitlistEntry,
 } from './storageInterface.js';
 
 export class PostgresStorage implements IStorage {
@@ -946,5 +948,148 @@ export class PostgresStorage implements IStorage {
 
     await this.saveUser(updatedUser);
     return updatedUser;
+  }
+
+  // --- MAINTENANCE BLOCKS ---
+  public async getMaintenanceBlocks(): Promise<MaintenanceBlock[]> {
+    const client = await this.pool.connect();
+    try {
+      const res = await client.query('SELECT * FROM room_unavailability ORDER BY room_id, day, period');
+      const grouped = new Map<string, MaintenanceBlock>();
+      for (const row of res.rows) {
+        const key = `${row.room_id}-${row.day}-${row.reason}`;
+        if (grouped.has(key)) {
+          grouped.get(key)!.periods.push(row.period);
+        } else {
+          grouped.set(key, {
+            id: `MB-${row.id}`,
+            room_id: row.room_id,
+            day: row.day,
+            periods: [row.period],
+            reason: row.reason,
+            created_by: 'system',
+            created_at: new Date().toISOString(),
+          });
+        }
+      }
+      return Array.from(grouped.values());
+    } catch {
+      return [];
+    } finally {
+      client.release();
+    }
+  }
+
+  public async saveMaintenanceBlock(block: MaintenanceBlock): Promise<void> {
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+      for (const p of block.periods) {
+        await client.query(
+          `INSERT INTO room_unavailability (room_id, day, period, reason) VALUES ($1, $2, $3, $4)`,
+          [block.room_id, block.day, p, block.reason]
+        );
+      }
+      await client.query('COMMIT');
+    } catch (e) {
+      await client.query('ROLLBACK');
+      throw e;
+    } finally {
+      client.release();
+    }
+  }
+
+  public async deleteMaintenanceBlock(id: string): Promise<boolean> {
+    const client = await this.pool.connect();
+    try {
+      const numId = parseInt(id.replace(/^MB-/, ''), 10);
+      if (!isNaN(numId)) {
+        const res = await client.query('DELETE FROM room_unavailability WHERE id = $1', [numId]);
+        return (res.rowCount || 0) > 0;
+      }
+      return false;
+    } finally {
+      client.release();
+    }
+  }
+
+  // --- WAITLIST ---
+  public async getWaitlist(): Promise<WaitlistEntry[]> {
+    const client = await this.pool.connect();
+    try {
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS venue_waitlist (
+          id VARCHAR(64) PRIMARY KEY,
+          student_id VARCHAR(64) NOT NULL,
+          student_name VARCHAR(128) NOT NULL,
+          student_email VARCHAR(128),
+          venue_id VARCHAR(32) NOT NULL,
+          day VARCHAR(3) NOT NULL,
+          period INT NOT NULL,
+          date VARCHAR(32),
+          purpose TEXT,
+          status VARCHAR(32) NOT NULL DEFAULT 'active',
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+      `);
+      const res = await client.query('SELECT * FROM venue_waitlist ORDER BY created_at DESC');
+      return res.rows || [];
+    } catch {
+      return [];
+    } finally {
+      client.release();
+    }
+  }
+
+  public async saveWaitlistEntry(entry: WaitlistEntry): Promise<void> {
+    const client = await this.pool.connect();
+    try {
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS venue_waitlist (
+          id VARCHAR(64) PRIMARY KEY,
+          student_id VARCHAR(64) NOT NULL,
+          student_name VARCHAR(128) NOT NULL,
+          student_email VARCHAR(128),
+          venue_id VARCHAR(32) NOT NULL,
+          day VARCHAR(3) NOT NULL,
+          period INT NOT NULL,
+          date VARCHAR(32),
+          purpose TEXT,
+          status VARCHAR(32) NOT NULL DEFAULT 'active',
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        INSERT INTO venue_waitlist (id, student_id, student_name, student_email, venue_id, day, period, date, purpose, status, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        ON CONFLICT (id) DO UPDATE SET status = EXCLUDED.status;
+      `, [
+        entry.id,
+        entry.student_id,
+        entry.student_name,
+        entry.student_email || null,
+        entry.venue_id,
+        entry.day,
+        entry.period,
+        entry.date || null,
+        entry.purpose || null,
+        entry.status,
+        entry.created_at,
+      ]);
+    } catch {
+      // safe fallback
+    } finally {
+      client.release();
+    }
+  }
+
+  public async deleteWaitlistEntry(id: string): Promise<boolean> {
+    const client = await this.pool.connect();
+    try {
+      const res = await client.query('DELETE FROM venue_waitlist WHERE id = $1', [id]);
+      return (res.rowCount || 0) > 0;
+    } catch {
+      return false;
+    } finally {
+      client.release();
+    }
   }
 }

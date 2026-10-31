@@ -5,6 +5,7 @@ import datasetRouter from './routes/dataset.js';
 import timetableRouter from './routes/timetable.js';
 import examsRouter from './routes/exams.js';
 import bookingsRouter from './routes/bookings.js';
+import venuesRouter from './routes/venues.js';
 import disruptionsRouter from './routes/disruptions.js';
 import calendarRouter from './routes/calendar.js';
 import auditRouter from './routes/audit.js';
@@ -26,6 +27,7 @@ export function createExpressApp() {
   app.use('/api', timetableRouter);
   app.use('/api', examsRouter);
   app.use('/api', bookingsRouter);
+  app.use('/api', venuesRouter);
   app.use('/api', disruptionsRouter);
   app.use('/api', calendarRouter);
   app.use('/api', auditRouter);

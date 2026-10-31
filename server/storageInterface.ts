@@ -82,6 +82,33 @@ export interface BookingRecord {
   decided_at?: string;
 }
 
+export interface MaintenanceBlock {
+  id: string;
+  room_id: string;
+  day: string;
+  periods: number[];
+  start_time?: string;
+  end_time?: string;
+  date?: string;
+  reason: string;
+  created_by?: string;
+  created_at?: string;
+}
+
+export interface WaitlistEntry {
+  id: string;
+  student_id: string;
+  student_name: string;
+  student_email?: string;
+  venue_id: string;
+  day: string;
+  period: number;
+  date?: string;
+  purpose?: string;
+  status: 'active' | 'fulfilled' | 'cancelled';
+  created_at: string;
+}
+
 export interface DisruptionRecord {
   id: string;
   title: string;
@@ -166,6 +193,16 @@ export interface IStorage {
   getAllDisruptions(): Promise<Record<string, DisruptionRecord>>;
   getDisruptionById(id: string): Promise<DisruptionRecord | null>;
   saveDisruption(disruption: DisruptionRecord): Promise<void>;
+
+  // Maintenance Blocks
+  getMaintenanceBlocks(): Promise<MaintenanceBlock[]>;
+  saveMaintenanceBlock(block: MaintenanceBlock): Promise<void>;
+  deleteMaintenanceBlock(id: string): Promise<boolean>;
+
+  // Waitlist
+  getWaitlist(): Promise<WaitlistEntry[]>;
+  saveWaitlistEntry(entry: WaitlistEntry): Promise<void>;
+  deleteWaitlistEntry(id: string): Promise<boolean>;
 
   // Audit
   logAudit(entry: Omit<AuditLogEntry, 'id' | 'timestamp'>): Promise<void>;

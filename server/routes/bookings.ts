@@ -33,9 +33,20 @@ router.get('/bookings', async (req: AuthenticatedRequest, res: Response) => {
   const allBookings = await storage.getAllBookings();
   let list = Object.values(allBookings);
 
+  // Student role: can only view confirmed/approved public bookings
+  if (req.user?.role === 'student') {
+    list = list.filter((b) => b.status === 'approved');
+  }
+
+  // Faculty filter: if mine=true, filter by created_by
+  if (req.query.mine === 'true' && req.user) {
+    list = list.filter((b) => b.created_by === req.user!.id);
+  }
+
   const statusFilter = req.query.status as string;
   const roleFilter = req.query.role as string;
   const roomFilter = req.query.room as string;
+  const search = (req.query.search as string)?.toLowerCase();
 
   if (statusFilter) {
     list = list.filter((b) => b.status === statusFilter);
@@ -44,7 +55,17 @@ router.get('/bookings', async (req: AuthenticatedRequest, res: Response) => {
     list = list.filter((b) => b.role === roleFilter);
   }
   if (roomFilter) {
-    list = list.filter((b) => b.allocated_room === roomFilter);
+    list = list.filter((b) => b.allocated_room === roomFilter || b.requested_room === roomFilter);
+  }
+  if (search) {
+    list = list.filter(
+      (b) =>
+        b.title?.toLowerCase().includes(search) ||
+        b.id?.toLowerCase().includes(search) ||
+        (b.allocated_room && b.allocated_room.toLowerCase().includes(search)) ||
+        (b.requested_room && b.requested_room.toLowerCase().includes(search)) ||
+        b.requester?.toLowerCase().includes(search)
+    );
   }
 
   // Sort by priority order, then submitted_at
@@ -198,6 +219,65 @@ Return ONLY valid JSON without markdown wrapping.`;
   });
 });
 
+async function checkBookingConflicts(
+  roomId: string,
+  day: string,
+  startPeriod: number,
+  endPeriod: number,
+  excludeBookingId?: string
+): Promise<{ code: string; message: string } | null> {
+  const sp = Number(startPeriod);
+  const ep = Number(endPeriod);
+
+  // 1. Check against maintenance blocks
+  const maintenanceBlocks = await storage.getMaintenanceBlocks();
+  const blocked = maintenanceBlocks.find(
+    (b) => b.room_id === roomId && b.day === day && b.periods.some((p) => p >= sp && p <= ep)
+  );
+  if (blocked) {
+    return {
+      code: 'MAINTENANCE_BLOCK_CONFLICT',
+      message: `Room '${roomId}' is blocked for maintenance on ${day} (reason: ${blocked.reason}).`,
+    };
+  }
+
+  // 2. Check against other approved bookings
+  const allBookings = await storage.getAllBookings();
+  for (const other of Object.values(allBookings)) {
+    if (
+      other.id !== excludeBookingId &&
+      other.status === 'approved' &&
+      other.allocated_room === roomId &&
+      other.allocated_day === day &&
+      other.allocated_start_period &&
+      other.allocated_end_period
+    ) {
+      if (sp <= other.allocated_end_period && ep >= other.allocated_start_period) {
+        return {
+          code: 'DOUBLE_BOOKING_CONFLICT',
+          message: `Room '${roomId}' is already booked on ${day} periods ${other.allocated_start_period}-${other.allocated_end_period} by booking ${other.id}.`,
+        };
+      }
+    }
+  }
+
+  // 3. Check against timetable sessions in approved schedule
+  const approvedSchedule = await storage.getApprovedSchedule();
+  if (approvedSchedule) {
+    const clash = approvedSchedule.sessions.find(
+      (s) => s.room_id === roomId && s.day === day && s.start_period >= sp && s.start_period <= ep
+    );
+    if (clash) {
+      return {
+        code: 'TIMETABLE_ROOM_CONFLICT',
+        message: `Room '${roomId}' is occupied by session '${clash.session_id}' on ${day} period ${clash.start_period}.`,
+      };
+    }
+  }
+
+  return null;
+}
+
 router.post('/bookings', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   const {
     title,
@@ -218,6 +298,22 @@ router.post('/bookings', requireAuth, async (req: AuthenticatedRequest, res: Res
       error: { code: 'INVALID_REQUEST', message: 'Missing required booking fields (title, attendance, duration_periods, windows)' },
     });
     return;
+  }
+
+  // Check maintenance conflict if room is requested
+  if (requested_room && Array.isArray(windows)) {
+    for (const win of windows) {
+      const fromP = win.from_period || win.start_period || 1;
+      const toP = win.to_period || win.end_period || fromP;
+      const conflict = await checkBookingConflicts(requested_room, win.day, fromP, toP);
+      if (conflict && conflict.code === 'MAINTENANCE_BLOCK_CONFLICT') {
+        res.status(409).json({
+          success: false,
+          error: conflict,
+        });
+        return;
+      }
+    }
   }
 
   const role = req.user!.role as any;
@@ -288,51 +384,15 @@ router.post('/bookings/:id/decision', requireRole('admin', 'department_coordinat
     return;
   }
 
-  // If approving with specific room and slot, prevent conflicting double booking
+  // If approving with specific room and slot, prevent conflicting double booking or maintenance overlap
   if (status === 'approved' && room_id && day && start_period && end_period) {
-    const sp = Number(start_period);
-    const ep = Number(end_period);
-
-    // 1. Check against other approved bookings
-    const allBookings = await storage.getAllBookings();
-    for (const other of Object.values(allBookings)) {
-      if (
-        other.id !== booking.id &&
-        other.status === 'approved' &&
-        other.allocated_room === room_id &&
-        other.allocated_day === day &&
-        other.allocated_start_period &&
-        other.allocated_end_period
-      ) {
-        if (sp <= other.allocated_end_period && ep >= other.allocated_start_period) {
-          res.status(409).json({
-            success: false,
-            error: {
-              code: 'DOUBLE_BOOKING_CONFLICT',
-              message: `Room '${room_id}' is already booked on ${day} periods ${other.allocated_start_period}-${other.allocated_end_period} by booking ${other.id}.`,
-            },
-          });
-          return;
-        }
-      }
-    }
-
-    // 2. Check against timetable sessions in approved schedule
-    const approvedSchedule = await storage.getApprovedSchedule();
-    if (approvedSchedule) {
-      const clash = approvedSchedule.sessions.find(
-        (s) => s.room_id === room_id && s.day === day && s.start_period >= sp && s.start_period <= ep
-      );
-      if (clash) {
-        res.status(409).json({
-          success: false,
-          error: {
-            code: 'TIMETABLE_ROOM_CONFLICT',
-            message: `Room '${room_id}' is occupied by session '${clash.session_id}' on ${day} period ${clash.start_period}.`,
-          },
-        });
-        return;
-      }
+    const conflict = await checkBookingConflicts(room_id, day, Number(start_period), Number(end_period), booking.id);
+    if (conflict) {
+      res.status(409).json({
+        success: false,
+        error: conflict,
+      });
+      return;
     }
   }
 
@@ -384,15 +444,32 @@ router.post('/bookings/:id/approve', requireRole('admin', 'department_coordinato
     return;
   }
 
+  const win = booking.windows?.[0] as any;
+  const room_id = req.body.room_id || booking.allocated_room || booking.requested_room;
+  const day = req.body.day || booking.allocated_day || win?.day;
+  const start_period = req.body.start_period || booking.allocated_start_period || win?.from_period || win?.start_period;
+  const end_period = req.body.end_period || booking.allocated_end_period || win?.to_period || win?.end_period;
+
+  if (room_id && day && start_period && end_period) {
+    const conflict = await checkBookingConflicts(room_id, day, Number(start_period), Number(end_period), booking.id);
+    if (conflict) {
+      res.status(409).json({
+        success: false,
+        error: conflict,
+      });
+      return;
+    }
+  }
+
   booking.status = 'approved';
   booking.decision_reason = req.body.reason || `Approved by ${req.user!.name}`;
   booking.decided_by = req.user!.id;
   booking.decided_at = new Date().toISOString();
 
-  if (req.body.room_id) booking.allocated_room = req.body.room_id;
-  if (req.body.day) booking.allocated_day = req.body.day;
-  if (req.body.start_period) booking.allocated_start_period = Number(req.body.start_period);
-  if (req.body.end_period) booking.allocated_end_period = Number(req.body.end_period);
+  if (room_id) booking.allocated_room = room_id;
+  if (day) booking.allocated_day = day;
+  if (start_period) booking.allocated_start_period = Number(start_period);
+  if (end_period) booking.allocated_end_period = Number(end_period);
 
   await storage.saveBooking(booking);
   await storage.logAudit({

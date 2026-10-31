@@ -8,6 +8,8 @@ import {
   DisruptionRecord,
   UserRecord,
   AuditLogEntry,
+  MaintenanceBlock,
+  WaitlistEntry,
 } from './storageInterface.js';
 import { PostgresStorage } from './postgresStorage.js';
 
@@ -22,6 +24,7 @@ export class StorageManager implements IStorage {
   private auditFile: string;
   private calendarFile: string;
   private usersFile: string;
+  private waitlistFile: string;
 
   constructor() {
     this.baseDir = STORAGE_DIR;
@@ -32,6 +35,7 @@ export class StorageManager implements IStorage {
     this.auditFile = path.join(this.baseDir, 'audit_log.json');
     this.calendarFile = path.join(this.baseDir, 'calendar_sync.json');
     this.usersFile = path.join(this.baseDir, 'users.json');
+    this.waitlistFile = path.join(this.baseDir, 'waitlist.json');
 
     this.ensureInitialized();
   }
@@ -397,6 +401,90 @@ export class StorageManager implements IStorage {
     const all = await this.getAllDisruptions();
     all[disruption.id] = disruption;
     this.writeJsonAtomic(this.disruptionsFile, all);
+  }
+
+  // --- MAINTENANCE BLOCKS ---
+  public async getMaintenanceBlocks(): Promise<MaintenanceBlock[]> {
+    const ds = await this.getDataset();
+    const blocks: MaintenanceBlock[] = [];
+    if (Array.isArray(ds.room_unavailability)) {
+      for (const item of ds.room_unavailability) {
+        blocks.push({
+          id: item.id || `MB-${item.room_id}-${item.day}-${item.periods?.[0] || '1'}`,
+          room_id: item.room_id,
+          day: item.day,
+          periods: Array.isArray(item.periods) ? item.periods : [item.period || 1],
+          date: item.date,
+          start_time: item.start_time,
+          end_time: item.end_time,
+          reason: item.reason || 'Scheduled Maintenance',
+          created_by: item.created_by || 'system',
+          created_at: item.created_at || new Date().toISOString(),
+        });
+      }
+    }
+    return blocks;
+  }
+
+  public async saveMaintenanceBlock(block: MaintenanceBlock): Promise<void> {
+    const ds = await this.getDataset();
+    if (!Array.isArray(ds.room_unavailability)) {
+      ds.room_unavailability = [];
+    }
+    ds.room_unavailability = ds.room_unavailability.filter((u: any) => u.id !== block.id);
+    ds.room_unavailability.push({
+      id: block.id,
+      room_id: block.room_id,
+      day: block.day,
+      periods: block.periods,
+      date: block.date,
+      start_time: block.start_time,
+      end_time: block.end_time,
+      reason: block.reason,
+      created_by: block.created_by,
+      created_at: block.created_at,
+    });
+    await this.saveDataset(ds);
+  }
+
+  public async deleteMaintenanceBlock(id: string): Promise<boolean> {
+    const ds = await this.getDataset();
+    if (!Array.isArray(ds.room_unavailability)) return false;
+    const initialLen = ds.room_unavailability.length;
+    ds.room_unavailability = ds.room_unavailability.filter(
+      (u: any) => u.id !== id && `${u.room_id}-${u.day}` !== id
+    );
+    if (ds.room_unavailability.length !== initialLen) {
+      await this.saveDataset(ds);
+      return true;
+    }
+    return false;
+  }
+
+  // --- WAITLIST ---
+  public async getWaitlist(): Promise<WaitlistEntry[]> {
+    return this.readJson<WaitlistEntry[]>(this.waitlistFile, []);
+  }
+
+  public async saveWaitlistEntry(entry: WaitlistEntry): Promise<void> {
+    const list = await this.getWaitlist();
+    const idx = list.findIndex((w) => w.id === entry.id);
+    if (idx >= 0) {
+      list[idx] = entry;
+    } else {
+      list.push(entry);
+    }
+    this.writeJsonAtomic(this.waitlistFile, list);
+  }
+
+  public async deleteWaitlistEntry(id: string): Promise<boolean> {
+    const list = await this.getWaitlist();
+    const filtered = list.filter((w) => w.id !== id);
+    if (filtered.length !== list.length) {
+      this.writeJsonAtomic(this.waitlistFile, filtered);
+      return true;
+    }
+    return false;
   }
 
   // --- AUDIT LOGS ---

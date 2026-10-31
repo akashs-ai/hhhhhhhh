@@ -57,6 +57,51 @@ export interface Booking {
   created_by?: string;
 }
 
+export interface VenueItem {
+  id: string;
+  name: string;
+  building: string;
+  type: string;
+  capacity: number;
+  accessible: boolean;
+  features: string[];
+  allowed_uses: string[];
+  status?: 'available' | 'occupied' | 'maintenance';
+  current_status?: 'available' | 'occupied' | 'maintenance';
+  status_label?: string;
+  maintenance_block?: {
+    id?: string;
+    room_id?: string;
+    day: string;
+    periods: number[];
+    date?: string;
+    start_time?: string;
+    end_time?: string;
+    reason: string;
+    created_by?: string;
+    created_at?: string;
+  } | null;
+  active_booking?: {
+    id: string;
+    title: string;
+    requester: string;
+  } | null;
+}
+
+export interface WaitlistItem {
+  id: string;
+  student_id: string;
+  student_name: string;
+  student_email?: string;
+  venue_id: string;
+  day: string;
+  period: number;
+  date?: string;
+  purpose?: string;
+  status: 'active' | 'fulfilled' | 'cancelled';
+  created_at: string;
+}
+
 export interface ExamItem {
   exam_id: string;
   day: string;
