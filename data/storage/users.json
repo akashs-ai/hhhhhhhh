@@ -727,5 +727,35 @@
     ],
     "created_at": "2026-10-31T22:01:45.642Z",
     "updated_at": "2026-10-31T22:01:45.642Z"
+  },
+  "usr-test-persistent-1793490436434": {
+    "id": "usr-test-persistent-1793490436434",
+    "username": "testuser.1793490436434",
+    "display_name": "Test Persistent Engineer",
+    "email": "test.1793490436434@cit.ac.in",
+    "role": "faculty",
+    "status": "active",
+    "department": "CSE",
+    "faculty_id": "F01",
+    "auth_tokens": [
+      "token-usr-test-persistent-1793490436434-1793490436436"
+    ],
+    "created_at": "2026-10-31T23:47:16.438Z",
+    "updated_at": "2026-10-31T23:47:16.438Z"
+  },
+  "usr-test-persistent-1793491058455": {
+    "id": "usr-test-persistent-1793491058455",
+    "username": "testuser.1793491058455",
+    "display_name": "Test Persistent Engineer",
+    "email": "test.1793491058455@cit.ac.in",
+    "role": "faculty",
+    "status": "active",
+    "department": "CSE",
+    "faculty_id": "F01",
+    "auth_tokens": [
+      "token-usr-test-persistent-1793491058455-1793491058458"
+    ],
+    "created_at": "2026-10-31T23:57:38.460Z",
+    "updated_at": "2026-10-31T23:57:38.460Z"
   }
 }

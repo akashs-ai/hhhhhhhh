@@ -172,6 +172,190 @@ export class StorageManager implements IStorage {
     if (!fs.existsSync(this.disruptionsFile)) {
       this.writeJsonAtomic(this.disruptionsFile, {});
     }
+    try {
+      const existingDisruptions = this.readJson<Record<string, DisruptionRecord>>(this.disruptionsFile, {});
+      if (!existingDisruptions['REQ-DIS-8821']) {
+        const seedDisruptions: Record<string, DisruptionRecord> = {
+          'REQ-DIS-8821': {
+            id: 'REQ-DIS-8821',
+            title: 'Dr. R. Pattnaik — Emergency Medical Leave',
+            description: 'Sudden hospitalization requiring emergency medical leave and session reschedule',
+            submitted_at: '2026-10-28T08:30:00.000Z',
+            submitted_by: 'usr-faculty-f01',
+            status: 'pending',
+            type: 'faculty_unavailability',
+            severity: 'urgent',
+            course_id: 'CS304',
+            course_name: 'Operating Systems (Theory)',
+            cohort: 'CSE-2A',
+            student_count: 62,
+            department: 'Computer Science & Engg.',
+            instructor_name: 'Dr. R. Pattnaik',
+            original_slot: {
+              day: 'WED',
+              date: '2026-10-29',
+              start_period: 3,
+              end_period: 4,
+              time_window: '10:00 AM – 11:15 AM (75 mins)',
+              room_id: 'C-104',
+              room_name: 'Room C-104 (Auditorium Wing)',
+              faculty_id: 'F01',
+              faculty_name: 'Dr. R. Pattnaik',
+              reason: 'Sudden hospitalization',
+            },
+            replacement_slot: {
+              day: 'WED',
+              date: '2026-10-29',
+              start_period: 6,
+              end_period: 7,
+              time_window: '02:00 PM – 03:15 PM (75 mins)',
+              room_id: 'B-203',
+              room_name: 'Room B-203 (High-Tech Block)',
+              substitute_faculty_id: 'F02',
+              substitute_faculty_name: 'Prof. A. Nanda (Assigned)',
+              match_rank: 'Rank #1 Match',
+            },
+            reason: 'Sudden hospitalization',
+            changes: [
+              {
+                type: 'reschedule',
+                course_id: 'CS304',
+                day: 'WED',
+                room_id: 'B-203',
+                periods: [6, 7],
+              },
+            ],
+          },
+          'REQ-DIS-8819': {
+            id: 'REQ-DIS-8819',
+            title: 'Systems Lab 1 — AC Compressor Breakdown',
+            description: 'Facility fault in Systems Lab 1 requiring relocation of lab cohort',
+            submitted_at: '2026-10-28T10:15:00.000Z',
+            submitted_by: 'usr-coord-cse',
+            status: 'pending',
+            type: 'room_reallocation',
+            severity: 'warning',
+            course_id: 'CS412',
+            course_name: 'Distributed Systems Lab',
+            cohort: 'CSE-4B',
+            student_count: 48,
+            department: 'Computer Science & Engg.',
+            instructor_name: 'Prof. S. K. Behera',
+            original_slot: {
+              day: 'THU',
+              date: '2026-10-30',
+              start_period: 6,
+              end_period: 8,
+              time_window: '02:00 PM – 04:30 PM',
+              room_id: 'CS-LAB-1',
+              room_name: 'Systems Lab 1',
+              reason: 'AC Compressor Breakdown',
+            },
+            replacement_slot: {
+              day: 'THU',
+              date: '2026-10-30',
+              start_period: 6,
+              end_period: 8,
+              time_window: '02:00 PM – 04:30 PM',
+              room_id: 'CS-LAB-2',
+              room_name: 'Systems Lab 2 (Software Wing)',
+              match_rank: 'Rank #1 Match',
+            },
+            reason: 'AC Compressor Breakdown',
+            changes: [
+              {
+                type: 'room_reallocation',
+                course_id: 'CS412',
+                room_id: 'CS-LAB-2',
+                day: 'THU',
+                periods: [6, 7, 8],
+              },
+            ],
+          },
+          'REQ-DIS-8815': {
+            id: 'REQ-DIS-8815',
+            title: 'Prof. M. K. Senapati — IEEE Conference Deputation',
+            description: 'Deputation for keynote presentation at IEEE Global Communications Conference',
+            submitted_at: '2026-10-27T14:00:00.000Z',
+            submitted_by: 'usr-faculty-f19',
+            status: 'pending',
+            type: 'faculty_unavailability',
+            severity: 'normal',
+            course_id: 'EC210',
+            course_name: 'Digital Signal Processing',
+            cohort: 'ECE-3A',
+            student_count: 74,
+            department: 'Electronics & Communication Engg.',
+            instructor_name: 'Prof. M. K. Senapati',
+            original_slot: {
+              day: 'FRI',
+              date: '2026-10-31',
+              start_period: 4,
+              end_period: 5,
+              time_window: '11:30 AM – 12:45 PM',
+              room_id: 'EC-202',
+              room_name: 'Room EC-202 (ECE Annex)',
+              reason: 'IEEE Conference Deputation',
+            },
+            replacement_slot: {
+              day: 'MON',
+              date: '2026-11-03',
+              start_period: 5,
+              end_period: 6,
+              time_window: '12:00 PM – 01:15 PM',
+              room_id: 'EC-202',
+              room_name: 'Room EC-202 (ECE Annex)',
+              substitute_faculty_id: 'F20',
+              substitute_faculty_name: 'Prof. T. Ray (Co-Instructor)',
+              match_rank: 'Rank #1 Match',
+            },
+            reason: 'IEEE Conference Deputation',
+            changes: [
+              {
+                type: 'faculty_deputation',
+                course_id: 'EC210',
+                day: 'MON',
+                room_id: 'EC-202',
+                periods: [5, 6],
+              },
+            ],
+          },
+        };
+        for (let i = 1; i <= 12; i++) {
+          const pad = i < 10 ? '0' + i : '' + i;
+          const id = 'REQ-DIS-88' + pad;
+          if (!existingDisruptions[id]) {
+            const isFac = i % 3 === 0;
+            const isRoom = i % 3 === 1;
+            const type = isFac ? 'faculty_unavailability' : isRoom ? 'room_reallocation' : 'general';
+            seedDisruptions[id] = {
+              id,
+              title: isFac
+                ? 'Faculty Duty Deputation #' + i
+                : isRoom
+                ? 'Room Maintenance Reallocation #' + i
+                : 'Schedule Adjustment #' + i,
+              description: 'Historical schedule repair resolved by SAT solver',
+              submitted_at: new Date(Date.now() - (15 - i) * 86400000).toISOString(),
+              submitted_by: 'usr-coord-cse',
+              status: 'approved',
+              type,
+              severity: i % 4 === 0 ? 'urgent' : 'normal',
+              course_id: 'CS' + (200 + i),
+              course_name: 'Computer Science Core ' + (200 + i),
+              cohort: 'CSE-' + ((i % 4) + 1) + 'A',
+              student_count: 60,
+              department: 'Computer Science & Engg.',
+              approved_by: 'usr-admin',
+              approved_at: new Date(Date.now() - (15 - i) * 86400000 + 3600000 * 3.2).toISOString(),
+              changes: [],
+            };
+          }
+        }
+        Object.assign(existingDisruptions, seedDisruptions);
+        this.writeJsonAtomic(this.disruptionsFile, existingDisruptions);
+      }
+    } catch (_) {}
 
     // 5. Audit Log
     if (!fs.existsSync(this.auditFile)) {

@@ -115,7 +115,44 @@ export interface DisruptionRecord {
   description?: string;
   submitted_at: string;
   submitted_by: string;
-  status: 'proposed' | 'approved' | 'rejected';
+  status: 'proposed' | 'approved' | 'rejected' | 'pending' | 'revision_requested';
+  type?: 'faculty_unavailability' | 'room_reallocation' | 'emergency_closure' | 'general';
+  severity?: 'urgent' | 'warning' | 'normal';
+  course_id?: string;
+  course_name?: string;
+  cohort?: string;
+  student_count?: number;
+  department?: string;
+  instructor_name?: string;
+  original_slot?: {
+    day: string;
+    date?: string;
+    start_period?: number;
+    end_period?: number;
+    time_window?: string;
+    room_id: string;
+    room_name?: string;
+    faculty_id?: string;
+    faculty_name?: string;
+    reason?: string;
+  };
+  replacement_slot?: {
+    day: string;
+    date?: string;
+    start_period?: number;
+    end_period?: number;
+    time_window?: string;
+    room_id: string;
+    room_name?: string;
+    substitute_faculty_id?: string;
+    substitute_faculty_name?: string;
+    match_rank?: string;
+  };
+  reason?: string;
+  rejection_reason?: string;
+  revision_notes?: string;
+  decided_by?: string;
+  decided_at?: string;
   changes: Array<{
     type: string;
     faculty_id?: string;
@@ -126,6 +163,8 @@ export interface DisruptionRecord {
     session?: any;
     faculty?: any;
     session_id?: string;
+    course_id?: string;
+    day?: string;
   }>;
   proposed_schedule_version_id?: string;
   stability_metrics?: {

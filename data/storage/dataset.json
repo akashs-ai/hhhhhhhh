@@ -5675,6 +5675,26 @@
       "groups": [
         "CSE-3"
       ]
+    },
+    {
+      "id": "CS_AUTO_1793490432595",
+      "course_id": "CS-777",
+      "kind": "theory",
+      "duration": 2,
+      "faculty_id": "F01",
+      "groups": [
+        "CSE-3"
+      ]
+    },
+    {
+      "id": "CS_AUTO_1793491054792",
+      "course_id": "CS-777",
+      "kind": "theory",
+      "duration": 2,
+      "faculty_id": "F01",
+      "groups": [
+        "CSE-3"
+      ]
     }
   ],
   "booking_requests": [
@@ -6730,10 +6750,11 @@
         "CS301"
       ],
       "groups": [
-        "CSE-3"
+        "CSE-2A"
       ],
-      "size": 75,
-      "duration_hours": 2
+      "size": 50,
+      "duration_hours": 2,
+      "title": "Data Structures and Algorithms Midterm"
     },
     {
       "id": "EX-CS302",

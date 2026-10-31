@@ -11,7 +11,7 @@
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
     "db:migrate": "tsx server/db/migrate.ts",
-    "test": "npx tsx tests/test_api.ts && npx tsx tests/test_google_calendar_integration.ts && npx tsx tests/test_timetable_calendar_views.ts && npx tsx tests/test_requests_and_calendar_integration.ts && npx tsx tests/test_security.ts && npx tsx tests/test_postgres_storage_mock.ts && npx tsx tests/test_postgres_schema.ts && npx tsx tests/test_remote_solver.ts && npx tsx tests/test_exam_scheduler.ts && npx tsx tests/test_venue_management.ts"
+    "test": "npx tsx tests/test_api.ts && npx tsx tests/test_google_calendar_integration.ts && npx tsx tests/test_timetable_calendar_views.ts && npx tsx tests/test_requests_and_calendar_integration.ts && npx tsx tests/test_security.ts && npx tsx tests/test_postgres_storage_mock.ts && npx tsx tests/test_postgres_schema.ts && npx tsx tests/test_remote_solver.ts && npx tsx tests/test_exam_scheduler.ts && npx tsx tests/test_venue_management.ts && npx tsx tests/test_disruptions_management.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
