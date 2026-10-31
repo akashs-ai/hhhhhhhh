@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   FileText,
   Download,
@@ -11,7 +11,8 @@ import {
   ExternalLink,
   RefreshCw,
 } from 'lucide-react';
-import { UserItem } from '../../types';
+import { UserItem, ExamItem } from '../../types';
+import { examService, ExamCounts } from '../../services/examService';
 
 interface FacultyExamSchedulerProps {
   currentUser: UserItem;
@@ -23,6 +24,33 @@ export const FacultyExamScheduler: React.FC<FacultyExamSchedulerProps> = ({
   onNavigateTab,
 }) => {
   const [activeTab, setActiveTab] = useState<'upcoming' | 'completed' | 'all'>('upcoming');
+  const [duties, setDuties] = useState<ExamItem[]>([]);
+  const [counts, setCounts] = useState<ExamCounts>({ total: 0, upcoming: 0, drafts: 0, completed: 0 });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadDuties = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await examService.getExams(currentUser.token, {
+        status: activeTab,
+      });
+      setDuties(res.data);
+      setCounts(res.counts);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load examination duties.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadDuties();
+  }, [activeTab]);
+
+  const totalHours = duties.reduce((acc, d) => acc + (d.duration_hours || 2), 0);
+  const nextDuty = duties.find((d) => d.status === 'upcoming');
 
   return (
     <div className="p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
@@ -36,18 +64,24 @@ export const FacultyExamScheduler: React.FC<FacultyExamSchedulerProps> = ({
             My Examination Duties & Schedule
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-            View assigned invigilation responsibilities, examination slots, and student hall rosters. Official schedule managed by the Controller of Examinations (COE).
+            View assigned invigilation responsibilities, examination slots, and student hall rosters for {currentUser.name}.
           </p>
         </div>
 
         <div className="flex items-center space-x-2.5">
-          <button className="px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-2xs flex items-center space-x-1.5">
-            <Download className="w-3.5 h-3.5 text-slate-500" />
-            <span>Download Invigilation Roster (PDF)</span>
+          <button
+            onClick={loadDuties}
+            title="Refresh duties"
+            className="p-2 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl text-slate-600 shadow-2xs"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
           </button>
-          <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-sm flex items-center space-x-1.5">
+          <button
+            onClick={() => onNavigateTab('timetable')}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-sm flex items-center space-x-1.5"
+          >
             <Calendar className="w-3.5 h-3.5" />
-            <span>Sync to Google Calendar</span>
+            <span>View Full Timetable</span>
           </button>
         </div>
       </div>
@@ -55,30 +89,40 @@ export const FacultyExamScheduler: React.FC<FacultyExamSchedulerProps> = ({
       {/* 4 Stat Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">ASSIGNED INVIGILATIONS</div>
-          <div className="text-3xl font-black text-slate-900 mt-1">4 Slots</div>
-          <div className="text-[11px] text-slate-500 mt-2">2 Lead Invigilator • 2 Assistant</div>
+          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            ASSIGNED INVIGILATIONS
+          </div>
+          <div className="text-3xl font-black text-slate-900 mt-1">{counts.total} Slots</div>
+          <div className="text-[11px] text-slate-500 mt-2">
+            {counts.upcoming} Upcoming • {counts.completed} Completed
+          </div>
         </div>
 
         <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs">
           <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">UPCOMING DUTY</div>
-          <div className="text-xl font-black text-blue-600 mt-1">Tomorrow, 09:00 AM</div>
-          <div className="text-[11px] text-slate-500 mt-2">Mid-Term: Operating Systems...</div>
+          <div className="text-lg font-black text-blue-600 mt-1 truncate">
+            {nextDuty ? `${nextDuty.day} • ${nextDuty.session}` : 'None Scheduled'}
+          </div>
+          <div className="text-[11px] text-slate-500 mt-2 truncate">
+            {nextDuty ? `${nextDuty.course_ids.join(', ')}: ${nextDuty.course_name}` : 'All duties cleared'}
+          </div>
         </div>
 
         <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs">
           <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">TOTAL EXAM HOURS</div>
-          <div className="text-3xl font-black text-slate-900 mt-1">12.0 Hrs</div>
-          <div className="text-[11px] text-emerald-600 font-semibold mt-2">Compliant with Faculty Quota (Max 16h)</div>
+          <div className="text-3xl font-black text-slate-900 mt-1">{totalHours}.0 Hrs</div>
+          <div className="text-[11px] text-emerald-600 font-semibold mt-2">
+            Compliant with Faculty Quota (Max 16h)
+          </div>
         </div>
 
         <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs">
           <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">SCHEDULE STATUS</div>
-          <div className="text-xl font-bold text-slate-800 mt-1 flex items-center space-x-1.5">
-            <span className="w-2 h-2 rounded-full bg-blue-600"></span>
+          <div className="text-lg font-bold text-slate-800 mt-1 flex items-center space-x-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
             <span>Confirmed by COE</span>
           </div>
-          <div className="text-[11px] text-slate-500 mt-2">All Clash-Free verified by SAT engine</div>
+          <div className="text-[11px] text-slate-500 mt-2">Verified Clash-Free by SAT engine</div>
         </div>
       </div>
 
@@ -95,6 +139,13 @@ export const FacultyExamScheduler: React.FC<FacultyExamSchedulerProps> = ({
         </button>
       </div>
 
+      {error && (
+        <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-900 flex items-center space-x-2">
+          <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
+
       {/* Duty Table */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
         <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
@@ -102,28 +153,33 @@ export const FacultyExamScheduler: React.FC<FacultyExamSchedulerProps> = ({
             <button
               onClick={() => setActiveTab('upcoming')}
               className={`px-3 py-1.5 rounded-xl font-bold transition-colors ${
-                activeTab === 'upcoming' ? 'bg-blue-50 text-blue-700' : 'text-slate-500'
+                activeTab === 'upcoming'
+                  ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                  : 'text-slate-500 hover:bg-slate-50'
               }`}
             >
-              Upcoming Duties (3)
+              Upcoming Duties ({counts.upcoming})
             </button>
             <button
               onClick={() => setActiveTab('completed')}
               className={`px-3 py-1.5 rounded-xl font-bold transition-colors ${
-                activeTab === 'completed' ? 'bg-blue-50 text-blue-700' : 'text-slate-500'
+                activeTab === 'completed'
+                  ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                  : 'text-slate-500 hover:bg-slate-50'
               }`}
             >
-              Completed Duties (1)
+              Completed Duties ({counts.completed})
             </button>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <select className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-700">
-              <option>3rd Semester CSE</option>
-            </select>
-            <select className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-700">
-              <option>All Duties</option>
-            </select>
+            <button
+              onClick={() => setActiveTab('all')}
+              className={`px-3 py-1.5 rounded-xl font-bold transition-colors ${
+                activeTab === 'all'
+                  ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                  : 'text-slate-500 hover:bg-slate-50'
+              }`}
+            >
+              All Duties ({counts.total})
+            </button>
           </div>
         </div>
 
@@ -137,118 +193,70 @@ export const FacultyExamScheduler: React.FC<FacultyExamSchedulerProps> = ({
                 <th className="p-3.5">EXAMINATION HALL</th>
                 <th className="p-3.5">CANDIDATES</th>
                 <th className="p-3.5">CO-INVIGILATORS</th>
-                <th className="p-3.5 text-right">ROSTER & ACTIONS</th>
+                <th className="p-3.5 text-right">STATUS</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              <tr>
-                <td className="p-3.5">
-                  <div className="font-bold text-blue-600">Tomorrow, 25 Oct 2026</div>
-                  <div className="text-[10px] text-slate-500">09:00 AM – 12:00 PM</div>
-                </td>
-                <td className="p-3.5">
-                  <div className="font-bold text-slate-800">Operating Systems</div>
-                  <div className="text-[10px] text-slate-400">CS302 • Midterm</div>
-                </td>
-                <td className="p-3.5">
-                  <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-bold text-[10px]">
-                    Chief Invigilator
-                  </span>
-                </td>
-                <td className="p-3.5 font-medium text-slate-800">B-Block Hall 302</td>
-                <td className="p-3.5 font-bold text-slate-800">64 Candidates (CSE-2A)</td>
-                <td className="p-3.5 text-slate-600">Er. P. Das</td>
-                <td className="p-3.5 text-right">
-                  <button className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-semibold text-[11px]">
-                    Roster
-                  </button>
-                </td>
-              </tr>
-
-              <tr>
-                <td className="p-3.5">
-                  <div className="font-bold text-slate-800">Wed, 28 Oct 2026</div>
-                  <div className="text-[10px] text-slate-500">02:00 PM – 05:00 PM</div>
-                </td>
-                <td className="p-3.5">
-                  <div className="font-bold text-slate-800">Cyber Security & Cryptography</div>
-                  <div className="text-[10px] text-slate-400">CS405 • Midterm</div>
-                </td>
-                <td className="p-3.5">
-                  <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-bold text-[10px]">
-                    Lead Invigilator
-                  </span>
-                </td>
-                <td className="p-3.5 font-medium text-slate-800">B-Block Hall 204</td>
-                <td className="p-3.5 font-bold text-slate-800">48 Candidates (CSE-3A)</td>
-                <td className="p-3.5 text-slate-600">Staff Escort</td>
-                <td className="p-3.5 text-right">
-                  <button className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-semibold text-[11px]">
-                    Roster
-                  </button>
-                </td>
-              </tr>
-
-              <tr>
-                <td className="p-3.5">
-                  <div className="font-bold text-slate-800">Mon, 02 Nov 2026</div>
-                  <div className="text-[10px] text-slate-500">09:00 AM – 12:00 PM</div>
-                </td>
-                <td className="p-3.5">
-                  <div className="font-bold text-slate-800">Database Management Systems</div>
-                  <div className="text-[10px] text-slate-400">CS303 • Midterm</div>
-                </td>
-                <td className="p-3.5">
-                  <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full font-semibold text-[10px]">
-                    Co-Invigilator
-                  </span>
-                </td>
-                <td className="p-3.5 font-medium text-slate-800">Hall 201</td>
-                <td className="p-3.5 font-bold text-slate-800">65 Candidates (CSE-2B)</td>
-                <td className="p-3.5 text-slate-600">Lead: Prof. A. Mohanty</td>
-                <td className="p-3.5 text-right">
-                  <button className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-semibold text-[11px]">
-                    Roster
-                  </button>
-                </td>
-              </tr>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={7} className="p-8 text-center text-slate-400">
+                    <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-blue-500" />
+                    <span>Loading assigned invigilation duties...</span>
+                  </td>
+                </tr>
+              ) : duties.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="p-8 text-center text-slate-400">
+                    <CheckCircle2 className="w-6 h-6 mx-auto mb-2 text-slate-300" />
+                    <p className="font-semibold text-slate-600">No examination duties in this view</p>
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      No invigilation sessions match filter: <strong>{activeTab}</strong>.
+                    </p>
+                  </td>
+                </tr>
+              ) : (
+                duties.map((row) => (
+                  <tr key={row.exam_id} className="hover:bg-slate-50/70 transition-colors">
+                    <td className="p-3.5">
+                      <div className="font-bold text-blue-600">{row.date}</div>
+                      <div className="text-[10px] text-slate-500">{row.timing}</div>
+                    </td>
+                    <td className="p-3.5">
+                      <div className="font-bold text-slate-800">{row.course_name}</div>
+                      <div className="text-[10px] text-slate-400">
+                        {row.course_ids.join(', ')} • {row.cohort}
+                      </div>
+                    </td>
+                    <td className="p-3.5">
+                      <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-bold text-[10px]">
+                        {row.chief_invigilator?.includes(currentUser.name)
+                          ? 'Chief Invigilator'
+                          : 'Assistant Invigilator'}
+                      </span>
+                    </td>
+                    <td className="p-3.5 font-medium text-slate-800">{row.venue_names}</td>
+                    <td className="p-3.5 font-bold text-slate-800">
+                      {row.size} Candidates ({row.groups.join(', ')})
+                    </td>
+                    <td className="p-3.5 text-slate-600">
+                      {row.invigilators?.[1] || 'Staff Escort'}
+                    </td>
+                    <td className="p-3.5 text-right">
+                      <span
+                        className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          row.status === 'completed'
+                            ? 'bg-slate-100 text-slate-700'
+                            : 'bg-emerald-100 text-emerald-800'
+                        }`}
+                      >
+                        {row.status === 'completed' ? 'Duty Completed' : 'Scheduled'}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
-        </div>
-      </div>
-
-      {/* Bottom Row: Guidelines & Swap Request Drawer */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-8 bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-3 text-xs">
-          <div className="font-bold text-slate-900">Invigilation Guidelines & Protocols (COE MANUAL 2026)</div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 text-slate-600">
-            <div className="p-3 bg-slate-50 rounded-xl space-y-1">
-              <div className="font-bold text-slate-800">1. Arrival Buffer</div>
-              <p className="text-[11px] text-slate-500">Report to COE Control Room at least 30 minutes prior to exam.</p>
-            </div>
-            <div className="p-3 bg-slate-50 rounded-xl space-y-1">
-              <div className="font-bold text-slate-800">2. Packet Custody</div>
-              <p className="text-[11px] text-slate-500">Collect sealed question paper bundles with dual faculty signatures.</p>
-            </div>
-            <div className="p-3 bg-slate-50 rounded-xl space-y-1">
-              <div className="font-bold text-slate-800">3. Verification</div>
-              <p className="text-[11px] text-slate-500">Verify student identity via physical Smart Cards and answer book barcodes.</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="lg:col-span-4 bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-3 text-xs">
-          <div className="font-bold text-slate-900">Need a Duty Swap?</div>
-          <p className="text-slate-500 text-[11px]">
-            Facing emergency clash or departmental commitment? Submit a swap ticket with a consenting substitute faculty member.
-          </p>
-          <button
-            onClick={() => onNavigateTab('requests')}
-            className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs transition-all shadow-2xs"
-          >
-            Request Duty Exchange
-          </button>
-          <div className="text-[10px] text-slate-400 text-center">Requires 24-hr advance notice for COE approval</div>
         </div>
       </div>
     </div>

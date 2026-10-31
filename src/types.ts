@@ -60,10 +60,13 @@ export interface Booking {
 export interface ExamItem {
   exam_id: string;
   day: string;
+  date?: string;
   session: 'AM' | 'PM';
   timing: string;
   course_ids: string[];
   course_name?: string;
+  cohort?: string;
+  department?: string;
   groups: string[];
   size: number;
   duration_hours: number;
@@ -73,11 +76,13 @@ export interface ExamItem {
     full_capacity: number;
     exam_capacity: number;
   }>;
+  venue_names?: string;
+  percent_filled?: string;
   total_allocated_capacity?: number;
   capacity_compliant?: boolean;
   chief_invigilator?: string;
   invigilators?: string[];
-  status?: string;
+  status?: 'upcoming' | 'draft' | 'completed';
 }
 
 export interface DisruptionItem {

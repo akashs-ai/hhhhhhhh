@@ -35,11 +35,22 @@ export interface ScheduleVersion {
       displaced_by: string;
     }>;
   };
+  exam_roster?: {
+    status: 'published' | 'draft';
+    published_at?: string;
+    published_by?: string;
+    published_by_name?: string;
+  };
   exams?: Array<{
     exam_id: string;
     day: string;
     session: string;
     rooms: string[];
+    status?: 'upcoming' | 'draft' | 'completed';
+    invigilator_lead?: string;
+    invigilator_asst?: string;
+    created_at?: string;
+    created_by?: string;
   }>;
   validator_report?: any;
 }
