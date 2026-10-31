@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -14,6 +15,7 @@ export const DISRUPTION_PATH = path.join(ROOT_DIR, 'starter_pack', 'CrunchWeek_S
 export const VALIDATOR_PATH = path.join(ROOT_DIR, 'starter_pack', 'CrunchWeek_StarterPack', 'validator.py');
 export const SOLVER_PATH = path.join(ROOT_DIR, 'solver.py');
 
-export const PYTHON_EXEC = process.env.PYTHON_EXEC || '/usr/bin/python3';
+export const PYTHON_EXEC =
+  process.env.PYTHON_EXEC || (process.platform === 'win32' ? 'python' : '/usr/bin/python3');
 export const PORT = parseInt(process.env.PORT || '3000', 10);
 export const HOST = process.env.HOST || '0.0.0.0';

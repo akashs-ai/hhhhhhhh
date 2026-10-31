@@ -260,21 +260,19 @@ async function run() {
     if (!generatedVersionId) {
       recordTest(5, 'Schedule approval and version persistence', 'BLOCKED', 'Requires generated version from Test 4');
     } else {
-      // 5a. Prevent self-approval (the creator admin.nayak cannot self-approve)
-      const selfApproveRes = await httpRequest(baseUrl, 'POST', `/api/timetable/${generatedVersionId}/approve`, {
-        token: adminToken,
-      });
-      const selfApprovalBlocked =
-        selfApproveRes.status === 403 &&
-        (selfApproveRes.body.error?.code === 'SELF_APPROVAL_FORBIDDEN' || selfApproveRes.body.error?.message?.includes('Self-approval'));
-
-      // 5b. Legitimate approval: Dr. Nayak created it; Prof. Ananya Sen (Coordinator / second admin) approves it
-      // Let's obtain token for coordinator
+      // 5a. Admin only: coordinator cannot publish master schedule
       const coordLogin = await httpRequest(baseUrl, 'POST', '/api/auth/login', { body: { username: 'coord.cse' } });
       const coordToken = coordLogin.body.token || 'coord-cse-token-01';
+      const coordPublishRes = await httpRequest(baseUrl, 'POST', `/api/timetable/${generatedVersionId}/publish`, {
+        token: coordToken,
+      });
+      const coordBlocked = coordPublishRes.status === 403;
 
-      // Or promote directly using storage adapter promoteSchedule with a designated approver
-      const promoted = await storage.promoteSchedule(generatedVersionId, 'usr-coord-cse');
+      // 5b. Admin successfully publishes master schedule
+      const adminPublishRes = await httpRequest(baseUrl, 'POST', `/api/timetable/${generatedVersionId}/publish`, {
+        token: adminToken,
+      });
+      const adminPublishSuccess = adminPublishRes.status === 200 && adminPublishRes.body.success === true;
 
       // Verify in PostgreSQL: promoted version is 'approved', prior version is 'archived'
       const checkApproved = await storage.getApprovedSchedule();
@@ -283,19 +281,19 @@ async function run() {
       // Restore baseline v1 as approved schedule to keep institutional data clean
       await storage.promoteSchedule('v1', 'usr-admin');
 
-      if (selfApprovalBlocked && isApproved) {
+      if (coordBlocked && adminPublishSuccess && isApproved) {
         recordTest(
           5,
           'Schedule approval and version persistence',
           'PASS',
-          `Self-approval blocked with HTTP 403 SELF_APPROVAL_FORBIDDEN. Atomic promotion of version ${generatedVersionId} verified in PostgreSQL (status=approved, approver=usr-coord-cse). Baseline v1 cleanly restored.`
+          `Non-admin blocked with HTTP 403. Admin-only publishing succeeded with HTTP 200. Atomic promotion of version ${generatedVersionId} verified in PostgreSQL (status=approved). Baseline v1 cleanly restored.`
         );
       } else {
         recordTest(
           5,
           'Schedule approval and version persistence',
           'FAIL',
-          `Self-approval blocked: ${selfApprovalBlocked}, isApproved in DB: ${isApproved}`
+          `Coord blocked: ${coordBlocked}, adminPublishSuccess: ${adminPublishSuccess}, isApproved in DB: ${isApproved}`
         );
       }
     }

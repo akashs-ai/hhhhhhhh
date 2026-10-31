@@ -5595,6 +5595,86 @@
       "groups": [
         "CSE-3"
       ]
+    },
+    {
+      "id": "CS_AUTO_1793479183171",
+      "course_id": "CS-777",
+      "kind": "theory",
+      "duration": 2,
+      "faculty_id": "F01",
+      "groups": [
+        "CSE-3"
+      ]
+    },
+    {
+      "id": "CS_AUTO_1793479684509",
+      "course_id": "CS-777",
+      "kind": "theory",
+      "duration": 2,
+      "faculty_id": "F01",
+      "groups": [
+        "CSE-3"
+      ]
+    },
+    {
+      "id": "CS_AUTO_1793479977378",
+      "course_id": "CS-777",
+      "kind": "theory",
+      "duration": 2,
+      "faculty_id": "F01",
+      "groups": [
+        "CSE-3"
+      ]
+    },
+    {
+      "id": "CS_AUTO_1793481276972",
+      "course_id": "CS-777",
+      "kind": "theory",
+      "duration": 2,
+      "faculty_id": "F01",
+      "groups": [
+        "CSE-3"
+      ]
+    },
+    {
+      "id": "CS_AUTO_1793481322228",
+      "course_id": "CS-777",
+      "kind": "theory",
+      "duration": 2,
+      "faculty_id": "F01",
+      "groups": [
+        "CSE-3"
+      ]
+    },
+    {
+      "id": "CS_AUTO_1793482252002",
+      "course_id": "CS-777",
+      "kind": "theory",
+      "duration": 2,
+      "faculty_id": "F01",
+      "groups": [
+        "CSE-3"
+      ]
+    },
+    {
+      "id": "CS_AUTO_1793483294673",
+      "course_id": "CS-777",
+      "kind": "theory",
+      "duration": 2,
+      "faculty_id": "F01",
+      "groups": [
+        "CSE-3"
+      ]
+    },
+    {
+      "id": "CS_AUTO_1793484099847",
+      "course_id": "CS-777",
+      "kind": "theory",
+      "duration": 2,
+      "faculty_id": "F01",
+      "groups": [
+        "CSE-3"
+      ]
     }
   ],
   "booking_requests": [

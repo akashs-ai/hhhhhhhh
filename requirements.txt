@@ -1,0 +1,4 @@
+# CIT Campus Scheduling Platform - Python Solver Microservice Dependencies
+# The core scheduling engine and validator execute on Python 3.10+ standard library.
+# Optional optimization packages:
+pulp>=2.8.0

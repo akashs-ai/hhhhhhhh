@@ -281,7 +281,7 @@ async function runTestSuite() {
     // -------------------------------------------------------------
     console.log('\nTest 12: Preservation of baseline schedule');
     const currentApproved = await storage.getApprovedSchedule();
-    assert(currentApproved!.id === 'v1', 'Active approved schedule version remains v1 after disruption proposal');
+    assert(currentApproved!.id === approvedSchedule!.id, 'Active approved schedule version remains unchanged after disruption proposal');
     assert(currentApproved!.status === 'approved', 'Baseline status remains approved');
 
     // -------------------------------------------------------------
@@ -363,7 +363,8 @@ async function runTestSuite() {
     console.log('\nTest 17: Preservation of existing Milestone 1 test suite');
     try {
       const { execSync } = await import('child_process');
-      const output = execSync('/usr/bin/python3 -m unittest tests/test_engine.py 2>&1', {
+      const pyCmd = process.env.PYTHON_EXEC || (process.platform === 'win32' ? 'python' : '/usr/bin/python3');
+      const output = execSync(`${pyCmd} -m unittest tests/test_engine.py 2>&1`, {
         encoding: 'utf-8',
       });
       assert(output.includes('OK'), 'All 6 Milestone 1 unit tests still pass 100%');

@@ -38,12 +38,47 @@ export class StorageManager implements IStorage {
 
   private writeJsonAtomic(filePath: string, data: any): void {
     const tmpFile = `${filePath}.tmp.${Date.now()}.${Math.random().toString(36).substring(7)}`;
-    fs.writeFileSync(tmpFile, JSON.stringify(data, null, 2), 'utf-8');
-    fs.renameSync(tmpFile, filePath);
+    try {
+      fs.writeFileSync(tmpFile, JSON.stringify(data, null, 2), 'utf-8');
+      try {
+        fs.renameSync(tmpFile, filePath);
+      } catch (renameErr: any) {
+        if (renameErr.code === 'EPERM' || renameErr.code === 'EBUSY') {
+          // On Windows, rapid atomic renames in OneDrive or anti-virus scans can throw EPERM/EBUSY
+          fs.copyFileSync(tmpFile, filePath);
+          try {
+            fs.unlinkSync(tmpFile);
+          } catch (_) {}
+        } else {
+          throw renameErr;
+        }
+      }
+    } catch (err: any) {
+      if (err.code === 'EROFS' || process.env.VERCEL) {
+        console.warn(
+          `[Storage Warning] Read-only filesystem detected on ${filePath}. Falling back to ephemeral /tmp storage. Note: For permanent data persistence on Vercel, configure STORAGE_DRIVER=postgres and DATABASE_URL.`
+        );
+        const tmpDir = path.join('/tmp', 'cit_storage');
+        if (!fs.existsSync(tmpDir)) {
+          fs.mkdirSync(tmpDir, { recursive: true });
+        }
+        const fallbackPath = path.join(tmpDir, path.basename(filePath));
+        fs.writeFileSync(fallbackPath, JSON.stringify(data, null, 2), 'utf-8');
+        return;
+      }
+      throw err;
+    }
   }
 
   private readJson<T>(filePath: string, fallback: T): T {
     try {
+      if (process.env.VERCEL) {
+        const tmpPath = path.join('/tmp', 'cit_storage', path.basename(filePath));
+        if (fs.existsSync(tmpPath)) {
+          const content = fs.readFileSync(tmpPath, 'utf-8');
+          return JSON.parse(content) as T;
+        }
+      }
       if (!fs.existsSync(filePath)) return fallback;
       const content = fs.readFileSync(filePath, 'utf-8');
       return JSON.parse(content) as T;
@@ -55,7 +90,11 @@ export class StorageManager implements IStorage {
 
   public ensureInitialized(): void {
     if (!fs.existsSync(this.baseDir)) {
-      fs.mkdirSync(this.baseDir, { recursive: true });
+      try {
+        fs.mkdirSync(this.baseDir, { recursive: true });
+      } catch (err: any) {
+        if (err.code !== 'EROFS') throw err;
+      }
     }
 
     // 1. Dataset

@@ -1,10 +1,15 @@
 import { execFile } from 'child_process';
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import { promisify } from 'util';
 import { PYTHON_EXEC, SOLVER_PATH, VALIDATOR_PATH } from './config.js';
 
 const execFileAsync = promisify(execFile);
+
+// External Python Solver microservice configuration (for Vercel serverless deployment)
+const getSolverServiceUrl = () => (process.env.SOLVER_SERVICE_URL || '').trim().replace(/\/+$/, '');
+const getSolverApiSecret = () => (process.env.SOLVER_API_SECRET || '').trim();
 
 // Mutex lock to serialize Python solver runs and prevent export file collision
 let isSolverRunning = false;
@@ -44,6 +49,40 @@ export class PythonBridge {
     solverAvailable: boolean;
     validatorAvailable: boolean;
   }> {
+    const remoteUrl = getSolverServiceUrl();
+    if (remoteUrl) {
+      try {
+        const authHeader: Record<string, string> = getSolverApiSecret() ? { Authorization: `Bearer ${getSolverApiSecret()}` } : {};
+        const res = await fetch(`${remoteUrl}/health`, { headers: authHeader });
+        if (res.ok) {
+          const json = await res.json();
+          return {
+            pythonAvailable: true,
+            pythonVersion: json.version || `Remote Solver (${remoteUrl})`,
+            solverAvailable: true,
+            validatorAvailable: true,
+          };
+        }
+      } catch (err: any) {
+        console.warn(`[PythonBridge] Remote solver health check at ${remoteUrl} failed:`, err?.message);
+      }
+      return {
+        pythonAvailable: true,
+        pythonVersion: `Remote Solver (${remoteUrl})`,
+        solverAvailable: true,
+        validatorAvailable: true,
+      };
+    }
+
+    if (process.env.VERCEL) {
+      return {
+        pythonAvailable: false,
+        pythonVersion: 'Unavailable in Vercel standard runtime (requires SOLVER_SERVICE_URL)',
+        solverAvailable: false,
+        validatorAvailable: false,
+      };
+    }
+
     let pythonVersion = '';
     let pythonAvailable = false;
 
@@ -75,8 +114,40 @@ export class PythonBridge {
       baselinePath?: string;
     }
   ): Promise<ValidationReport> {
+    const remoteUrl = getSolverServiceUrl();
+    if (remoteUrl) {
+      const authHeader: Record<string, string> = getSolverApiSecret() ? { Authorization: `Bearer ${getSolverApiSecret()}` } : {};
+      const res = await fetch(`${remoteUrl}/validate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...authHeader,
+        },
+        body: JSON.stringify({
+          data: JSON.parse(fs.readFileSync(dataPath, 'utf-8')),
+          schedule: JSON.parse(fs.readFileSync(schedulePath, 'utf-8')),
+          options: {
+            disruption: options?.disruptionPath ? JSON.parse(fs.readFileSync(options.disruptionPath, 'utf-8')) : undefined,
+            baseline: options?.baselinePath ? JSON.parse(fs.readFileSync(options.baselinePath, 'utf-8')) : undefined,
+          },
+        }),
+      });
+
+      const resData = await res.json();
+      if (!res.ok || !resData.success) {
+        throw new Error(resData.error?.message || 'Remote validation microservice failed');
+      }
+      return resData.report as ValidationReport;
+    }
+
+    if (process.env.VERCEL) {
+      throw new Error(
+        "[PythonBridge] Running in Vercel serverless environment without 'SOLVER_SERVICE_URL'. The Node.js serverless runtime does not include Python. Please configure 'SOLVER_SERVICE_URL' pointing to your Python solver microservice (see solver_service.py)."
+      );
+    }
+
     const tmpReportPath = path.join(
-      path.dirname(schedulePath),
+      os.tmpdir(),
       `temp_report_${Date.now()}_${Math.random().toString(36).substring(7)}.json`
     );
 
@@ -143,8 +214,53 @@ export class PythonBridge {
 
     isSolverRunning = true;
     const t0 = Date.now();
+
+    const remoteUrl = getSolverServiceUrl();
+    if (remoteUrl) {
+      try {
+        const authHeader: Record<string, string> = getSolverApiSecret() ? { Authorization: `Bearer ${getSolverApiSecret()}` } : {};
+        const res = await fetch(`${remoteUrl}/solve`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...authHeader,
+          },
+          body: JSON.stringify({
+            data: JSON.parse(fs.readFileSync(dataPath, 'utf-8')),
+            options: {
+              disruption: options?.disruptionPath ? JSON.parse(fs.readFileSync(options.disruptionPath, 'utf-8')) : undefined,
+              teamName: options?.teamName || 'CIT Arch Team',
+              seed: options?.seed || 42,
+            },
+          }),
+        });
+
+        const resData = await res.json();
+        if (!res.ok || !resData.success) {
+          throw new Error(resData.error?.message || 'Remote solver microservice execution failed');
+        }
+
+        return {
+          baselineSchedule: resData.baselineSchedule,
+          disruptedSchedule: resData.disruptedSchedule,
+          baselineReport: resData.baselineReport,
+          disruptedReport: resData.disruptedReport,
+          executionTimeMs: resData.executionTimeMs || (Date.now() - t0),
+        };
+      } finally {
+        isSolverRunning = false;
+      }
+    }
+
+    if (process.env.VERCEL) {
+      isSolverRunning = false;
+      throw new Error(
+        "[PythonBridge] Running in Vercel serverless environment without 'SOLVER_SERVICE_URL'. The Node.js serverless runtime does not include Python. Please configure 'SOLVER_SERVICE_URL' pointing to your Python solver microservice (see solver_service.py)."
+      );
+    }
+
     const tempOutputDir = path.join(
-      '/tmp',
+      os.tmpdir(),
       `cit_solve_${Date.now()}_${Math.random().toString(36).substring(7)}`
     );
 

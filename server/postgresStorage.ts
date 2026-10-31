@@ -23,9 +23,14 @@ export class PostgresStorage implements IStorage {
         'PostgresStorage initialization failed: DATABASE_URL environment variable is required when STORAGE_DRIVER=postgres'
       );
     }
+    const isLocal = url.includes('localhost') || url.includes('127.0.0.1');
+    const useSsl = process.env.NODE_ENV === 'production' || process.env.VERCEL || (!isLocal && url.includes('sslmode=require'));
     this.pool = new Pool({
       connectionString: url,
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
+      ssl: useSsl ? { rejectUnauthorized: false } : undefined,
+      max: parseInt(process.env.PG_MAX_POOL || '5', 10),
+      idleTimeoutMillis: 10000,
+      connectionTimeoutMillis: 10000,
     });
   }
 
@@ -553,6 +558,25 @@ export class PostgresStorage implements IStorage {
   public async saveAllBookings(bookings: Record<string, BookingRecord>): Promise<void> {
     for (const b of Object.values(bookings)) {
       await this.saveBooking(b);
+    }
+  }
+
+  public async deleteBooking(id: string): Promise<boolean> {
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query('DELETE FROM booking_windows WHERE booking_id = $1', [id]);
+      await client.query('DELETE FROM booking_room_types WHERE booking_id = $1', [id]);
+      await client.query('DELETE FROM booking_needs WHERE booking_id = $1', [id]);
+      await client.query('DELETE FROM booking_mandatory_groups WHERE booking_id = $1', [id]);
+      const res = await client.query('DELETE FROM venue_bookings WHERE id = $1', [id]);
+      await client.query('COMMIT');
+      return (res.rowCount ?? 0) > 0;
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
     }
   }
 

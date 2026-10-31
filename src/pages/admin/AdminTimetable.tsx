@@ -85,50 +85,50 @@ export const AdminTimetable: React.FC<AdminTimetableProps> = ({
 
   const handlePublishSchedule = async () => {
     if (!latestGeneratedId) {
-      // Retrieve proposed schedule to approve
+      // Retrieve proposed schedule to publish
       try {
         const propRes = await fetch('/api/timetable?status=proposed', {
-          headers: { Authorization: `Bearer ${currentUser.token}` },
+          headers: { Authorization: `Bearer ${currentUser.token || currentUser.id}` },
         });
         const propData = await propRes.json();
         if (propData.success && propData.version_id) {
-          await executeApprove(propData.version_id);
+          await executePublish(propData.version_id);
           return;
         }
       } catch (_) {}
 
       setApiNotice({
         type: 'info',
-        message: 'Master schedule v4.2 is already the active committed schedule.',
+        message: 'Active master schedule is already published and live.',
       });
       return;
     }
 
-    await executeApprove(latestGeneratedId);
+    await executePublish(latestGeneratedId);
   };
 
-  const executeApprove = async (versionId: string) => {
+  const executePublish = async (versionId: string) => {
     try {
-      const res = await fetch(`/api/timetable/${versionId}/approve`, {
+      const res = await fetch(`/api/timetable/${versionId}/publish`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${currentUser.token}`,
+          Authorization: `Bearer ${currentUser.token || currentUser.id}`,
         },
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data.error?.message || 'Failed to approve timetable version.');
+        throw new Error(data.error?.message || 'Failed to publish timetable version.');
       }
       setApiNotice({
         type: 'success',
-        message: `Schedule version ${versionId} is now active and published to ERP.`,
+        message: `Master schedule ${versionId} published successfully and is now active across campus!`,
       });
       if (onTriggerSolver) onTriggerSolver();
     } catch (err: any) {
       setApiNotice({
         type: 'error',
-        message: err.message || 'Approval failed.',
+        message: err.message || 'Publishing failed.',
       });
     }
   };
@@ -255,13 +255,15 @@ export const AdminTimetable: React.FC<AdminTimetableProps> = ({
             <FileText className="w-3.5 h-3.5 text-slate-500" />
             <span>Audit History</span>
           </button>
-          <button
-            onClick={handlePublishSchedule}
-            className="px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 flex items-center space-x-1.5 shadow-2xs hover:bg-slate-50 cursor-pointer"
-          >
-            <UploadCloud className="w-3.5 h-3.5 text-slate-500" />
-            <span>Publish Schedule</span>
-          </button>
+          {currentUser.role === 'admin' && (
+            <button
+              onClick={handlePublishSchedule}
+              className="px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 flex items-center space-x-1.5 shadow-2xs hover:bg-slate-50 cursor-pointer"
+            >
+              <UploadCloud className="w-3.5 h-3.5 text-slate-500" />
+              <span>Publish Schedule</span>
+            </button>
+          )}
           <button
             onClick={handleLaunchSolver}
             disabled={solverRunning}
@@ -335,95 +337,93 @@ export const AdminTimetable: React.FC<AdminTimetableProps> = ({
         </div>
       </div>
 
-      {/* Interactive Google Calendar-Style Timetable */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-9">
-          <GoogleStyleCalendar
-            currentUser={currentUser}
-            sessions={sessions}
-            onRefreshNeeded={onTriggerSolver}
-          />
+      {/* Interactive Google Calendar-Style Timetable (Full Width) */}
+      <div className="w-full">
+        <GoogleStyleCalendar
+          currentUser={currentUser}
+          sessions={sessions}
+          onRefreshNeeded={onTriggerSolver}
+        />
+      </div>
+
+      {/* Secondary Workspace Panels: Relocated Below Calendar */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Unscheduled Queue */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-bold text-slate-900">Unscheduled Queue</h3>
+            <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full">
+              {placedItem ? '0 Courses' : '2 Courses'}
+            </span>
+          </div>
+          <p className="text-[10px] text-slate-500">
+            Mandatory contact courses awaiting constraint-compliant room allocation for Semester 5.
+          </p>
+
+          {!placedItem ? (
+            <div className="space-y-2.5">
+              <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-800">CS-408L</span>
+                  <span className="text-[9px] font-bold text-red-600 bg-red-50 px-1.5 py-0.2 rounded">High Pri</span>
+                </div>
+                <div className="text-[11px] font-medium text-slate-700 mt-0.5">Compiler Construction Lab</div>
+                <div className="text-[10px] text-slate-400 mt-0.5">Prof. A. Ray • 2-Hour Practical</div>
+                <button
+                  onClick={() => setPlacedItem(true)}
+                  className="mt-2 w-full py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[10px] font-bold transition-all"
+                >
+                  Auto-Place
+                </button>
+              </div>
+
+              <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-800">EC-310T</span>
+                  <span className="text-[9px] font-bold text-slate-500 bg-slate-200 px-1.5 py-0.2 rounded">Normal</span>
+                </div>
+                <div className="text-[11px] font-medium text-slate-700 mt-0.5">VLSI Testing Tutorial</div>
+                <div className="text-[10px] text-slate-400 mt-0.5">Dr. P. Sethi • 1-Hour Tutorial</div>
+                <button
+                  onClick={() => setPlacedItem(true)}
+                  className="mt-2 w-full py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[10px] font-bold transition-all"
+                >
+                  Auto-Place
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-center text-xs text-emerald-800 font-semibold">
+              ✓ All courses successfully scheduled!
+            </div>
+          )}
         </div>
 
-        {/* Right Sidebar: Unscheduled Queue + Resolved Overlaps (3 Cols) */}
-        <div className="lg:col-span-3 space-y-4">
-          {/* Unscheduled Queue */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold text-slate-900">Unscheduled Queue</h3>
-              <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full">
-                {placedItem ? '0 Courses' : '2 Courses'}
-              </span>
+        {/* Auto-Resolved Overlaps Feed */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs space-y-3">
+          <h3 className="text-xs font-bold text-slate-900 flex items-center space-x-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+            <span>Auto-Resolved Overlaps</span>
+          </h3>
+
+          <div className="space-y-2 text-[10px] text-slate-600">
+            <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
+              <div className="font-semibold text-slate-800">Dr. Sengupta ↔ Dr. Mahapatra</div>
+              <div className="text-slate-500 mt-0.5">
+                Moved OS Lab from Thu 10:00 to Tue 14:00 to avoid conflicting with Dean Academic Advisory board.
+              </div>
             </div>
-            <p className="text-[10px] text-slate-500">
-              Mandatory contact courses awaiting constraint-compliant room allocation for Semester 5.
-            </p>
-
-            {!placedItem ? (
-              <div className="space-y-2.5">
-                <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-800">CS-408L</span>
-                    <span className="text-[9px] font-bold text-red-600 bg-red-50 px-1.5 py-0.2 rounded">High Pri</span>
-                  </div>
-                  <div className="text-[11px] font-medium text-slate-700 mt-0.5">Compiler Construction Lab</div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">Prof. A. Ray • 2-Hour Practical</div>
-                  <button
-                    onClick={() => setPlacedItem(true)}
-                    className="mt-2 w-full py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[10px] font-bold transition-all"
-                  >
-                    Auto-Place
-                  </button>
-                </div>
-
-                <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-800">EC-310T</span>
-                    <span className="text-[9px] font-bold text-slate-500 bg-slate-200 px-1.5 py-0.2 rounded">Normal</span>
-                  </div>
-                  <div className="text-[11px] font-medium text-slate-700 mt-0.5">VLSI Testing Tutorial</div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">Dr. P. Sethi • 1-Hour Tutorial</div>
-                  <button
-                    onClick={() => setPlacedItem(true)}
-                    className="mt-2 w-full py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[10px] font-bold transition-all"
-                  >
-                    Auto-Place
-                  </button>
-                </div>
+            <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
+              <div className="font-semibold text-slate-800">Venue Conflict: Turing Lab 2</div>
+              <div className="text-slate-500 mt-0.5">
+                Re-routed CS-502L Section A away from concurrent M.Tech AI project review block. Zero capacity violation.
               </div>
-            ) : (
-              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-center text-xs text-emerald-800 font-semibold">
-                ✓ All courses successfully scheduled!
-              </div>
-            )}
+            </div>
           </div>
 
-          {/* Auto-Resolved Overlaps Feed */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs space-y-3">
-            <h3 className="text-xs font-bold text-slate-900 flex items-center space-x-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-              <span>Auto-Resolved Overlaps</span>
-            </h3>
-
-            <div className="space-y-2 text-[10px] text-slate-600">
-              <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
-                <div className="font-semibold text-slate-800">Dr. Sengupta ↔ Dr. Mahapatra</div>
-                <div className="text-slate-500 mt-0.5">
-                  Moved OS Lab from Thu 10:00 to Tue 14:00 to avoid conflicting with Dean Academic Advisory board.
-                </div>
-              </div>
-              <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
-                <div className="font-semibold text-slate-800">Venue Conflict: Turing Lab 2</div>
-                <div className="text-slate-500 mt-0.5">
-                  Re-routed CS-502L Section A away from concurrent M.Tech AI project review block. Zero capacity violation.
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
-              <span className="text-slate-500">Constraint State:</span>
-              <span className="font-bold text-emerald-600">100% Satisfied</span>
-            </div>
+          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
+            <span className="text-slate-500">Constraint State:</span>
+            <span className="font-bold text-emerald-600">100% Satisfied</span>
           </div>
         </div>
       </div>

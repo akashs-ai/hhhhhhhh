@@ -149,6 +149,7 @@ export interface IStorage {
   getBookingById(id: string): Promise<BookingRecord | null>;
   saveBooking(booking: BookingRecord): Promise<void>;
   saveAllBookings(bookings: Record<string, BookingRecord>): Promise<void>;
+  deleteBooking(id: string): Promise<boolean>;
 
   // Disruptions
   getAllDisruptions(): Promise<Record<string, DisruptionRecord>>;

@@ -199,7 +199,8 @@ export class CalendarService {
       studentGroupId?: string;
       facultyId?: string;
     },
-    providedDataset?: any
+    providedDataset?: any,
+    includeBookings: boolean = true
   ): Promise<GoogleCalendarEventModel[]> {
     if (schedule.status !== 'approved') {
       throw new Error(
@@ -269,6 +270,67 @@ export class CalendarService {
             },
           },
         });
+      }
+
+      // Include approved venue bookings in calendar events
+      if (includeBookings) {
+        try {
+          const allBookings = await storage.getAllBookings();
+          const approvedBookings = Object.values(allBookings).filter(
+            (b) => b.status === 'approved' && b.allocated_room && b.allocated_day && b.allocated_start_period
+          );
+
+          for (const b of approvedBookings) {
+            if (filter?.studentGroupId && !(b.mandatory_for_groups || []).includes(filter.studentGroupId)) {
+              continue;
+            }
+            if (filter?.facultyId && b.requester !== filter.facultyId && b.created_by !== filter.facultyId) {
+              continue;
+            }
+
+            const startP = b.allocated_start_period!;
+            const endP = b.allocated_end_period || startP;
+            const dateStr = DAY_OFFSETS[b.allocated_day!] || '2027-02-01';
+            const startTimeStr = PERIOD_TIMES[startP]?.start || '09:00:00';
+            const endTimeStr = PERIOD_TIMES[endP]?.end || '10:00:00';
+            const room: any = roomsMap.get(b.allocated_room!);
+
+            const stableId = `cit_booking_${b.id.replace(/[^a-zA-Z0-9]/g, '_')}`;
+            const iCalUID = `cit-booking-${b.id}@cit.ac.in`;
+            const groupTag = filter?.studentGroupId
+              ? ` (${filter.studentGroupId})`
+              : b.mandatory_for_groups?.length
+              ? ` (${b.mandatory_for_groups.join(', ')})`
+              : '';
+
+            events.push({
+              id: stableId,
+              iCalUID,
+              summary: `${b.title} [${(b.effective_category || 'Booking').toUpperCase()}]${groupTag}`,
+              description: `Event: ${b.title} | Category: ${b.effective_category} | Requester: ${b.requester} | Status: Approved`,
+              location: `${room?.name || b.allocated_room} (${room?.building || 'Main Campus'})`,
+              start: {
+                dateTime: `${dateStr}T${startTimeStr}+05:30`,
+                timeZone: 'Asia/Kolkata',
+              },
+              end: {
+                dateTime: `${dateStr}T${endTimeStr}+05:30`,
+                timeZone: 'Asia/Kolkata',
+              },
+              status: 'confirmed',
+              extendedProperties: {
+                private: {
+                  citSessionId: `booking-${b.id}`,
+                  citCourseId: b.title,
+                  citScheduleVersion: schedule.id,
+                  citDay: b.allocated_day!,
+                  citStartPeriod: startP,
+                  citRoomId: b.allocated_room!,
+                },
+              },
+            });
+          }
+        } catch (_) {}
       }
 
       return events;

@@ -342,7 +342,8 @@ async function runSecuritySuite() {
     // Requirement 13 & 14: Preservation of MS-1 and MS-2 regression test suites
     // -------------------------------------------------------------
     console.log('\nRequirement 13 & 14: Regression test suite executions');
-    const ms1Output = execSync('/usr/bin/python3 -m unittest tests/test_engine.py 2>&1', {
+    const pyCmd = process.env.PYTHON_EXEC || (process.platform === 'win32' ? 'python' : '/usr/bin/python3');
+    const ms1Output = execSync(`${pyCmd} -m unittest tests/test_engine.py 2>&1`, {
       encoding: 'utf-8',
     });
     assert(ms1Output.includes('OK'), 'MS-1 Python engine test suite passes without regressions');

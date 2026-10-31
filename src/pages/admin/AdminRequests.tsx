@@ -159,6 +159,7 @@ export const AdminRequests: React.FC<AdminRequestsProps> = ({ currentUser }) => 
       }
 
       setActionSuccess(`Requisition ${selectedBooking.id} successfully marked as ${status.toUpperCase()}!`);
+      window.dispatchEvent(new CustomEvent('cit_schedule_changed'));
       await fetchBookings();
     } catch (err: any) {
       setActionError(err.message);

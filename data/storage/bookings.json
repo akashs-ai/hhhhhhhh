@@ -5346,5 +5346,1311 @@
     "raw_text": "",
     "status": "pending",
     "created_by": "usr-admin"
+  },
+  "BR-6263": {
+    "id": "BR-6263",
+    "submitted_at": "2026-10-31T20:39:56.263Z",
+    "requester": "Kabir Varma (Dramatics Society)",
+    "role": "club",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Shakespeare Night Practice",
+    "attendance": 35,
+    "duration_periods": 2,
+    "windows": [
+      {
+        "day": "THU",
+        "from_period": 10,
+        "to_period": 12
+      }
+    ],
+    "room_types": [
+      "seminar_hall",
+      "classroom"
+    ],
+    "needs": [
+      "stage"
+    ],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-club-drama"
+  },
+  "BR-2803": {
+    "id": "BR-2803",
+    "submitted_at": "2026-10-31T20:40:02.803Z",
+    "requester": "Kabir Varma (Dramatics Society)",
+    "role": "club",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Shakespeare Night Practice",
+    "attendance": 35,
+    "duration_periods": 2,
+    "windows": [
+      {
+        "day": "THU",
+        "from_period": 10,
+        "to_period": 12
+      }
+    ],
+    "room_types": [
+      "seminar_hall",
+      "classroom"
+    ],
+    "needs": [
+      "stage"
+    ],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-club-drama"
+  },
+  "BR-3426": {
+    "id": "BR-3426",
+    "submitted_at": "2026-10-31T20:40:03.426Z",
+    "requester": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Dean Academics Special Assembly",
+    "attendance": 250,
+    "duration_periods": 2,
+    "windows": [
+      {
+        "day": "FRI",
+        "from_period": 10,
+        "to_period": 12
+      }
+    ],
+    "room_types": [
+      "auditorium"
+    ],
+    "needs": [
+      "mic"
+    ],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-admin"
+  },
+  "BR-4278": {
+    "id": "BR-4278",
+    "submitted_at": "2026-10-31T20:40:14.278Z",
+    "requester": "Aarav Patel (Student)",
+    "role": "club",
+    "requested_category": "institute_event",
+    "effective_category": "club_event",
+    "title": "Privilege Escalation Test",
+    "attendance": 50,
+    "duration_periods": 2,
+    "windows": [
+      {
+        "day": "MON",
+        "from_period": 10,
+        "to_period": 12
+      }
+    ],
+    "room_types": [
+      "seminar_hall",
+      "lecture_hall",
+      "classroom"
+    ],
+    "needs": [],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-student-cse3"
+  },
+  "BR-4319": {
+    "id": "BR-4319",
+    "submitted_at": "2026-10-31T20:40:14.319Z",
+    "requester": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Dean Review Meeting",
+    "attendance": 20,
+    "duration_periods": 1,
+    "windows": [
+      {
+        "day": "MON",
+        "from_period": 10,
+        "to_period": 11
+      }
+    ],
+    "room_types": [
+      "classroom"
+    ],
+    "needs": [],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-admin"
+  },
+  "BR-4567": {
+    "id": "BR-4567",
+    "submitted_at": "2026-10-31T20:40:24.567Z",
+    "requester": "Aarav Patel (Student)",
+    "role": "club",
+    "requested_category": "institute_event",
+    "effective_category": "club_event",
+    "title": "Privilege Escalation Attempt",
+    "attendance": 100,
+    "duration_periods": 2,
+    "windows": [
+      {
+        "day": "MON",
+        "from_period": 10,
+        "to_period": 12
+      }
+    ],
+    "room_types": [
+      "seminar_hall",
+      "lecture_hall",
+      "classroom"
+    ],
+    "needs": [],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-student-cse3"
+  },
+  "BR-4577": {
+    "id": "BR-4577",
+    "submitted_at": "2026-10-31T20:40:24.577Z",
+    "requester": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Administrative Assembly",
+    "attendance": 30,
+    "duration_periods": 1,
+    "windows": [
+      {
+        "day": "TUE",
+        "from_period": 10,
+        "to_period": 11
+      }
+    ],
+    "room_types": [
+      "seminar_hall",
+      "lecture_hall",
+      "classroom"
+    ],
+    "needs": [],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-admin"
+  },
+  "BR-4652": {
+    "id": "BR-4652",
+    "submitted_at": "2026-10-31T20:40:24.652Z",
+    "requester": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Concurrent Booking 0",
+    "attendance": 20,
+    "duration_periods": 1,
+    "windows": [
+      {
+        "day": "WED",
+        "from_period": 10,
+        "to_period": 11
+      }
+    ],
+    "room_types": [
+      "seminar_hall",
+      "lecture_hall",
+      "classroom"
+    ],
+    "needs": [],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-admin"
+  },
+  "BR-4658": {
+    "id": "BR-4658",
+    "submitted_at": "2026-10-31T20:40:24.659Z",
+    "requester": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Concurrent Booking 1",
+    "attendance": 21,
+    "duration_periods": 1,
+    "windows": [
+      {
+        "day": "WED",
+        "from_period": 10,
+        "to_period": 11
+      }
+    ],
+    "room_types": [
+      "seminar_hall",
+      "lecture_hall",
+      "classroom"
+    ],
+    "needs": [],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-admin"
+  },
+  "BR-4666": {
+    "id": "BR-4666",
+    "submitted_at": "2026-10-31T20:40:24.666Z",
+    "requester": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Concurrent Booking 2",
+    "attendance": 22,
+    "duration_periods": 1,
+    "windows": [
+      {
+        "day": "WED",
+        "from_period": 10,
+        "to_period": 11
+      }
+    ],
+    "room_types": [
+      "seminar_hall",
+      "lecture_hall",
+      "classroom"
+    ],
+    "needs": [],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-admin"
+  },
+  "BR-4671": {
+    "id": "BR-4671",
+    "submitted_at": "2026-10-31T20:40:24.671Z",
+    "requester": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Concurrent Booking 3",
+    "attendance": 23,
+    "duration_periods": 1,
+    "windows": [
+      {
+        "day": "WED",
+        "from_period": 10,
+        "to_period": 11
+      }
+    ],
+    "room_types": [
+      "seminar_hall",
+      "lecture_hall",
+      "classroom"
+    ],
+    "needs": [],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-admin"
+  },
+  "BR-4677": {
+    "id": "BR-4677",
+    "submitted_at": "2026-10-31T20:40:24.677Z",
+    "requester": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Concurrent Booking 4",
+    "attendance": 24,
+    "duration_periods": 1,
+    "windows": [
+      {
+        "day": "WED",
+        "from_period": 10,
+        "to_period": 11
+      }
+    ],
+    "room_types": [
+      "seminar_hall",
+      "lecture_hall",
+      "classroom"
+    ],
+    "needs": [],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-admin"
+  },
+  "BR-4682": {
+    "id": "BR-4682",
+    "submitted_at": "2026-10-31T20:40:24.682Z",
+    "requester": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Concurrent Booking 5",
+    "attendance": 25,
+    "duration_periods": 1,
+    "windows": [
+      {
+        "day": "WED",
+        "from_period": 10,
+        "to_period": 11
+      }
+    ],
+    "room_types": [
+      "seminar_hall",
+      "lecture_hall",
+      "classroom"
+    ],
+    "needs": [],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-admin"
+  },
+  "BR-4687": {
+    "id": "BR-4687",
+    "submitted_at": "2026-10-31T20:40:24.687Z",
+    "requester": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Concurrent Booking 6",
+    "attendance": 26,
+    "duration_periods": 1,
+    "windows": [
+      {
+        "day": "WED",
+        "from_period": 10,
+        "to_period": 11
+      }
+    ],
+    "room_types": [
+      "seminar_hall",
+      "lecture_hall",
+      "classroom"
+    ],
+    "needs": [],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-admin"
+  },
+  "BR-4692": {
+    "id": "BR-4692",
+    "submitted_at": "2026-10-31T20:40:24.692Z",
+    "requester": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Concurrent Booking 7",
+    "attendance": 27,
+    "duration_periods": 1,
+    "windows": [
+      {
+        "day": "WED",
+        "from_period": 10,
+        "to_period": 11
+      }
+    ],
+    "room_types": [
+      "seminar_hall",
+      "lecture_hall",
+      "classroom"
+    ],
+    "needs": [],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-admin"
+  },
+  "BR-4697": {
+    "id": "BR-4697",
+    "submitted_at": "2026-10-31T20:40:24.697Z",
+    "requester": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Concurrent Booking 8",
+    "attendance": 28,
+    "duration_periods": 1,
+    "windows": [
+      {
+        "day": "WED",
+        "from_period": 10,
+        "to_period": 11
+      }
+    ],
+    "room_types": [
+      "seminar_hall",
+      "lecture_hall",
+      "classroom"
+    ],
+    "needs": [],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-admin"
+  },
+  "BR-4702": {
+    "id": "BR-4702",
+    "submitted_at": "2026-10-31T20:40:24.702Z",
+    "requester": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Concurrent Booking 9",
+    "attendance": 29,
+    "duration_periods": 1,
+    "windows": [
+      {
+        "day": "WED",
+        "from_period": 10,
+        "to_period": 11
+      }
+    ],
+    "room_types": [
+      "seminar_hall",
+      "lecture_hall",
+      "classroom"
+    ],
+    "needs": [],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-admin"
+  },
+  "BR-4518": {
+    "id": "BR-4518",
+    "submitted_at": "2026-10-31T20:45:14.518Z",
+    "requester": "Kabir Varma (Dramatics Society)",
+    "role": "club",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Shakespeare Night Practice",
+    "attendance": 35,
+    "duration_periods": 2,
+    "windows": [
+      {
+        "day": "THU",
+        "from_period": 10,
+        "to_period": 12
+      }
+    ],
+    "room_types": [
+      "seminar_hall",
+      "classroom"
+    ],
+    "needs": [
+      "stage"
+    ],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-club-drama"
+  },
+  "BR-5366": {
+    "id": "BR-5366",
+    "submitted_at": "2026-10-31T20:45:15.366Z",
+    "requester": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Dean Academics Special Assembly",
+    "attendance": 250,
+    "duration_periods": 2,
+    "windows": [
+      {
+        "day": "FRI",
+        "from_period": 10,
+        "to_period": 12
+      }
+    ],
+    "room_types": [
+      "auditorium"
+    ],
+    "needs": [
+      "mic"
+    ],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-admin"
+  },
+  "BR-2441": {
+    "id": "BR-2441",
+    "submitted_at": "2026-10-31T20:45:22.441Z",
+    "requester": "Aarav Patel (Student)",
+    "role": "club",
+    "requested_category": "institute_event",
+    "effective_category": "club_event",
+    "title": "Privilege Escalation Test",
+    "attendance": 50,
+    "duration_periods": 2,
+    "windows": [
+      {
+        "day": "MON",
+        "from_period": 10,
+        "to_period": 12
+      }
+    ],
+    "room_types": [
+      "seminar_hall",
+      "lecture_hall",
+      "classroom"
+    ],
+    "needs": [],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-student-cse3"
+  },
+  "BR-2540": {
+    "id": "BR-2540",
+    "submitted_at": "2026-10-31T21:15:32.540Z",
+    "requester": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Dean Review Meeting",
+    "attendance": 20,
+    "duration_periods": 1,
+    "windows": [
+      {
+        "day": "MON",
+        "from_period": 10,
+        "to_period": 11
+      }
+    ],
+    "room_types": [
+      "classroom"
+    ],
+    "needs": [],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-admin"
+  },
+  "BR-1682": {
+    "id": "BR-1682",
+    "submitted_at": "2026-10-31T20:52:51.682Z",
+    "requester": "Kabir Varma (Dramatics Society)",
+    "role": "club",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Shakespeare Night Practice",
+    "attendance": 35,
+    "duration_periods": 2,
+    "windows": [
+      {
+        "day": "THU",
+        "from_period": 10,
+        "to_period": 12
+      }
+    ],
+    "room_types": [
+      "seminar_hall",
+      "classroom"
+    ],
+    "needs": [
+      "stage"
+    ],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-club-drama"
+  },
+  "BR-2293": {
+    "id": "BR-2293",
+    "submitted_at": "2026-10-31T20:52:52.293Z",
+    "requester": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Dean Academics Special Assembly",
+    "attendance": 250,
+    "duration_periods": 2,
+    "windows": [
+      {
+        "day": "FRI",
+        "from_period": 10,
+        "to_period": 12
+      }
+    ],
+    "room_types": [
+      "auditorium"
+    ],
+    "needs": [
+      "mic"
+    ],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-admin"
+  },
+  "BR-4846": {
+    "id": "BR-4846",
+    "submitted_at": "2026-10-31T21:15:14.846Z",
+    "requester": "Kabir Varma (Dramatics Society)",
+    "role": "club",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Shakespeare Night Practice",
+    "attendance": 35,
+    "duration_periods": 2,
+    "windows": [
+      {
+        "day": "THU",
+        "from_period": 10,
+        "to_period": 12
+      }
+    ],
+    "room_types": [
+      "seminar_hall",
+      "classroom"
+    ],
+    "needs": [
+      "stage"
+    ],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-club-drama"
+  },
+  "BR-5581": {
+    "id": "BR-5581",
+    "submitted_at": "2026-10-31T21:15:15.581Z",
+    "requester": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Dean Academics Special Assembly",
+    "attendance": 250,
+    "duration_periods": 2,
+    "windows": [
+      {
+        "day": "FRI",
+        "from_period": 10,
+        "to_period": 12
+      }
+    ],
+    "room_types": [
+      "auditorium"
+    ],
+    "needs": [
+      "mic"
+    ],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-admin"
+  },
+  "BR-2365": {
+    "id": "BR-2365",
+    "submitted_at": "2026-10-31T21:15:32.365Z",
+    "requester": "Aarav Patel (Student)",
+    "role": "club",
+    "requested_category": "institute_event",
+    "effective_category": "club_event",
+    "title": "Privilege Escalation Test",
+    "attendance": 50,
+    "duration_periods": 2,
+    "windows": [
+      {
+        "day": "MON",
+        "from_period": 10,
+        "to_period": 12
+      }
+    ],
+    "room_types": [
+      "seminar_hall",
+      "lecture_hall",
+      "classroom"
+    ],
+    "needs": [],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-student-cse3"
+  },
+  "BR-0264": {
+    "id": "BR-0264",
+    "submitted_at": "2026-10-31T21:29:50.264Z",
+    "requester": "Kabir Varma (Dramatics Society)",
+    "role": "club",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Shakespeare Night Practice",
+    "attendance": 35,
+    "duration_periods": 2,
+    "windows": [
+      {
+        "day": "THU",
+        "from_period": 10,
+        "to_period": 12
+      }
+    ],
+    "room_types": [
+      "seminar_hall",
+      "classroom"
+    ],
+    "needs": [
+      "stage"
+    ],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-club-drama"
+  },
+  "BR-0829": {
+    "id": "BR-0829",
+    "submitted_at": "2026-10-31T21:29:50.829Z",
+    "requester": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Dean Academics Special Assembly",
+    "attendance": 250,
+    "duration_periods": 2,
+    "windows": [
+      {
+        "day": "FRI",
+        "from_period": 10,
+        "to_period": 12
+      }
+    ],
+    "room_types": [
+      "auditorium"
+    ],
+    "needs": [
+      "mic"
+    ],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-admin"
+  },
+  "BR-6349": {
+    "id": "BR-6349",
+    "submitted_at": "2026-10-31T21:30:36.349Z",
+    "requester": "Kabir Varma (Dramatics Society)",
+    "role": "club",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Shakespeare Night Practice",
+    "attendance": 35,
+    "duration_periods": 2,
+    "windows": [
+      {
+        "day": "THU",
+        "from_period": 10,
+        "to_period": 12
+      }
+    ],
+    "room_types": [
+      "seminar_hall",
+      "classroom"
+    ],
+    "needs": [
+      "stage"
+    ],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-club-drama"
+  },
+  "BR-7181": {
+    "id": "BR-7181",
+    "submitted_at": "2026-10-31T21:30:37.181Z",
+    "requester": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Dean Academics Special Assembly",
+    "attendance": 250,
+    "duration_periods": 2,
+    "windows": [
+      {
+        "day": "FRI",
+        "from_period": 10,
+        "to_period": 12
+      }
+    ],
+    "room_types": [
+      "auditorium"
+    ],
+    "needs": [
+      "mic"
+    ],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-admin"
+  },
+  "BR-5817": {
+    "id": "BR-5817",
+    "submitted_at": "2026-10-31T21:30:45.817Z",
+    "requester": "Kabir Varma (Dramatics Society)",
+    "role": "club",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Shakespeare Night Practice",
+    "attendance": 35,
+    "duration_periods": 2,
+    "windows": [
+      {
+        "day": "THU",
+        "from_period": 10,
+        "to_period": 12
+      }
+    ],
+    "room_types": [
+      "seminar_hall",
+      "classroom"
+    ],
+    "needs": [
+      "stage"
+    ],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-club-drama"
+  },
+  "BR-6537": {
+    "id": "BR-6537",
+    "submitted_at": "2026-10-31T21:30:46.537Z",
+    "requester": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Dean Academics Special Assembly",
+    "attendance": 250,
+    "duration_periods": 2,
+    "windows": [
+      {
+        "day": "FRI",
+        "from_period": 10,
+        "to_period": 12
+      }
+    ],
+    "room_types": [
+      "auditorium"
+    ],
+    "needs": [
+      "mic"
+    ],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-admin"
+  },
+  "BR-3501": {
+    "id": "BR-3501",
+    "submitted_at": "2026-10-31T21:31:13.501Z",
+    "requester": "Aarav Patel (Student)",
+    "role": "club",
+    "requested_category": "institute_event",
+    "effective_category": "club_event",
+    "title": "Privilege Escalation Test",
+    "attendance": 50,
+    "duration_periods": 2,
+    "windows": [
+      {
+        "day": "MON",
+        "from_period": 10,
+        "to_period": 12
+      }
+    ],
+    "room_types": [
+      "seminar_hall",
+      "lecture_hall",
+      "classroom"
+    ],
+    "needs": [],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-student-cse3"
+  },
+  "BR-3592": {
+    "id": "BR-3592",
+    "submitted_at": "2026-10-31T21:31:13.592Z",
+    "requester": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Dean Review Meeting",
+    "attendance": 20,
+    "duration_periods": 1,
+    "windows": [
+      {
+        "day": "MON",
+        "from_period": 10,
+        "to_period": 11
+      }
+    ],
+    "room_types": [
+      "classroom"
+    ],
+    "needs": [],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-admin"
+  },
+  "BR-3160": {
+    "id": "BR-3160",
+    "submitted_at": "2026-10-31T21:47:13.160Z",
+    "requester": "Kabir Varma (Dramatics Society)",
+    "role": "club",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Shakespeare Night Practice",
+    "attendance": 35,
+    "duration_periods": 2,
+    "windows": [
+      {
+        "day": "THU",
+        "from_period": 10,
+        "to_period": 12
+      }
+    ],
+    "room_types": [
+      "seminar_hall",
+      "classroom"
+    ],
+    "needs": [
+      "stage"
+    ],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-club-drama"
+  },
+  "BR-3961": {
+    "id": "BR-3961",
+    "submitted_at": "2026-10-31T21:47:13.961Z",
+    "requester": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Dean Academics Special Assembly",
+    "attendance": 250,
+    "duration_periods": 2,
+    "windows": [
+      {
+        "day": "FRI",
+        "from_period": 10,
+        "to_period": 12
+      }
+    ],
+    "room_types": [
+      "auditorium"
+    ],
+    "needs": [
+      "mic"
+    ],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-admin"
+  },
+  "BR-9287": {
+    "id": "BR-9287",
+    "submitted_at": "2026-10-31T21:48:09.287Z",
+    "requester": "Kabir Varma (Dramatics Society)",
+    "role": "club",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Shakespeare Night Practice",
+    "attendance": 35,
+    "duration_periods": 2,
+    "windows": [
+      {
+        "day": "THU",
+        "from_period": 10,
+        "to_period": 12
+      }
+    ],
+    "room_types": [
+      "seminar_hall",
+      "classroom"
+    ],
+    "needs": [
+      "stage"
+    ],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-club-drama"
+  },
+  "BR-0071": {
+    "id": "BR-0071",
+    "submitted_at": "2026-10-31T21:48:10.071Z",
+    "requester": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Dean Academics Special Assembly",
+    "attendance": 250,
+    "duration_periods": 2,
+    "windows": [
+      {
+        "day": "FRI",
+        "from_period": 10,
+        "to_period": 12
+      }
+    ],
+    "room_types": [
+      "auditorium"
+    ],
+    "needs": [
+      "mic"
+    ],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-admin"
+  },
+  "BR-5939": {
+    "id": "BR-5939",
+    "submitted_at": "2026-10-31T21:48:25.939Z",
+    "requester": "Aarav Patel (Student)",
+    "role": "club",
+    "requested_category": "institute_event",
+    "effective_category": "club_event",
+    "title": "Privilege Escalation Test",
+    "attendance": 50,
+    "duration_periods": 2,
+    "windows": [
+      {
+        "day": "MON",
+        "from_period": 10,
+        "to_period": 12
+      }
+    ],
+    "room_types": [
+      "seminar_hall",
+      "lecture_hall",
+      "classroom"
+    ],
+    "needs": [],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-student-cse3"
+  },
+  "BR-9223": {
+    "id": "BR-9223",
+    "submitted_at": "2026-10-31T21:48:49.223Z",
+    "requester": "Aarav Patel (Student)",
+    "role": "club",
+    "requested_category": "institute_event",
+    "effective_category": "club_event",
+    "title": "Privilege Escalation Test",
+    "attendance": 50,
+    "duration_periods": 2,
+    "windows": [
+      {
+        "day": "MON",
+        "from_period": 10,
+        "to_period": 12
+      }
+    ],
+    "room_types": [
+      "seminar_hall",
+      "lecture_hall",
+      "classroom"
+    ],
+    "needs": [],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-student-cse3"
+  },
+  "BR-9299": {
+    "id": "BR-9299",
+    "submitted_at": "2026-10-31T21:48:49.299Z",
+    "requester": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Dean Review Meeting",
+    "attendance": 20,
+    "duration_periods": 1,
+    "windows": [
+      {
+        "day": "MON",
+        "from_period": 10,
+        "to_period": 11
+      }
+    ],
+    "room_types": [
+      "classroom"
+    ],
+    "needs": [],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-admin"
+  },
+  "BR-3369": {
+    "id": "BR-3369",
+    "submitted_at": "2026-10-31T22:01:33.369Z",
+    "requester": "Kabir Varma (Dramatics Society)",
+    "role": "club",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Shakespeare Night Practice",
+    "attendance": 35,
+    "duration_periods": 2,
+    "windows": [
+      {
+        "day": "THU",
+        "from_period": 10,
+        "to_period": 12
+      }
+    ],
+    "room_types": [
+      "seminar_hall",
+      "classroom"
+    ],
+    "needs": [
+      "stage"
+    ],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-club-drama"
+  },
+  "BR-4364": {
+    "id": "BR-4364",
+    "submitted_at": "2026-10-31T22:01:34.364Z",
+    "requester": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Dean Academics Special Assembly",
+    "attendance": 250,
+    "duration_periods": 2,
+    "windows": [
+      {
+        "day": "FRI",
+        "from_period": 10,
+        "to_period": 12
+      }
+    ],
+    "room_types": [
+      "auditorium"
+    ],
+    "needs": [
+      "mic"
+    ],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-admin"
+  },
+  "BR-5536": {
+    "id": "BR-5536",
+    "submitted_at": "2026-10-31T22:01:45.536Z",
+    "requester": "Aarav Patel (Student)",
+    "role": "club",
+    "requested_category": "institute_event",
+    "effective_category": "club_event",
+    "title": "Privilege Escalation Test",
+    "attendance": 50,
+    "duration_periods": 2,
+    "windows": [
+      {
+        "day": "MON",
+        "from_period": 10,
+        "to_period": 12
+      }
+    ],
+    "room_types": [
+      "seminar_hall",
+      "lecture_hall",
+      "classroom"
+    ],
+    "needs": [],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-student-cse3"
+  },
+  "BR-5622": {
+    "id": "BR-5622",
+    "submitted_at": "2026-10-31T22:01:45.622Z",
+    "requester": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Dean Review Meeting",
+    "attendance": 20,
+    "duration_periods": 1,
+    "windows": [
+      {
+        "day": "MON",
+        "from_period": 10,
+        "to_period": 11
+      }
+    ],
+    "room_types": [
+      "classroom"
+    ],
+    "needs": [],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-admin"
   }
 }

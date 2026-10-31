@@ -48,14 +48,23 @@ export const auth: any = {
 // In-memory token cache (never stored in localStorage or persistent storage)
 let cachedAccessToken: string | null = null;
 let cachedGoogleUser: GoogleAuthUser | null = null;
+let runtimeClientId: string | null = null;
 let isSigningIn = false;
 let pendingSignInPromise: Promise<{ user: GoogleAuthUser; accessToken: string } | null> | null = null;
 
 /**
- * Returns the currently active VITE_GOOGLE_CLIENT_ID from Vite environment.
+ * Sets runtime-detected Google Client ID.
+ */
+export const setRuntimeClientId = (id: string | null): void => {
+  runtimeClientId = id ? id.trim() : null;
+};
+
+/**
+ * Returns the currently active VITE_GOOGLE_CLIENT_ID from Vite environment or backend config.
  */
 export const getGoogleClientId = (): string => {
-  return (import.meta.env.VITE_GOOGLE_CLIENT_ID || '').trim();
+  const envId = (import.meta.env.VITE_GOOGLE_CLIENT_ID || '').trim();
+  return envId || runtimeClientId || '';
 };
 
 /**
@@ -75,14 +84,23 @@ export const ensureGsiLoaded = (): Promise<void> => {
   }
 
   return new Promise((resolve, reject) => {
-    const existing = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
+    const existing = document.querySelector<HTMLScriptElement>('script[src="https://accounts.google.com/gsi/client"]');
     if (existing) {
       if (window.google?.accounts?.oauth2) {
         resolve();
         return;
       }
-      existing.addEventListener('load', () => resolve());
-      existing.addEventListener('error', () => reject(new Error('Failed to load Google Identity Services library.')));
+      let checks = 0;
+      const interval = setInterval(() => {
+        checks++;
+        if (window.google?.accounts?.oauth2) {
+          clearInterval(interval);
+          resolve();
+        } else if (checks > 50) {
+          clearInterval(interval);
+          reject(new Error('Timed out waiting for Google Identity Services library to initialize.'));
+        }
+      }, 50);
       return;
     }
 
@@ -90,19 +108,43 @@ export const ensureGsiLoaded = (): Promise<void> => {
     script.src = 'https://accounts.google.com/gsi/client';
     script.async = true;
     script.defer = true;
-    script.onload = () => resolve();
+    script.onload = () => {
+      let checks = 0;
+      const interval = setInterval(() => {
+        checks++;
+        if (window.google?.accounts?.oauth2) {
+          clearInterval(interval);
+          resolve();
+        } else if (checks > 30) {
+          clearInterval(interval);
+          resolve();
+        }
+      }, 30);
+    };
     script.onerror = () => reject(new Error('Failed to load Google Identity Services library.'));
     document.head.appendChild(script);
   });
 };
 
 /**
- * Initializes Google OAuth listeners or preloads GIS library.
+ * Initializes Google OAuth listeners, preloads GIS library, and fetches backend client ID if needed.
  */
 export const initGoogleAuth = (
   onAuthSuccess?: (user: GoogleAuthUser, token: string) => void,
   onAuthFailure?: () => void
 ): (() => void) => {
+  // Asynchronously query server for client ID if not provided at build-time
+  if (!getGoogleClientId() && typeof window !== 'undefined') {
+    fetch('/api/calendar/config')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.success && data.client_id) {
+          setRuntimeClientId(data.client_id);
+        }
+      })
+      .catch(() => {});
+  }
+
   ensureGsiLoaded().catch((err) => {
     console.warn('[GoogleAuth] Failed to initialize Google Identity Services:', err);
   });
@@ -124,7 +166,18 @@ export const initGoogleAuth = (
  * Returns { user, accessToken } or null if cancelled/closed.
  */
 export const googleSignIn = async (): Promise<{ user: GoogleAuthUser; accessToken: string } | null> => {
-  const clientId = getGoogleClientId();
+  let clientId = getGoogleClientId();
+  if (!clientId && typeof window !== 'undefined') {
+    try {
+      const cfgRes = await fetch('/api/calendar/config');
+      const cfgData = await cfgRes.json();
+      if (cfgData.success && cfgData.client_id) {
+        setRuntimeClientId(cfgData.client_id);
+        clientId = cfgData.client_id;
+      }
+    } catch (_) {}
+  }
+
   if (!clientId) {
     throw new Error(
       'Google OAuth Client ID is not configured. Please set VITE_GOOGLE_CLIENT_ID in your .env file with your OAuth Web Client ID.'
@@ -188,6 +241,10 @@ export const googleSignIn = async (): Promise<{ user: GoogleAuthUser; accessToke
               if (errType === 'popup_closed' || errType === 'user_cancel') {
                 console.warn('[GoogleAuth] Popup closed by user before completing sign-in.');
                 resolve(null);
+              } else if (errType === 'popup_failed_to_open') {
+                reject(
+                  new Error('Popup blocked: Please allow popups for localhost:3000 in your browser to sign in with Google.')
+                );
               } else {
                 reject(new Error(error?.message || `OAuth popup failure: ${errType || 'Unknown error'}`));
               }

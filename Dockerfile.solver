@@ -11,7 +11,7 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
-# Install system dependencies including CBC/GLPK coin-or solvers
+# Install system dependencies including CBC/GLPK coin-or solvers & curl for healthcheck
 RUN apt-get update && apt-get install -y --no-install-recommends \
     coinor-cbc \
     coinor-libcbc-dev \
@@ -23,9 +23,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy solver core modules and official validator
+# Copy solver core modules, engine, and official validator
 COPY solver.py ./
+COPY solver_service.py ./
 COPY validator_runner.py ./
+COPY engine/ ./engine/
 COPY starter_pack/ ./starter_pack/
 
 # Create non-root runner user
@@ -35,8 +37,8 @@ USER solveruser
 
 EXPOSE 8000
 
-# Healthcheck verifying solver and python runtime
+# Healthcheck verifying solver service is responsive
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-    CMD python3 -c "import pulp; import sys; sys.exit(0)"
+    CMD curl -f http://localhost:8000/health || exit 1
 
-CMD ["python3", "solver.py", "--serve", "--port", "8000"]
+CMD ["python3", "solver_service.py"]

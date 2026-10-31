@@ -432,4 +432,31 @@ export class GoogleCalendarSyncService {
       return false;
     }
   }
+
+  /**
+   * Patches an existing managed event in Google Calendar.
+   */
+  public static async patchEvent(options: {
+    accessToken: string;
+    calendarId?: string;
+    googleEventId: string;
+    patch: any;
+    fetchFn?: typeof fetch;
+  }): Promise<boolean> {
+    const { accessToken, calendarId = 'primary', googleEventId, patch, fetchFn = fetch } = options;
+    try {
+      const url = `${this.GOOGLE_API_BASE}/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(googleEventId)}`;
+      const res = await fetchFn(url, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(patch),
+      });
+      return res.ok;
+    } catch (_) {
+      return false;
+    }
+  }
 }

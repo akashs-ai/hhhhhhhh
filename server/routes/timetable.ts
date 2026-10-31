@@ -1,5 +1,5 @@
 import { Router, Response } from 'express';
-import { AuthenticatedRequest, assertNotSelfApproval, requireRole } from '../auth.js';
+import { AuthenticatedRequest, requireRole } from '../auth.js';
 import { PythonBridge } from '../pythonBridge.js';
 import { ScheduleVersion, storage } from '../storage.js';
 import { DATASET_PATH } from '../config.js';
@@ -268,7 +268,8 @@ router.post('/timetable/generate', requireRole('admin'), async (req: Authenticat
   }
 });
 
-router.post('/timetable/:id/approve', requireRole('admin'), async (req: AuthenticatedRequest, res: Response) => {
+// Schedule publishing handler: Admin-only governance operation to publish the master timetable
+const handlePublishSchedule = async (req: AuthenticatedRequest, res: Response) => {
   const versionId = req.params.id;
   const schedule = await storage.getScheduleById(versionId);
 
@@ -277,47 +278,51 @@ router.post('/timetable/:id/approve', requireRole('admin'), async (req: Authenti
     return;
   }
 
-  // Enforce self-approval prevention
-  try {
-    assertNotSelfApproval(req, schedule.created_by);
-  } catch (err: any) {
-    res.status(err.status || 403).json({
-      success: false,
-      error: { code: err.code || 'SELF_APPROVAL_FORBIDDEN', message: err.message },
-    });
-    return;
-  }
-
+  // Check validator hard violations
   if (schedule.validator_report?.hard_violation_count > 0) {
     res.status(400).json({
       success: false,
       error: {
         code: 'CANNOT_APPROVE_VIOLATIONS',
-        message: 'Cannot approve schedule version with hard violations.',
+        message: 'Cannot publish schedule version with hard violations.',
       },
     });
     return;
   }
 
-  // Atomically promote schedule version
+  // Atomically promote schedule version to approved/published
   const promoted = await storage.promoteSchedule(versionId, req.user!.id);
 
   await storage.logAudit({
     user_id: req.user!.id,
     user_name: req.user!.name,
     role: req.user!.role,
-    action: 'APPROVE_TIMETABLE_VERSION',
+    action: 'PUBLISH_TIMETABLE_VERSION',
     resource_type: 'timetable',
     resource_id: versionId,
+    details: { published_by: req.user!.id, previous_status: schedule.status, new_status: 'approved' },
     status: 'success',
   });
 
   res.json({
     success: true,
-    message: `Schedule version ${versionId} is now the active approved schedule`,
-    data: { id: promoted.id, status: promoted.status, approved_at: promoted.approved_at },
+    message: `Schedule version ${versionId} is now published and active as the master timetable`,
+    data: {
+      id: promoted.id,
+      status: promoted.status,
+      approved_at: promoted.approved_at,
+      published_at: promoted.approved_at,
+      approved_by: promoted.approved_by,
+      published_by: promoted.approved_by,
+    },
   });
-});
+};
+
+// POST /api/timetable/:id/publish - Administrative publication of master timetable (Admin only)
+router.post('/timetable/:id/publish', requireRole('admin'), handlePublishSchedule);
+
+// POST /api/timetable/:id/approve - Approval/promotion alias for backward compatibility (Admin only)
+router.post('/timetable/:id/approve', requireRole('admin'), handlePublishSchedule);
 
 // POST /api/timetable/sessions - Create an academic timetable session
 router.post(
@@ -536,6 +541,56 @@ router.put(
 
     await storage.saveSchedule(schedule);
     await storage.saveDataset(dataset);
+
+    // If Google token is present and event is mapped, patch remote Google Calendar event
+    const googleAccessToken =
+      (req.headers['x-google-token'] as string) ||
+      (req.headers['x-google-access-token'] as string);
+
+    if (googleAccessToken) {
+      const syncData = await storage.getCalendarSyncData();
+      const googleEventId = syncData.event_mappings?.[sid];
+      if (googleEventId) {
+        try {
+          const { GoogleCalendarSyncService } = await import('../googleCalendarSync.js');
+          const dayOffsets: Record<string, string> = {
+            MON: '2027-02-01',
+            TUE: '2027-02-02',
+            WED: '2027-02-03',
+            THU: '2027-02-04',
+            FRI: '2027-02-05',
+            SAT: '2027-02-06',
+          };
+          const periodTimes: Record<number, { start: string; end: string }> = {
+            1: { start: '08:00:00', end: '09:00:00' },
+            2: { start: '09:00:00', end: '10:00:00' },
+            3: { start: '10:00:00', end: '11:00:00' },
+            4: { start: '11:00:00', end: '12:00:00' },
+            5: { start: '12:00:00', end: '13:00:00' },
+            6: { start: '14:00:00', end: '15:00:00' },
+            7: { start: '15:00:00', end: '16:00:00' },
+            8: { start: '16:00:00', end: '17:00:00' },
+            9: { start: '17:00:00', end: '18:00:00' },
+            10: { start: '18:00:00', end: '19:00:00' },
+            11: { start: '19:00:00', end: '20:00:00' },
+            12: { start: '20:00:00', end: '21:00:00' },
+          };
+          const dateStr = dayOffsets[targetDay] || '2027-02-01';
+          const startTimeStr = periodTimes[targetStart]?.start || '09:00:00';
+          const endTimeStr = periodTimes[numEnd]?.end || '10:00:00';
+
+          await GoogleCalendarSyncService.patchEvent({
+            accessToken: googleAccessToken,
+            googleEventId,
+            patch: {
+              location: targetRoom,
+              start: { dateTime: `${dateStr}T${startTimeStr}+05:30`, timeZone: 'Asia/Kolkata' },
+              end: { dateTime: `${dateStr}T${endTimeStr}+05:30`, timeZone: 'Asia/Kolkata' },
+            },
+          });
+        } catch (_) {}
+      }
+    }
 
     await storage.logAudit({
       user_id: req.user!.id,

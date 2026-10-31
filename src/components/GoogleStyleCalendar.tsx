@@ -47,6 +47,12 @@ export interface CalendarEventItem {
   rawGoogleEvent?: any;
 }
 
+export interface PositionedCalendarEventItem extends CalendarEventItem {
+  colIndex: number;
+  totalCols: number;
+  colSpan?: number;
+}
+
 interface GoogleStyleCalendarProps {
   currentUser: UserItem;
   sessions?: TimetableSession[];
@@ -174,18 +180,43 @@ export const GoogleStyleCalendar: React.FC<GoogleStyleCalendarProps> = ({
     }
   };
 
+  // Local real-time tracker for the red current-time indicator matching reference image
+  const [now, setNow] = useState<Date>(new Date());
+  useEffect(() => {
+    const clock = setInterval(() => setNow(new Date()), 30000);
+    return () => clearInterval(clock);
+  }, []);
+
+  const currentHourFraction = now.getHours() + now.getMinutes() / 60;
+  const showRedLine = currentHourFraction >= 8 && currentHourFraction <= 20;
+  const redLineTopPercent = Math.min(100, Math.max(0, ((currentHourFraction - 8) / 12) * 100));
+
+  // Role-specific auto-scoping for cohort and faculty views
+  useEffect(() => {
+    if (currentUser.role === 'student' && currentUser.studentGroupId) {
+      setSelectedSection(currentUser.studentGroupId);
+    } else {
+      setSelectedSection('All');
+    }
+  }, [currentUser]);
+
   useEffect(() => {
     fetchCalendarData();
     const timer = setInterval(() => {
       fetchCalendarData();
-    }, 15000);
+    }, 8000); // 8-second polling for live cross-role synchronization
     const handleFocus = () => {
       fetchCalendarData();
     };
+    const handleCustomChange = () => {
+      fetchCalendarData();
+    };
     window.addEventListener('focus', handleFocus);
+    window.addEventListener('cit_schedule_changed', handleCustomChange);
     return () => {
       clearInterval(timer);
       window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('cit_schedule_changed', handleCustomChange);
     };
   }, [currentUser]);
 
@@ -273,7 +304,11 @@ export const GoogleStyleCalendar: React.FC<GoogleStyleCalendarProps> = ({
   };
 
   const handleToday = () => {
-    setCurrentDate(new Date(2026, 9, 19)); // Jump to active academic week
+    setCurrentDate(new Date()); // Jump to real-time today
+  };
+
+  const handleAcademicTerm = () => {
+    setCurrentDate(new Date(2026, 9, 19)); // Jump to Autumn 2026 academic term week
   };
 
   const handleDatePickerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -400,8 +435,9 @@ export const GoogleStyleCalendar: React.FC<GoogleStyleCalendarProps> = ({
     return allCalendarEvents;
   }, [viewMode, currentDate, allCalendarEvents]);
 
-  // Layout Algorithm: Group overlapping events side-by-side within each day column
-  const eventsWithLayout = useMemo(() => {
+  // Layout Algorithm: Group overlapping events into connected interval clusters,
+  // assigning horizontal column indices and spans strictly per overlapping group
+  const eventsWithLayout = useMemo((): PositionedCalendarEventItem[] => {
     const dayGroups: Record<string, CalendarEventItem[]> = {};
     for (const d of DAY_NAMES) dayGroups[d] = [];
 
@@ -411,34 +447,83 @@ export const GoogleStyleCalendar: React.FC<GoogleStyleCalendarProps> = ({
       }
     }
 
-    const positionedEvents: Array<CalendarEventItem & { colIndex: number; totalCols: number }> = [];
+    const positionedEvents: PositionedCalendarEventItem[] = [];
 
     for (const day of DAY_NAMES) {
-      const dayEvts = dayGroups[day].sort((a, b) => a.startHourFraction - b.startHourFraction);
-      const columns: CalendarEventItem[][] = [];
+      // Sort primarily by start time ascending, then longer events first
+      const dayEvts = [...dayGroups[day]].sort(
+        (a, b) => a.startHourFraction - b.startHourFraction || b.endHourFraction - a.endHourFraction
+      );
+
+      // 1. Partition into connected overlapping clusters
+      const clusters: CalendarEventItem[][] = [];
+      let currentCluster: CalendarEventItem[] = [];
+      let clusterMaxEnd = -1;
 
       for (const ev of dayEvts) {
-        let placed = false;
-        for (let i = 0; i < columns.length; i++) {
-          const lastInCol = columns[i][columns[i].length - 1];
-          if (lastInCol.endHourFraction <= ev.startHourFraction) {
-            columns[i].push(ev);
-            placed = true;
-            break;
-          }
-        }
-        if (!placed) {
-          columns.push([ev]);
+        if (currentCluster.length === 0) {
+          currentCluster.push(ev);
+          clusterMaxEnd = ev.endHourFraction;
+        } else if (ev.startHourFraction < clusterMaxEnd) {
+          // Overlaps with current cluster
+          currentCluster.push(ev);
+          clusterMaxEnd = Math.max(clusterMaxEnd, ev.endHourFraction);
+        } else {
+          clusters.push(currentCluster);
+          currentCluster = [ev];
+          clusterMaxEnd = ev.endHourFraction;
         }
       }
+      if (currentCluster.length > 0) {
+        clusters.push(currentCluster);
+      }
 
-      // Assign colIndex and totalCols
-      for (let colIdx = 0; colIdx < columns.length; colIdx++) {
-        for (const ev of columns[colIdx]) {
+      // 2. Greedily assign columns and spans within each independent cluster
+      for (const cluster of clusters) {
+        const clusterCols: CalendarEventItem[][] = [];
+        const eventColMap = new Map<string, number>();
+
+        for (const ev of cluster) {
+          let placedCol = -1;
+          for (let c = 0; c < clusterCols.length; c++) {
+            const lastEv = clusterCols[c][clusterCols[c].length - 1];
+            if (lastEv.endHourFraction <= ev.startHourFraction) {
+              clusterCols[c].push(ev);
+              placedCol = c;
+              break;
+            }
+          }
+          if (placedCol === -1) {
+            clusterCols.push([ev]);
+            placedCol = clusterCols.length - 1;
+          }
+          eventColMap.set(ev.id, placedCol);
+        }
+
+        const numCols = Math.max(1, clusterCols.length);
+
+        for (const ev of cluster) {
+          const colIndex = eventColMap.get(ev.id) ?? 0;
+
+          // Expand span if adjacent columns to the right are free during this event's interval
+          let colSpan = 1;
+          while (colIndex + colSpan < numCols) {
+            const nextCol = clusterCols[colIndex + colSpan];
+            const hasConflict = nextCol.some(
+              (other) => other.startHourFraction < ev.endHourFraction && other.endHourFraction > ev.startHourFraction
+            );
+            if (!hasConflict) {
+              colSpan++;
+            } else {
+              break;
+            }
+          }
+
           positionedEvents.push({
             ...ev,
-            colIndex: colIdx,
-            totalCols: Math.max(1, columns.length),
+            colIndex,
+            totalCols: numCols,
+            colSpan,
           });
         }
       }
@@ -600,29 +685,29 @@ export const GoogleStyleCalendar: React.FC<GoogleStyleCalendarProps> = ({
   // Hours array for Grid: 8:00 AM to 7:00 PM (8 to 19)
   const hours = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
 
-  // Helper color tags based on kind
+  // Helper color tags matching reference image palette (pastel card + solid left accent border)
   const getEventBadgeClass = (kind?: string, isPersonal?: boolean, hasConflict?: boolean) => {
     if (hasConflict) {
-      return 'bg-amber-50/95 border-amber-300 border-l-4 border-l-red-500 text-amber-950 ring-1 ring-red-400';
+      return 'bg-amber-50/95 border-amber-300 border-l-[4px] border-l-red-500 text-amber-950 ring-1 ring-red-400';
     }
     if (isPersonal) {
-      return 'bg-purple-50/95 border-purple-200 border-l-4 border-l-purple-500 text-purple-950';
+      return 'bg-indigo-50/90 border border-indigo-200/70 border-l-[4px] border-l-indigo-500 text-indigo-950';
     }
     const k = (kind || 'theory').toLowerCase();
     if (k.includes('lab') || k.includes('practical')) {
-      return 'bg-emerald-50/95 border-emerald-200 border-l-4 border-l-emerald-500 text-emerald-950';
+      return 'bg-emerald-50/90 border border-emerald-200/70 border-l-[4px] border-l-emerald-500 text-emerald-950';
     }
     if (k.includes('tutorial')) {
-      return 'bg-amber-50/95 border-amber-200 border-l-4 border-l-amber-500 text-amber-950';
+      return 'bg-purple-50/90 border border-purple-200/70 border-l-[4px] border-l-purple-500 text-purple-950';
     }
     if (k.includes('exam')) {
-      return 'bg-rose-50/95 border-rose-200 border-l-4 border-l-rose-500 text-rose-950';
+      return 'bg-rose-50/90 border border-rose-200/70 border-l-[4px] border-l-rose-500 text-rose-950';
     }
     if (k.includes('event') || k.includes('booking') || k.includes('lecture') || k.includes('club')) {
-      return 'bg-orange-50/95 border-orange-200 border-l-4 border-l-orange-400 text-orange-950';
+      return 'bg-amber-50/90 border border-amber-200/70 border-l-[4px] border-l-amber-500 text-amber-950';
     }
-    // Default theory
-    return 'bg-blue-50/95 border-blue-200 border-l-4 border-l-blue-500 text-blue-950';
+    // Default theory (soft sky blue with strong blue accent)
+    return 'bg-blue-50/90 border border-blue-200/70 border-l-[4px] border-l-blue-500 text-blue-950';
   };
 
   const getEventPillHeaderClass = (kind?: string, isPersonal?: boolean, hasConflict?: boolean) => {
@@ -669,13 +754,20 @@ export const GoogleStyleCalendar: React.FC<GoogleStyleCalendarProps> = ({
               </button>
             </div>
 
-            {/* Today Button */}
+            {/* Today & Academic Term Buttons */}
             <button
               type="button"
               onClick={handleToday}
               className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold shadow-2xs cursor-pointer transition-colors"
             >
               Today
+            </button>
+            <button
+              type="button"
+              onClick={handleAcademicTerm}
+              className="px-2.5 py-1.5 bg-blue-50/70 border border-blue-200 hover:bg-blue-100 text-blue-700 rounded-xl text-xs font-semibold shadow-2xs cursor-pointer transition-colors hidden sm:inline-flex"
+            >
+              Academic Term (Oct 2026)
             </button>
 
             {/* Prev / Next Buttons */}
@@ -856,7 +948,7 @@ export const GoogleStyleCalendar: React.FC<GoogleStyleCalendarProps> = ({
       )}
 
       {/* Main Google Calendar Grid */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden flex flex-col">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden flex flex-col w-full">
         {/* All-Day Events Banner Section */}
         <div className="border-b border-slate-200 bg-slate-50/70 p-2.5 px-4 flex items-center justify-between text-xs">
           <div className="flex items-center space-x-2">
@@ -870,245 +962,280 @@ export const GoogleStyleCalendar: React.FC<GoogleStyleCalendarProps> = ({
           </span>
         </div>
 
-        {/* Days Header Row */}
-        <div className="grid grid-cols-12 border-b border-slate-200 bg-slate-50/50 sticky top-0 z-10">
-          {/* Time Gutter Column header with GMT Timezone */}
-          <div className="col-span-1 p-2 sm:p-2.5 flex items-center justify-center border-r border-slate-200">
-            <span className="text-[11px] font-semibold text-slate-400">GMT+5:30</span>
-          </div>
+        {/* Unified Scroll Container enclosing BOTH the header and the time grid body */}
+        <div className="relative overflow-x-auto w-full">
+          <div className={`${viewMode === 'week' ? 'min-w-[860px] sm:min-w-[940px] lg:min-w-0' : ''} w-full`}>
+            {/* Days Header Row */}
+            <div className="grid grid-cols-12 border-b border-slate-200 bg-slate-50/70 sticky top-0 z-20 backdrop-blur-xs">
+              {/* Time Gutter Column header with GMT Timezone pill matching reference image */}
+              <div className="col-span-1 p-2 sm:p-2.5 flex items-center justify-center border-r border-slate-200">
+                <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-tight bg-slate-100 px-2 py-0.5 rounded border border-slate-200 shadow-2xs font-mono">
+                  GMT+5:30
+                </span>
+              </div>
 
-          {/* Active Days Columns header */}
-          {viewMode === 'day' ? (
-            (() => {
-              const activeDayOfWeek = (currentDate.getDay() + 6) % 7;
-              const activeDayObj = weekDates[activeDayOfWeek] || weekDates[0];
-              return (
-                <div className="col-span-11 p-2.5 text-center flex flex-col items-center justify-center">
-                  <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    {activeDayObj.dayName}
-                  </div>
-                  {activeDayObj.isToday ? (
-                    <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-black text-sm flex items-center justify-center shadow-xs mt-0.5">
-                      {activeDayObj.dayNumber}
+              {/* Active Days Columns header */}
+              {viewMode === 'day' ? (
+                (() => {
+                  const activeDayOfWeek = (currentDate.getDay() + 6) % 7;
+                  const activeDayObj = weekDates[activeDayOfWeek] || weekDates[0];
+                  return (
+                    <div className="col-span-11 p-2.5 text-center flex items-center justify-center space-x-2">
+                      <span className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider">
+                        {activeDayObj.dayName}
+                      </span>
+                      {activeDayObj.isToday ? (
+                        <span className="px-2.5 py-0.5 rounded-full bg-blue-600 text-white font-bold text-xs sm:text-sm shadow-xs">
+                          {activeDayObj.shortDateStr}
+                        </span>
+                      ) : (
+                        <span className="text-xs sm:text-sm font-semibold text-slate-800">
+                          {activeDayObj.shortDateStr}
+                        </span>
+                      )}
                     </div>
-                  ) : (
-                    <div className="text-sm font-bold text-slate-800 mt-1">
-                      {activeDayObj.shortDateStr}
+                  );
+                })()
+              ) : (
+                // Week View: 7 Days (Mon - Sun)
+                <div className="col-span-11 grid grid-cols-7 divide-x divide-slate-200">
+                  {weekDates.map((col) => (
+                    <div key={col.dayName} className="p-2 sm:p-2.5 text-center flex items-center justify-center space-x-1.5">
+                      <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                        {col.dayName}
+                      </span>
+                      {col.isToday ? (
+                        <span className="px-2 py-0.5 rounded-full bg-blue-600 text-white font-bold text-[10px] sm:text-[11px] shadow-xs">
+                          {col.shortDateStr}
+                        </span>
+                      ) : (
+                        <span className="text-[11px] sm:text-xs font-semibold text-slate-700">
+                          {col.shortDateStr}
+                        </span>
+                      )}
                     </div>
-                  )}
+                  ))}
                 </div>
-              );
-            })()
-          ) : (
-            // Week View: 7 Days (Mon - Sun)
-            <div className="col-span-11 grid grid-cols-7 divide-x divide-slate-200">
-              {weekDates.map((col) => (
-                <div key={col.dayName} className="p-2 sm:p-2.5 text-center flex flex-col items-center justify-center">
-                  <div className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                    {col.dayName}
-                  </div>
-                  {col.isToday ? (
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-blue-600 text-white font-black text-xs sm:text-sm flex items-center justify-center shadow-xs mt-1">
-                      {col.dayNumber}
-                    </div>
-                  ) : (
-                    <div className="text-xs sm:text-sm font-semibold text-slate-700 mt-1">
-                      {col.shortDateStr}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Time Grid Body */}
-        <div className="relative overflow-x-auto min-w-[650px] sm:min-w-0">
-          <div className="grid grid-cols-12 relative divide-x divide-slate-200">
-            {/* Time labels column */}
-            <div className="col-span-1 divide-y divide-slate-100 bg-slate-50/20">
-              {hours.map((h) => (
-                <div key={h} className="h-16 pr-2.5 text-right text-[11px] text-slate-400 font-medium font-mono pt-1">
-                  {String(h).padStart(2, '0')}:00
-                </div>
-              ))}
+              )}
             </div>
 
-            {/* Days Schedule Content Area */}
-            {viewMode === 'day' ? (
-              (() => {
-                const activeDayOfWeek = (currentDate.getDay() + 6) % 7;
-                const activeDayObj = weekDates[activeDayOfWeek] || weekDates[0];
-
-                return (
-                  <div className="col-span-11 relative">
-                    {/* Hour row background lines & clickable slot trigger */}
-                    <div className="divide-y divide-slate-100">
-                      {hours.map((h) => (
-                        <div
-                          key={h}
-                          onClick={() => handleSlotClick(activeDayObj.dayName, activeDayObj.dateStr, h)}
-                          className={`h-16 group hover:bg-blue-50/20 transition-colors ${
-                            canEdit ? 'cursor-pointer' : ''
-                          }`}
-                        >
-                          {canEdit && (
-                            <span className="opacity-0 group-hover:opacity-100 text-[10px] font-semibold text-blue-600 pl-2 pt-1 inline-flex items-center space-x-1">
-                              <Plus className="w-2.5 h-2.5" />
-                              <span>Add slot {h}:00</span>
-                            </span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Today indicator line if current date is today */}
-                    {activeDayObj.isToday && (
-                      <div
-                        className="absolute left-0 right-0 z-20 pointer-events-none flex items-center"
-                        style={{
-                          top: `${((new Date().getHours() + new Date().getMinutes() / 60 - 8) / 12) * 100}%`,
-                        }}
-                      >
-                        <div className="w-2.5 h-2.5 rounded-full bg-red-600 -ml-1"></div>
-                        <div className="h-[2px] bg-red-500 w-full shadow-xs"></div>
-                      </div>
-                    )}
-
-                    {/* Event Blocks */}
-                    {eventsWithLayout
-                      .filter((e) => e.day === activeDayObj.dayName)
-                      .map((ev) => {
-                        const topPercent = ((ev.startHourFraction - 8) / 12) * 100;
-                        const heightPercent = ((ev.endHourFraction - ev.startHourFraction) / 12) * 100;
-                        const widthPercent = 100 / ev.totalCols;
-                        const leftPercent = ev.colIndex * widthPercent;
-
-                        return (
-                          <div
-                            key={ev.id}
-                            onClick={() => setSelectedEvent(ev)}
-                            style={{
-                              top: `${Math.max(0, topPercent)}%`,
-                              height: `${Math.max(5, heightPercent)}%`,
-                              left: `${leftPercent}%`,
-                              width: `${widthPercent}%`,
-                            }}
-                            className={`absolute z-10 p-2.5 m-0.5 rounded-lg border text-xs shadow-2xs transition-all hover:shadow-md cursor-pointer flex flex-col justify-between overflow-hidden ${getEventBadgeClass(
-                              ev.kind,
-                              ev.isPersonal,
-                              ev.hasConflict
-                            )}`}
-                          >
-                            <div>
-                              <div className="text-[10px] text-slate-500 font-semibold tracking-tight">
-                                {ev.startTime} – {ev.endTime}
-                              </div>
-                              <div className="font-bold text-[11px] sm:text-xs text-slate-900 leading-snug line-clamp-1 mt-0.5 flex items-center justify-between gap-1">
-                                <span className="truncate">{ev.summary}</span>
-                                {ev.hasConflict && (
-                                  <span title="Conflict detected">
-                                    <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-
-                            <div className="text-[10px] text-slate-600 truncate mt-auto pt-1">
-                              {ev.roomName} {ev.facultyName && ev.facultyName !== 'Personal' ? `• ${ev.facultyName}` : ''}
-                            </div>
-                          </div>
-                        );
-                      })}
-                  </div>
-                );
-              })()
-            ) : (
-              // Week View Grid: 7 day columns
-              <div className="col-span-11 grid grid-cols-7 divide-x divide-slate-200 relative">
-                {weekDates.map((col) => (
-                  <div key={col.dayName} className="relative">
-                    {/* Hour slot clickable backgrounds */}
-                    <div className="divide-y divide-slate-100">
-                      {hours.map((h) => (
-                        <div
-                          key={h}
-                          onClick={() => handleSlotClick(col.dayName, col.dateStr, h)}
-                          className={`h-16 group hover:bg-blue-50/20 transition-colors ${
-                            canEdit ? 'cursor-pointer' : ''
-                          }`}
-                        >
-                          {canEdit && (
-                            <span className="opacity-0 group-hover:opacity-100 text-[9px] font-semibold text-blue-600 pl-1 inline-flex items-center">
-                              <Plus className="w-2 h-2" />
-                            </span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Today indicator line */}
-                    {col.isToday && (
-                      <div
-                        className="absolute left-0 right-0 z-20 pointer-events-none flex items-center"
-                        style={{
-                          top: `${((new Date().getHours() + new Date().getMinutes() / 60 - 8) / 12) * 100}%`,
-                        }}
-                      >
-                        <div className="w-2 h-2 rounded-full bg-red-600 -ml-1"></div>
-                        <div className="h-[2px] bg-red-500 w-full shadow-xs"></div>
-                      </div>
-                    )}
-
-                    {/* Events for this day column */}
-                    {eventsWithLayout
-                      .filter((e) => e.day === col.dayName)
-                      .map((ev) => {
-                        const topPercent = ((ev.startHourFraction - 8) / 12) * 100;
-                        const heightPercent = ((ev.endHourFraction - ev.startHourFraction) / 12) * 100;
-                        const widthPercent = 100 / ev.totalCols;
-                        const leftPercent = ev.colIndex * widthPercent;
-
-                        return (
-                          <div
-                            key={ev.id}
-                            onClick={() => setSelectedEvent(ev)}
-                            style={{
-                              top: `${Math.max(0, topPercent)}%`,
-                              height: `${Math.max(5, heightPercent)}%`,
-                              left: `${leftPercent}%`,
-                              width: `${widthPercent}%`,
-                            }}
-                            className={`absolute z-10 p-2 m-0.5 rounded-lg border text-xs shadow-2xs transition-all hover:shadow-md cursor-pointer flex flex-col justify-between overflow-hidden ${getEventBadgeClass(
-                              ev.kind,
-                              ev.isPersonal,
-                              ev.hasConflict
-                            )}`}
-                          >
-                            <div>
-                              <div className="text-[10px] text-slate-500 font-semibold tracking-tight">
-                                {ev.startTime} – {ev.endTime}
-                              </div>
-                              <div className="font-bold text-[11px] text-slate-900 leading-snug line-clamp-1 mt-0.5 flex items-center justify-between gap-0.5">
-                                <span className="truncate">{ev.courseId || ev.summary}</span>
-                                {ev.hasConflict && (
-                                  <span title="Conflict detected">
-                                    <AlertTriangle className="w-3 h-3 text-amber-600 shrink-0" />
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-
-                            <div className="text-[10px] text-slate-600 truncate mt-auto pt-0.5">
-                              {ev.roomName}
-                            </div>
-                          </div>
-                        );
-                      })}
+            {/* Time Grid Body */}
+            <div className="grid grid-cols-12 relative divide-x divide-slate-200">
+              {/* Time labels column */}
+              <div className="col-span-1 divide-y divide-slate-100 bg-slate-50/20">
+                {hours.map((h) => (
+                  <div key={h} className="h-16 pr-2.5 text-right text-[11px] text-slate-400 font-medium font-mono pt-1">
+                    {String(h).padStart(2, '0')}:00
                   </div>
                 ))}
               </div>
-            )}
+
+              {/* Days Schedule Content Area */}
+              {viewMode === 'day' ? (
+                (() => {
+                  const activeDayOfWeek = (currentDate.getDay() + 6) % 7;
+                  const activeDayObj = weekDates[activeDayOfWeek] || weekDates[0];
+
+                  return (
+                    <div className="col-span-11 relative">
+                      {/* Hour row background lines & clickable slot trigger */}
+                      <div className="divide-y divide-slate-100">
+                        {hours.map((h) => (
+                          <div
+                            key={h}
+                            onClick={() => handleSlotClick(activeDayObj.dayName, activeDayObj.dateStr, h)}
+                            className={`h-16 group hover:bg-blue-50/20 transition-colors ${
+                              canEdit ? 'cursor-pointer' : ''
+                            }`}
+                          >
+                            {canEdit && (
+                              <span className="opacity-0 group-hover:opacity-100 text-[10px] font-semibold text-blue-600 pl-2 pt-1 inline-flex items-center space-x-1">
+                                <Plus className="w-2.5 h-2.5" />
+                                <span>Add slot {h}:00</span>
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Today indicator line if current date is today */}
+                      {activeDayObj.isToday && showRedLine && (
+                        <div
+                          className="absolute left-0 right-0 z-20 pointer-events-none flex items-center"
+                          style={{ top: `${redLineTopPercent}%` }}
+                        >
+                          <div className="w-2.5 h-2.5 rounded-full bg-red-500 -ml-1.5 shrink-0 shadow-xs ring-2 ring-white"></div>
+                          <div className="h-[2px] bg-red-500 w-full shadow-2xs"></div>
+                        </div>
+                      )}
+
+                      {/* Event Blocks */}
+                      {eventsWithLayout
+                        .filter((e) => e.day === activeDayObj.dayName)
+                        .map((ev) => {
+                          const topPercent = ((ev.startHourFraction - 8) / 12) * 100;
+                          const heightPercent = ((ev.endHourFraction - ev.startHourFraction) / 12) * 100;
+                          const colWidth = 100 / ev.totalCols;
+                          const widthPercent = colWidth * (ev.colSpan || 1);
+                          const leftPercent = ev.colIndex * colWidth;
+
+                          return (
+                            <div
+                              key={ev.id}
+                              onClick={() => setSelectedEvent(ev)}
+                              style={{
+                                top: `${Math.max(0, topPercent)}%`,
+                                height: `calc(${Math.max(5.5, heightPercent)}% - 4px)`,
+                                left: `calc(${leftPercent}% + 2px)`,
+                                width: `calc(${widthPercent}% - 4px)`,
+                              }}
+                              title={`${ev.courseId || ev.summary} (${ev.kind || 'Class'})\nTime: ${ev.startTime} – ${ev.endTime}\nRoom: ${ev.roomName || 'CIT Venue'}\nFaculty: ${ev.facultyName || 'N/A'}${ev.groups?.length ? `\nCohorts: ${ev.groups.join(', ')}` : ''}`}
+                              className={`absolute z-10 p-2 sm:p-2.5 rounded-xl border text-xs shadow-2xs transition-all hover:shadow-md hover:scale-[1.01] hover:z-20 cursor-pointer flex flex-col justify-between overflow-hidden ${getEventBadgeClass(
+                                ev.kind,
+                                ev.isPersonal,
+                                ev.hasConflict
+                              )}`}
+                            >
+                              <div className="space-y-0.5">
+                                <div className="text-[10px] text-slate-600 font-semibold tracking-tight flex items-center justify-between font-mono">
+                                  <span>{ev.startTime} – {ev.endTime}</span>
+                                  {ev.hasConflict && (
+                                    <span title="Sync conflict detected with Google Calendar" className="text-red-600">
+                                      <AlertTriangle className="w-3 h-3 shrink-0" />
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="font-bold text-[11px] sm:text-xs text-slate-900 leading-snug line-clamp-1 truncate">
+                                  {ev.courseId ? `${ev.courseId}` : ev.summary}
+                                </div>
+                              </div>
+
+                              <div className="text-[10px] text-slate-500 truncate pt-0.5 flex items-center space-x-1">
+                                <span className="truncate">{ev.roomName || 'CIT Venue'}</span>
+                                {ev.facultyName && ev.facultyName !== 'Personal' && (
+                                  <>
+                                    <span>•</span>
+                                    <span className="truncate">{ev.facultyName}</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  );
+                })()
+              ) : (
+                // Week View Grid: 7 day columns
+                <div className="col-span-11 grid grid-cols-7 divide-x divide-slate-200 relative">
+                  {/* Continuous Current Time Red Indicator Line matching visual reference */}
+                  {showRedLine && (
+                    <div
+                      className="absolute left-0 right-0 z-20 pointer-events-none flex items-center"
+                      style={{ top: `${redLineTopPercent}%` }}
+                    >
+                      <div className="w-2.5 h-2.5 rounded-full bg-red-500 -ml-1.5 shrink-0 shadow-xs ring-2 ring-white"></div>
+                      <div className="h-[2px] bg-red-500 w-full shadow-2xs"></div>
+                    </div>
+                  )}
+
+                  {weekDates.map((col) => (
+                    <div key={col.dayName} className="relative overflow-hidden h-full">
+                      {/* Hour slot clickable backgrounds */}
+                      <div className="divide-y divide-slate-100">
+                        {hours.map((h) => (
+                          <div
+                            key={h}
+                            onClick={() => handleSlotClick(col.dayName, col.dateStr, h)}
+                            className={`h-16 group hover:bg-blue-50/20 transition-colors ${
+                              canEdit ? 'cursor-pointer' : ''
+                            }`}
+                          >
+                            {canEdit && (
+                              <span className="opacity-0 group-hover:opacity-100 text-[9px] font-semibold text-blue-600 pl-1 inline-flex items-center">
+                                <Plus className="w-2 h-2" />
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Events for this day column */}
+                      {eventsWithLayout
+                        .filter((e) => e.day === col.dayName)
+                        .map((ev) => {
+                          const topPercent = ((ev.startHourFraction - 8) / 12) * 100;
+                          const heightPercent = ((ev.endHourFraction - ev.startHourFraction) / 12) * 100;
+                          
+                          let widthPercent: number;
+                          let leftPercent: number;
+
+                          if (ev.totalCols === 1) {
+                            widthPercent = 100;
+                            leftPercent = 0;
+                          } else if (ev.totalCols === 2) {
+                            widthPercent = 50;
+                            leftPercent = ev.colIndex * 50;
+                          } else if (ev.totalCols === 3) {
+                            widthPercent = 33.33;
+                            leftPercent = ev.colIndex * 33.33;
+                          } else {
+                            // Dense overlap (>= 4 simultaneous events)
+                            widthPercent = 52;
+                            const step = (100 - widthPercent) / (ev.totalCols - 1);
+                            leftPercent = ev.colIndex * step;
+                          }
+
+                          const isShortEvent = (ev.duration || 1) <= 1;
+
+                          return (
+                            <div
+                              key={ev.id}
+                              onClick={() => setSelectedEvent(ev)}
+                              style={{
+                                top: `${Math.max(0, topPercent)}%`,
+                                height: `calc(${Math.max(5.5, heightPercent)}% - 4px)`,
+                                left: `calc(${leftPercent}% + 1px)`,
+                                width: `calc(${widthPercent}% - 2px)`,
+                              }}
+                              title={`${ev.courseId || ev.summary} (${ev.kind || 'Class'})\nTime: ${ev.startTime} – ${ev.endTime}\nRoom: ${ev.roomName || 'CIT Venue'}\nFaculty: ${ev.facultyName || 'N/A'}${ev.groups?.length ? `\nCohorts: ${ev.groups.join(', ')}` : ''}${ev.hasConflict ? '\n⚠️ Google Calendar Conflict Detected' : ''}`}
+                              className={`absolute z-10 p-1.5 sm:p-2 rounded-xl border text-xs shadow-2xs transition-all hover:shadow-lg hover:z-30 hover:w-[96%] focus:z-30 focus:w-[96%] cursor-pointer flex flex-col justify-between overflow-hidden group ${getEventBadgeClass(
+                                ev.kind,
+                                ev.isPersonal,
+                                ev.hasConflict
+                              )}`}
+                            >
+                              <div className="space-y-0.5 overflow-hidden">
+                                <div className="text-[9px] sm:text-[10px] text-slate-600 font-semibold tracking-tight flex items-center justify-between font-mono">
+                                  <span className="truncate">{ev.startTime} – {ev.endTime}</span>
+                                  {ev.hasConflict && (
+                                    <span title="Sync conflict detected with Google Calendar" className="text-red-600 shrink-0 ml-1">
+                                      <AlertTriangle className="w-2.5 h-2.5" />
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="font-bold text-[10px] sm:text-[11px] text-slate-900 leading-tight truncate">
+                                  {ev.courseId ? `${ev.courseId}` : ev.summary}
+                                </div>
+                              </div>
+
+                              <div className="text-[9px] text-slate-500 truncate pt-0.5 flex items-center space-x-1">
+                                <span className="truncate">{ev.roomName || 'CIT Venue'}</span>
+                                {!isShortEvent && ev.facultyName && ev.facultyName !== 'Personal' && (
+                                  <>
+                                    <span>•</span>
+                                    <span className="truncate">{ev.facultyName}</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

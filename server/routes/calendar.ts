@@ -85,6 +85,16 @@ router.get('/calendar/changes', async (req: AuthenticatedRequest, res: Response)
   res.json({ success: true, data: changeReport });
 });
 
+// GET /api/calendar/config - Check OAuth Client ID configuration status
+router.get('/calendar/config', async (req: AuthenticatedRequest, res: Response) => {
+  const clientId = (process.env.VITE_GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID || '').trim();
+  res.json({
+    success: true,
+    configured: Boolean(clientId),
+    client_id: clientId || null,
+  });
+});
+
 router.get('/calendar/status', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   const requestedUserId = req.query.userId as string;
   let targetUserId = req.user!.id;
