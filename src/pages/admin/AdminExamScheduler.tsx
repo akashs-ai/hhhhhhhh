@@ -192,83 +192,60 @@ export const AdminExamScheduler: React.FC<AdminExamSchedulerProps> = ({ currentU
         </div>
       </div>
 
-      {/* Middle Row: Room Saturation + Contingency Overflow Buffer */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-8 bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="text-xs font-bold text-slate-800">Room Saturation & Campus Distance Footprint</div>
-            <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full">
-              Safe Distance ≥ 1.2m
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-              <div className="flex items-center justify-between text-xs font-bold">
-                <span>Auditorium East</span>
-                <span className="text-blue-600">85%</span>
-              </div>
-              <div className="text-[10px] text-slate-400 mt-0.5">Tiered Amphitheater</div>
-              <div className="w-full bg-slate-200 h-1.5 rounded-full mt-2.5 overflow-hidden">
-                <div className="bg-blue-600 h-full w-[85%]"></div>
-              </div>
-              <div className="flex justify-between text-[10px] text-slate-500 mt-1">
-                <span>510 / 600 Desks</span>
-                <span className="text-blue-600 font-semibold">90 Buffer Left</span>
-              </div>
-            </div>
-
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-              <div className="flex items-center justify-between text-xs font-bold">
-                <span>B-Block Annex</span>
-                <span className="text-red-600">100%</span>
-              </div>
-              <div className="text-[10px] text-slate-400 mt-0.5">Rooms 301, 302, 305</div>
-              <div className="w-full bg-slate-200 h-1.5 rounded-full mt-2.5 overflow-hidden">
-                <div className="bg-red-500 h-full w-full"></div>
-              </div>
-              <div className="flex justify-between text-[10px] text-slate-500 mt-1">
-                <span>420 / 420 Desks</span>
-                <span className="text-red-600 font-bold">CAPPED</span>
-              </div>
-            </div>
-
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-              <div className="flex items-center justify-between text-xs font-bold">
-                <span>C-Block Tech</span>
-                <span className="text-emerald-600">62%</span>
-              </div>
-              <div className="text-[10px] text-slate-400 mt-0.5">Halls 101 through 108</div>
-              <div className="w-full bg-slate-200 h-1.5 rounded-full mt-2.5 overflow-hidden">
-                <div className="bg-emerald-500 h-full w-[62%]"></div>
-              </div>
-              <div className="flex justify-between text-[10px] text-slate-500 mt-1">
-                <span>560 / 900 Desks</span>
-                <span className="text-emerald-600 font-semibold">340 Buffer Left</span>
-              </div>
-            </div>
-          </div>
+      {/* Middle Row: Room Saturation */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="text-xs font-bold text-slate-800">Room Saturation & Campus Distance Footprint</div>
+          <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full">
+            Safe Distance ≥ 1.2m
+          </span>
         </div>
 
-        <div className="lg:col-span-4 bg-slate-900 rounded-2xl p-5 text-white shadow-md flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-slate-400">
-              <span>CONTINGENCY OVERFLOW BUFFER</span>
-              <span className="text-emerald-400 bg-emerald-950 px-2 py-0.5 rounded">Ready</span>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+          <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+            <div className="flex items-center justify-between text-xs font-bold">
+              <span>Auditorium East</span>
+              <span className="text-blue-600">85%</span>
             </div>
-            <div className="text-sm font-bold mt-2">Chilika Main Examination Grounds</div>
-            <p className="text-[11px] text-slate-400 mt-1">
-              Backup halls reserved for unexpected cohort spillover or medical isolations.
-            </p>
-            <div className="mt-3 p-2.5 bg-slate-800 rounded-xl flex items-center justify-between text-xs font-semibold">
-              <span>Quad B • Central Seminar Complex</span>
-              <span className="text-blue-400">+280 Reserve Desks</span>
+            <div className="text-[10px] text-slate-400 mt-0.5">Tiered Amphitheater</div>
+            <div className="w-full bg-slate-200 h-1.5 rounded-full mt-2.5 overflow-hidden">
+              <div className="bg-blue-600 h-full w-[85%]"></div>
+            </div>
+            <div className="flex justify-between text-[10px] text-slate-500 mt-1">
+              <span>510 / 600 Desks</span>
+              <span className="text-blue-600 font-semibold">90 Buffer Left</span>
             </div>
           </div>
 
-          <button className="mt-4 text-xs font-bold text-blue-400 hover:text-blue-300 text-left">
-            Manage Reserves →
-          </button>
+          <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+            <div className="flex items-center justify-between text-xs font-bold">
+              <span>B-Block Annex</span>
+              <span className="text-red-600">100%</span>
+            </div>
+            <div className="text-[10px] text-slate-400 mt-0.5">Rooms 301, 302, 305</div>
+            <div className="w-full bg-slate-200 h-1.5 rounded-full mt-2.5 overflow-hidden">
+              <div className="bg-red-500 h-full w-full"></div>
+            </div>
+            <div className="flex justify-between text-[10px] text-slate-500 mt-1">
+              <span>420 / 420 Desks</span>
+              <span className="text-red-600 font-bold">CAPPED</span>
+            </div>
+          </div>
+
+          <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+            <div className="flex items-center justify-between text-xs font-bold">
+              <span>C-Block Tech</span>
+              <span className="text-emerald-600">62%</span>
+            </div>
+            <div className="text-[10px] text-slate-400 mt-0.5">Halls 101 through 108</div>
+            <div className="w-full bg-slate-200 h-1.5 rounded-full mt-2.5 overflow-hidden">
+              <div className="bg-emerald-500 h-full w-[62%]"></div>
+            </div>
+            <div className="flex justify-between text-[10px] text-slate-500 mt-1">
+              <span>560 / 900 Desks</span>
+              <span className="text-emerald-600 font-semibold">340 Buffer Left</span>
+            </div>
+          </div>
         </div>
       </div>
 
