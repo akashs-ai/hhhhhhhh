@@ -754,5 +754,491 @@
       "hard_by_rule": {},
       "warnings": []
     }
+  },
+  "disruption-1793467931493": {
+    "id": "disruption-1793467931493",
+    "title": "Emergency Lab Maintenance",
+    "description": "CS-LAB-1 electrical testing on Tuesday P6-P8",
+    "submitted_at": "2026-10-31T17:32:12.204Z",
+    "submitted_by": "usr-coord-cse",
+    "status": "proposed",
+    "changes": [
+      {
+        "type": "room_unavailable",
+        "room_id": "CS-LAB-1",
+        "days": [
+          "TUE"
+        ],
+        "periods": [
+          6,
+          7,
+          8
+        ],
+        "reason": "Electrical testing"
+      }
+    ],
+    "proposed_schedule_version_id": "v_prop_dis_1793467932183",
+    "stability_metrics": {
+      "sessions_moved": 0,
+      "time_changed": 0,
+      "room_only_changed": 0,
+      "moved_ids": []
+    },
+    "validator_report": {
+      "dataset_id": "cit-public-v1",
+      "schedule_dataset_id": "cit-public-v1",
+      "team": "CIT Arch Team",
+      "soft_penalties": {
+        "S1": 0,
+        "S2": 145,
+        "S3": 12,
+        "S4": 12,
+        "S5": 1,
+        "S6": 0
+      },
+      "soft_total": 170,
+      "stability": {
+        "sessions_moved": 0,
+        "time_changed": 0,
+        "room_only_changed": 0,
+        "moved_ids": []
+      },
+      "hard_violations": [],
+      "hard_violation_count": 0,
+      "hard_by_rule": {},
+      "warnings": []
+    }
+  },
+  "disruption-1793470683898": {
+    "id": "disruption-1793470683898",
+    "title": "Emergency Lab Maintenance",
+    "description": "CS-LAB-1 electrical testing on Tuesday P6-P8",
+    "submitted_at": "2026-10-31T18:18:04.622Z",
+    "submitted_by": "usr-coord-cse",
+    "status": "proposed",
+    "changes": [
+      {
+        "type": "room_unavailable",
+        "room_id": "CS-LAB-1",
+        "days": [
+          "TUE"
+        ],
+        "periods": [
+          6,
+          7,
+          8
+        ],
+        "reason": "Electrical testing"
+      }
+    ],
+    "proposed_schedule_version_id": "v_prop_dis_1793470684601",
+    "stability_metrics": {
+      "sessions_moved": 0,
+      "time_changed": 0,
+      "room_only_changed": 0,
+      "moved_ids": []
+    },
+    "validator_report": {
+      "dataset_id": "cit-public-v1",
+      "schedule_dataset_id": "cit-public-v1",
+      "team": "CIT Arch Team",
+      "soft_penalties": {
+        "S1": 0,
+        "S2": 145,
+        "S3": 12,
+        "S4": 12,
+        "S5": 1,
+        "S6": 0
+      },
+      "soft_total": 170,
+      "stability": {
+        "sessions_moved": 0,
+        "time_changed": 0,
+        "room_only_changed": 0,
+        "moved_ids": []
+      },
+      "hard_violations": [],
+      "hard_violation_count": 0,
+      "hard_by_rule": {},
+      "warnings": []
+    }
+  },
+  "disruption-1793470757084": {
+    "id": "disruption-1793470757084",
+    "title": "Emergency Lab Maintenance",
+    "description": "CS-LAB-1 electrical testing on Tuesday P6-P8",
+    "submitted_at": "2026-10-31T18:19:17.780Z",
+    "submitted_by": "usr-coord-cse",
+    "status": "proposed",
+    "changes": [
+      {
+        "type": "room_unavailable",
+        "room_id": "CS-LAB-1",
+        "days": [
+          "TUE"
+        ],
+        "periods": [
+          6,
+          7,
+          8
+        ],
+        "reason": "Electrical testing"
+      }
+    ],
+    "proposed_schedule_version_id": "v_prop_dis_1793470757761",
+    "stability_metrics": {
+      "sessions_moved": 0,
+      "time_changed": 0,
+      "room_only_changed": 0,
+      "moved_ids": []
+    },
+    "validator_report": {
+      "dataset_id": "cit-public-v1",
+      "schedule_dataset_id": "cit-public-v1",
+      "team": "CIT Arch Team",
+      "soft_penalties": {
+        "S1": 0,
+        "S2": 145,
+        "S3": 12,
+        "S4": 12,
+        "S5": 1,
+        "S6": 0
+      },
+      "soft_total": 170,
+      "stability": {
+        "sessions_moved": 0,
+        "time_changed": 0,
+        "room_only_changed": 0,
+        "moved_ids": []
+      },
+      "hard_violations": [],
+      "hard_violation_count": 0,
+      "hard_by_rule": {},
+      "warnings": []
+    }
+  },
+  "disruption-1793474230736": {
+    "id": "disruption-1793474230736",
+    "title": "Emergency Lab Maintenance",
+    "description": "CS-LAB-1 electrical testing on Tuesday P6-P8",
+    "submitted_at": "2026-10-31T19:17:11.426Z",
+    "submitted_by": "usr-coord-cse",
+    "status": "proposed",
+    "changes": [
+      {
+        "type": "room_unavailable",
+        "room_id": "CS-LAB-1",
+        "days": [
+          "TUE"
+        ],
+        "periods": [
+          6,
+          7,
+          8
+        ],
+        "reason": "Electrical testing"
+      }
+    ],
+    "proposed_schedule_version_id": "v_prop_dis_1793474231404",
+    "stability_metrics": {
+      "sessions_moved": 0,
+      "time_changed": 0,
+      "room_only_changed": 0,
+      "moved_ids": []
+    },
+    "validator_report": {
+      "dataset_id": "cit-public-v1",
+      "schedule_dataset_id": "cit-public-v1",
+      "team": "CIT Arch Team",
+      "soft_penalties": {
+        "S1": 0,
+        "S2": 145,
+        "S3": 12,
+        "S4": 12,
+        "S5": 1,
+        "S6": 0
+      },
+      "soft_total": 170,
+      "stability": {
+        "sessions_moved": 0,
+        "time_changed": 0,
+        "room_only_changed": 0,
+        "moved_ids": []
+      },
+      "hard_violations": [],
+      "hard_violation_count": 0,
+      "hard_by_rule": {},
+      "warnings": []
+    }
+  },
+  "disruption-1793474410290": {
+    "id": "disruption-1793474410290",
+    "title": "Emergency Lab Maintenance",
+    "description": "CS-LAB-1 electrical testing on Tuesday P6-P8",
+    "submitted_at": "2026-10-31T19:20:11.024Z",
+    "submitted_by": "usr-coord-cse",
+    "status": "proposed",
+    "changes": [
+      {
+        "type": "room_unavailable",
+        "room_id": "CS-LAB-1",
+        "days": [
+          "TUE"
+        ],
+        "periods": [
+          6,
+          7,
+          8
+        ],
+        "reason": "Electrical testing"
+      }
+    ],
+    "proposed_schedule_version_id": "v_prop_dis_1793474411002",
+    "stability_metrics": {
+      "sessions_moved": 0,
+      "time_changed": 0,
+      "room_only_changed": 0,
+      "moved_ids": []
+    },
+    "validator_report": {
+      "dataset_id": "cit-public-v1",
+      "schedule_dataset_id": "cit-public-v1",
+      "team": "CIT Arch Team",
+      "soft_penalties": {
+        "S1": 0,
+        "S2": 145,
+        "S3": 12,
+        "S4": 12,
+        "S5": 1,
+        "S6": 0
+      },
+      "soft_total": 170,
+      "stability": {
+        "sessions_moved": 0,
+        "time_changed": 0,
+        "room_only_changed": 0,
+        "moved_ids": []
+      },
+      "hard_violations": [],
+      "hard_violation_count": 0,
+      "hard_by_rule": {},
+      "warnings": []
+    }
+  },
+  "disruption-1793476653639": {
+    "id": "disruption-1793476653639",
+    "title": "Emergency Lab Maintenance",
+    "description": "CS-LAB-1 electrical testing on Tuesday P6-P8",
+    "submitted_at": "2026-10-31T19:57:34.308Z",
+    "submitted_by": "usr-coord-cse",
+    "status": "proposed",
+    "changes": [
+      {
+        "type": "room_unavailable",
+        "room_id": "CS-LAB-1",
+        "days": [
+          "TUE"
+        ],
+        "periods": [
+          6,
+          7,
+          8
+        ],
+        "reason": "Electrical testing"
+      }
+    ],
+    "proposed_schedule_version_id": "v_prop_dis_1793476654284",
+    "stability_metrics": {
+      "sessions_moved": 0,
+      "time_changed": 0,
+      "room_only_changed": 0,
+      "moved_ids": []
+    },
+    "validator_report": {
+      "dataset_id": "cit-public-v1",
+      "schedule_dataset_id": "cit-public-v1",
+      "team": "CIT Arch Team",
+      "soft_penalties": {
+        "S1": 0,
+        "S2": 145,
+        "S3": 12,
+        "S4": 12,
+        "S5": 1,
+        "S6": 0
+      },
+      "soft_total": 170,
+      "stability": {
+        "sessions_moved": 0,
+        "time_changed": 0,
+        "room_only_changed": 0,
+        "moved_ids": []
+      },
+      "hard_violations": [],
+      "hard_violation_count": 0,
+      "hard_by_rule": {},
+      "warnings": []
+    }
+  },
+  "disruption-1793477346802": {
+    "id": "disruption-1793477346802",
+    "title": "Emergency Lab Maintenance",
+    "description": "CS-LAB-1 electrical testing on Tuesday P6-P8",
+    "submitted_at": "2026-10-31T20:09:07.590Z",
+    "submitted_by": "usr-coord-cse",
+    "status": "proposed",
+    "changes": [
+      {
+        "type": "room_unavailable",
+        "room_id": "CS-LAB-1",
+        "days": [
+          "TUE"
+        ],
+        "periods": [
+          6,
+          7,
+          8
+        ],
+        "reason": "Electrical testing"
+      }
+    ],
+    "proposed_schedule_version_id": "v_prop_dis_1793477347565",
+    "stability_metrics": {
+      "sessions_moved": 0,
+      "time_changed": 0,
+      "room_only_changed": 0,
+      "moved_ids": []
+    },
+    "validator_report": {
+      "dataset_id": "cit-public-v1",
+      "schedule_dataset_id": "cit-public-v1",
+      "team": "CIT Arch Team",
+      "soft_penalties": {
+        "S1": 0,
+        "S2": 145,
+        "S3": 12,
+        "S4": 12,
+        "S5": 1,
+        "S6": 0
+      },
+      "soft_total": 170,
+      "stability": {
+        "sessions_moved": 0,
+        "time_changed": 0,
+        "room_only_changed": 0,
+        "moved_ids": []
+      },
+      "hard_violations": [],
+      "hard_violation_count": 0,
+      "hard_by_rule": {},
+      "warnings": []
+    }
+  },
+  "disruption-1793478252714": {
+    "id": "disruption-1793478252714",
+    "title": "Emergency Lab Maintenance",
+    "description": "CS-LAB-1 electrical testing on Tuesday P6-P8",
+    "submitted_at": "2026-10-31T20:24:13.445Z",
+    "submitted_by": "usr-coord-cse",
+    "status": "proposed",
+    "changes": [
+      {
+        "type": "room_unavailable",
+        "room_id": "CS-LAB-1",
+        "days": [
+          "TUE"
+        ],
+        "periods": [
+          6,
+          7,
+          8
+        ],
+        "reason": "Electrical testing"
+      }
+    ],
+    "proposed_schedule_version_id": "v_prop_dis_1793478253415",
+    "stability_metrics": {
+      "sessions_moved": 0,
+      "time_changed": 0,
+      "room_only_changed": 0,
+      "moved_ids": []
+    },
+    "validator_report": {
+      "dataset_id": "cit-public-v1",
+      "schedule_dataset_id": "cit-public-v1",
+      "team": "CIT Arch Team",
+      "soft_penalties": {
+        "S1": 0,
+        "S2": 145,
+        "S3": 12,
+        "S4": 12,
+        "S5": 1,
+        "S6": 0
+      },
+      "soft_total": 170,
+      "stability": {
+        "sessions_moved": 0,
+        "time_changed": 0,
+        "room_only_changed": 0,
+        "moved_ids": []
+      },
+      "hard_violations": [],
+      "hard_violation_count": 0,
+      "hard_by_rule": {},
+      "warnings": []
+    }
+  },
+  "disruption-1793478309073": {
+    "id": "disruption-1793478309073",
+    "title": "Emergency Lab Maintenance",
+    "description": "CS-LAB-1 electrical testing on Tuesday P6-P8",
+    "submitted_at": "2026-10-31T20:25:09.964Z",
+    "submitted_by": "usr-coord-cse",
+    "status": "proposed",
+    "changes": [
+      {
+        "type": "room_unavailable",
+        "room_id": "CS-LAB-1",
+        "days": [
+          "TUE"
+        ],
+        "periods": [
+          6,
+          7,
+          8
+        ],
+        "reason": "Electrical testing"
+      }
+    ],
+    "proposed_schedule_version_id": "v_prop_dis_1793478309932",
+    "stability_metrics": {
+      "sessions_moved": 0,
+      "time_changed": 0,
+      "room_only_changed": 0,
+      "moved_ids": []
+    },
+    "validator_report": {
+      "dataset_id": "cit-public-v1",
+      "schedule_dataset_id": "cit-public-v1",
+      "team": "CIT Arch Team",
+      "soft_penalties": {
+        "S1": 0,
+        "S2": 145,
+        "S3": 12,
+        "S4": 12,
+        "S5": 1,
+        "S6": 0
+      },
+      "soft_total": 170,
+      "stability": {
+        "sessions_moved": 0,
+        "time_changed": 0,
+        "room_only_changed": 0,
+        "moved_ids": []
+      },
+      "hard_violations": [],
+      "hard_violation_count": 0,
+      "hard_by_rule": {},
+      "warnings": []
+    }
   }
 }

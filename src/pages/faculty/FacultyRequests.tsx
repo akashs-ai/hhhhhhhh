@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   FileText,
   Plus,
@@ -14,17 +14,184 @@ import {
   ChevronRight,
   ShieldCheck,
   Check,
+  X,
+  RefreshCw,
+  Trash2,
 } from 'lucide-react';
 import { UserItem } from '../../types';
+
+interface BookingRecord {
+  id: string;
+  submitted_at: string;
+  requester: string;
+  role: string;
+  requested_category: string;
+  effective_category: string;
+  title: string;
+  attendance: number;
+  duration_periods: number;
+  windows: Array<{ day: string; start_period: number; end_period: number }>;
+  room_types: string[];
+  needs: string[];
+  requested_room?: string | null;
+  mandatory_for_groups?: string[];
+  raw_text?: string;
+  status: 'pending' | 'approved' | 'rejected' | 'alternative_offered';
+  created_by: string;
+  allocated_room?: string | null;
+  allocated_day?: string | null;
+  allocated_start_period?: number | null;
+  allocated_end_period?: number | null;
+  decision_reason?: string | null;
+  decided_by?: string;
+  decided_at?: string;
+}
 
 interface FacultyRequestsProps {
   currentUser: UserItem;
 }
 
 export const FacultyRequests: React.FC<FacultyRequestsProps> = ({ currentUser }) => {
-  const [selectedTicketId, setSelectedTicketId] = useState('REQ-8821');
+  const [bookings, setBookings] = useState<BookingRecord[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [nudged, setNudged] = useState(false);
   const [showNewModal, setShowNewModal] = useState(false);
+
+  // New Request Form State
+  const [formTitle, setFormTitle] = useState('Extra Tutorial Session');
+  const [formCategory, setFormCategory] = useState('guest_lecture');
+  const [formAttendance, setFormAttendance] = useState(45);
+  const [formDuration, setFormDuration] = useState(1);
+  const [formDay, setFormDay] = useState('WED');
+  const [formStartPeriod, setFormStartPeriod] = useState(3);
+  const [formRoom, setFormRoom] = useState('L-301');
+  const [formReason, setFormReason] = useState('Remedial problem-solving session for mid-semester exam preparation.');
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitLoading, setSubmitLoading] = useState(false);
+
+  const fetchBookings = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/bookings', {
+        headers: {
+          Authorization: `Bearer ${currentUser.token || currentUser.id}`,
+        },
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data)) {
+          setBookings(json.data);
+          if (!selectedTicketId && json.data.length > 0) {
+            setSelectedTicketId(json.data[0].id);
+          }
+        }
+      }
+    } catch (err: any) {
+      console.error('Failed to fetch faculty bookings:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchBookings();
+    const timer = setInterval(fetchBookings, 15000);
+    const handleFocus = () => fetchBookings();
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [currentUser]);
+
+  const handleCreateRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitLoading(true);
+    setSubmitError(null);
+
+    try {
+      const payload = {
+        title: formTitle.trim(),
+        attendance: Number(formAttendance),
+        duration_periods: Number(formDuration),
+        requested_category: formCategory,
+        requested_room: formRoom,
+        raw_text: formReason.trim(),
+        windows: [
+          {
+            day: formDay,
+            start_period: Number(formStartPeriod),
+            end_period: Number(formStartPeriod) + Number(formDuration) - 1,
+          },
+        ],
+      };
+
+      const res = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${currentUser.token || currentUser.id}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const resJson = await res.json();
+      if (!res.ok || !resJson.success) {
+        throw new Error(resJson.error?.message || 'Failed to submit requisition');
+      }
+
+      setShowNewModal(false);
+      setSelectedTicketId(resJson.data?.id);
+      await fetchBookings();
+    } catch (err: any) {
+      setSubmitError(err.message);
+    } finally {
+      setSubmitLoading(false);
+    }
+  };
+
+  const handleWithdraw = async (id: string) => {
+    if (!window.confirm(`Withdraw requisition '${id}'? This will permanently cancel the ticket.`)) return;
+
+    try {
+      const res = await fetch(`/api/bookings/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${currentUser.token || currentUser.id}`,
+        },
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error?.message || 'Failed to withdraw');
+      }
+      await fetchBookings();
+    } catch (err: any) {
+      alert('Withdrawal error: ' + err.message);
+    }
+  };
+
+  const handleNudge = async (id: string) => {
+    try {
+      const res = await fetch(`/api/bookings/${encodeURIComponent(id)}/nudge`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${currentUser.token || currentUser.id}`,
+        },
+      });
+      if (res.ok) {
+        setNudged(true);
+        setTimeout(() => setNudged(false), 3000);
+      }
+    } catch (err: any) {
+      console.error(err);
+    }
+  };
+
+  const selectedTicket = bookings.find((b) => b.id === selectedTicketId) || bookings[0] || null;
+
+  const totalActive = bookings.filter((b) => b.status === 'pending').length;
+  const totalApproved = bookings.filter((b) => b.status === 'approved').length;
 
   return (
     <div className="p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
@@ -43,12 +210,17 @@ export const FacultyRequests: React.FC<FacultyRequestsProps> = ({ currentUser })
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          <button className="px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-2xs">
-            Export Summary
+          <button
+            onClick={fetchBookings}
+            disabled={loading}
+            className="p-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold shadow-2xs flex items-center space-x-1.5 cursor-pointer disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-blue-600' : ''}`} />
+            <span>Refresh</span>
           </button>
           <button
             onClick={() => setShowNewModal(true)}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-sm flex items-center space-x-1.5"
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-sm flex items-center space-x-1.5 cursor-pointer transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>+ Submit New Request</span>
@@ -60,23 +232,23 @@ export const FacultyRequests: React.FC<FacultyRequestsProps> = ({ currentUser })
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs">
           <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">ACTIVE REQUESTS</div>
-          <div className="text-3xl font-black text-slate-900 mt-1">2</div>
-          <div className="text-[11px] text-slate-500 mt-2">In review queue • Under Coordinator / HOD</div>
+          <div className="text-3xl font-black text-slate-900 mt-1">{totalActive}</div>
+          <div className="text-[11px] text-slate-500 mt-2">In review queue • Under Coordinator / Chair</div>
         </div>
 
         <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs">
           <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">APPROVED THIS TERM</div>
-          <div className="text-3xl font-black text-slate-900 mt-1">5</div>
+          <div className="text-3xl font-black text-emerald-600 mt-1">{totalApproved}</div>
           <div className="text-[11px] text-emerald-600 font-semibold mt-2">Resolved tickets • 100% adherence</div>
         </div>
 
         <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">AVG RESOLUTION TIME</div>
+          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">TOTAL REQUISITIONS</div>
           <div className="flex items-baseline space-x-1 mt-1">
-            <span className="text-3xl font-black text-slate-900">3.2</span>
-            <span className="text-xs font-bold text-slate-500">Hours</span>
+            <span className="text-3xl font-black text-slate-900">{bookings.length}</span>
+            <span className="text-xs font-bold text-slate-500">tickets</span>
           </div>
-          <div className="text-[11px] text-blue-600 font-semibold mt-2">Fastest: 18m via Automated SAT</div>
+          <div className="text-[11px] text-blue-600 font-semibold mt-2">All submitted dockets</div>
         </div>
 
         <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs">
@@ -90,168 +262,322 @@ export const FacultyRequests: React.FC<FacultyRequestsProps> = ({ currentUser })
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Tickets */}
         <div className="lg:col-span-5 space-y-3">
-          {/* Ticket 1 */}
-          <div
-            onClick={() => setSelectedTicketId('REQ-8821')}
-            className={`p-4 rounded-2xl border cursor-pointer transition-all ${
-              selectedTicketId === 'REQ-8821'
-                ? 'border-blue-600 bg-white ring-2 ring-blue-500/20 shadow-sm'
-                : 'border-slate-200 bg-white hover:border-slate-300'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">
-                EMERGENCY DISRUPTION
-              </span>
-              <span className="font-mono text-xs font-bold text-slate-400">REQ-8821</span>
+          {bookings.length === 0 ? (
+            <div className="p-8 text-center bg-white border border-slate-200 rounded-2xl text-xs text-slate-500">
+              No tickets submitted yet. Click '+ Submit New Request' to create one.
             </div>
-            <div className="text-xs font-bold text-slate-900 mt-2">
-              Class Reschedule: CS304 Operating Systems Theory
-            </div>
-            <div className="text-[11px] text-slate-500 mt-0.5">Submitted Today, 08:30 AM • Term Slot #14</div>
-            <div className="mt-2.5 p-2 bg-slate-50 rounded-lg text-[10px] space-y-0.5">
-              <div className="text-red-600 font-semibold">Medical emergency: Tue 28 Oct (10:30 – 11:30 AM)</div>
-              <div className="text-blue-700 font-semibold">Proposed: Wed 29 Oct, 02:00 PM (Room B-203)</div>
-            </div>
-            <div className="mt-3 flex items-center justify-between text-[10px] text-slate-400">
-              <span className="text-amber-600 font-semibold">Pending Coordinator Endorsement</span>
-              <span className="font-bold text-blue-600">Inspect →</span>
-            </div>
-          </div>
+          ) : (
+            bookings.map((b) => {
+              const isSelected = selectedTicketId === b.id;
+              const statusColor =
+                b.status === 'approved'
+                  ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
+                  : b.status === 'rejected'
+                  ? 'text-red-700 bg-red-50 border-red-200'
+                  : 'text-amber-700 bg-amber-50 border-amber-200';
 
-          {/* Ticket 2 */}
-          <div
-            onClick={() => setSelectedTicketId('REQ-8804')}
-            className={`p-4 rounded-2xl border cursor-pointer transition-all ${
-              selectedTicketId === 'REQ-8804'
-                ? 'border-blue-600 bg-white ring-2 ring-blue-500/20 shadow-sm'
-                : 'border-slate-200 bg-white hover:border-slate-300'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">
-                DUTY SWAP
-              </span>
-              <span className="font-mono text-xs font-bold text-slate-400">REQ-8804</span>
-            </div>
-            <div className="text-xs font-bold text-slate-900 mt-2">
-              Invigilation Duty Exchange for 02 Nov 2026
-            </div>
-            <div className="text-[11px] text-slate-500 mt-0.5">
-              Swap with Prof. K. Nayak due to overlapping PhD doctoral committee defense.
-            </div>
-            <div className="mt-3 flex items-center justify-between text-[10px] text-slate-400">
-              <span className="text-slate-600 font-semibold">Under HOD Review</span>
-              <span>Target: Hall C-302</span>
-            </div>
-          </div>
-
-          {/* Info Card */}
-          <div className="p-4 bg-linear-to-br from-blue-900 to-indigo-950 text-white rounded-2xl space-y-2 text-xs">
-            <div className="flex items-center space-x-2 font-bold text-blue-200">
-              <ShieldCheck className="w-4 h-4" />
-              <span>Chilika Automated Resolver Active</span>
-            </div>
-            <p className="text-[11px] text-slate-300 leading-relaxed">
-              When requesting alternative slots, our constraint solver guarantees zero student batch clashes across CSE-2A, CSE-2B, and IT electives.
-            </p>
-          </div>
+              return (
+                <div
+                  key={b.id}
+                  onClick={() => setSelectedTicketId(b.id)}
+                  className={`p-4 rounded-2xl border cursor-pointer transition-all ${
+                    isSelected
+                      ? 'border-blue-600 bg-white ring-2 ring-blue-500/20 shadow-sm'
+                      : 'border-slate-200 bg-white hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${statusColor}`}>
+                      {b.status.toUpperCase()}
+                    </span>
+                    <span className="font-mono text-xs font-bold text-slate-400">{b.id}</span>
+                  </div>
+                  <div className="text-xs font-bold text-slate-900 mt-2 line-clamp-1">{b.title}</div>
+                  <div className="text-[11px] text-slate-500 mt-0.5">
+                    Requester: {b.requester} • Att: {b.attendance}
+                  </div>
+                  {b.windows && b.windows[0] && (
+                    <div className="mt-2.5 p-2 bg-slate-50 rounded-lg text-[10px] space-y-0.5">
+                      <div className="text-blue-700 font-semibold">
+                        Slot: {b.windows[0].day} Period {b.windows[0].start_period} ({b.duration_periods} slot)
+                      </div>
+                      {b.allocated_room && (
+                        <div className="text-emerald-700 font-semibold">Allocated Room: {b.allocated_room}</div>
+                      )}
+                    </div>
+                  )}
+                  <div className="mt-3 flex items-center justify-between text-[10px] text-slate-400">
+                    <span className="text-slate-500">{new Date(b.submitted_at).toLocaleDateString()}</span>
+                    <span className="font-bold text-blue-600">Inspect →</span>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
 
-        {/* Right Column: Ticket Inspector */}
+        {/* Right Column: Detail View */}
         <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-5">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <div>
-              <div className="font-mono text-[11px] text-slate-400">REQ-8821 • Created Oct 24, 08:30 AM</div>
-              <h2 className="text-base font-black text-slate-900 mt-0.5">Class Reschedule Details</h2>
-            </div>
-            <span className="text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-full">
-              In Review
-            </span>
-          </div>
-
-          {/* Lifecycle Stepper */}
-          <div className="space-y-2 text-xs">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-              APPROVAL & NOTIFICATION LIFECYCLE
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-start space-x-2.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
+          {selectedTicket ? (
+            <>
+              <div className="flex items-start justify-between pb-3 border-b border-slate-100">
                 <div>
-                  <div className="font-bold text-slate-800">Submitted by Dr. R. Pattnaik</div>
-                  <div className="text-[10px] text-slate-400">Completed • Oct 24, 08:30 AM</div>
+                  <div className="flex items-center space-x-2">
+                    <span className="font-mono font-bold text-sm text-blue-600">{selectedTicket.id}</span>
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                        selectedTicket.status === 'approved'
+                          ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                          : selectedTicket.status === 'rejected'
+                          ? 'bg-red-50 border-red-200 text-red-700'
+                          : 'bg-amber-50 border-amber-200 text-amber-700'
+                      }`}
+                    >
+                      {selectedTicket.status.toUpperCase()}
+                    </span>
+                  </div>
+                  <h2 className="text-base font-black text-slate-900 mt-1">{selectedTicket.title}</h2>
+                  <div className="text-[11px] text-slate-500 mt-0.5">
+                    Submitted on {new Date(selectedTicket.submitted_at).toLocaleString()}
+                  </div>
                 </div>
               </div>
-              <div className="flex items-start space-x-2.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
-                <div>
+
+              {/* Slot Details */}
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase">REQUESTED SLOT & VENUE</span>
                   <div className="font-bold text-slate-800">
-                    AI SAT Solver Validation <span className="text-blue-600 font-semibold">(0 Cohort Clashes)</span>
+                    {selectedTicket.windows && selectedTicket.windows[0]
+                      ? `${selectedTicket.windows[0].day} Period ${selectedTicket.windows[0].start_period}`
+                      : 'Flexible'}
                   </div>
-                  <div className="text-[10px] text-slate-400">Verified automatically • Oct 24, 08:31 AM</div>
+                  <div className="text-[11px] text-slate-600">
+                    Preferred Room: {selectedTicket.requested_room || 'Any suitable'}
+                  </div>
+                  <div className="text-[10px] text-slate-500 pt-1">{selectedTicket.attendance} Students expected</div>
+                </div>
+
+                <div className="p-3 bg-blue-50/60 border border-blue-200 rounded-xl space-y-1">
+                  <span className="text-[10px] font-bold text-blue-700 uppercase">ALLOCATION DECISION</span>
+                  <div className="font-bold text-slate-800">
+                    {selectedTicket.allocated_room
+                      ? `${selectedTicket.allocated_room} on ${selectedTicket.allocated_day}`
+                      : 'Pending Allocation'}
+                  </div>
+                  <div className="text-[11px] text-blue-700 font-semibold">
+                    {selectedTicket.allocated_start_period
+                      ? `Periods ${selectedTicket.allocated_start_period} – ${selectedTicket.allocated_end_period}`
+                      : 'Under review by Chair'}
+                  </div>
+                  {selectedTicket.decision_reason && (
+                    <div className="text-[10px] text-slate-600 pt-1 italic">"{selectedTicket.decision_reason}"</div>
+                  )}
                 </div>
               </div>
-              <div className="flex items-start space-x-2.5">
-                <Clock className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
-                <div>
-                  <div className="font-bold text-amber-800">Coordinator Approval</div>
-                  <div className="text-[10px] text-slate-500">
-                    Pending Soumyajit Mohapatra (Dept. Timetable Chair)
+
+              {/* Requester Statement */}
+              {selectedTicket.raw_text && (
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs space-y-1">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    FACULTY RATIONALE & CONTEXT
                   </div>
+                  <p className="text-[11px] text-slate-600 leading-relaxed">"{selectedTicket.raw_text}"</p>
                 </div>
+              )}
+
+              {/* Action Footer */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100">
+                <div className="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => handleWithdraw(selectedTicket.id)}
+                    className="px-3 py-1.5 bg-white border border-red-200 text-red-600 rounded-lg text-xs font-semibold hover:bg-red-50 cursor-pointer flex items-center space-x-1"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Withdraw Request</span>
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleNudge(selectedTicket.id)}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center space-x-1.5 cursor-pointer"
+                >
+                  <Bell className="w-3.5 h-3.5" />
+                  <span>{nudged ? 'Chair Nudged ✓' : 'Nudge Coordinator'}</span>
+                </button>
               </div>
+            </>
+          ) : (
+            <div className="text-center py-12 text-slate-400 text-xs">
+              Select a ticket to inspect details and actions.
             </div>
-          </div>
-
-          {/* Slot Comparison */}
-          <div className="grid grid-cols-2 gap-3 text-xs">
-            <div className="p-3 bg-red-50/50 border border-red-200 rounded-xl space-y-1">
-              <span className="text-[10px] font-bold text-red-700 uppercase">ORIGINAL SLOT</span>
-              <div className="font-bold text-slate-800">Tuesday, 28 Oct 2026</div>
-              <div className="text-[11px] text-slate-600">10:30 AM – 11:30 AM</div>
-              <div className="text-[10px] text-slate-500 pt-1">Room B-201 • 62 Students</div>
-            </div>
-
-            <div className="p-3 bg-blue-50/60 border border-blue-200 rounded-xl space-y-1">
-              <span className="text-[10px] font-bold text-blue-700 uppercase">REQUESTED ALTERNATIVE</span>
-              <div className="font-bold text-slate-800">Wednesday, 29 Oct 2026</div>
-              <div className="text-[11px] text-blue-700 font-semibold">02:00 PM – 03:00 PM</div>
-              <div className="text-[10px] text-slate-500 pt-1">Room B-203 • Auditorium Wing</div>
-            </div>
-          </div>
-
-          {/* Clinical Context */}
-          <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs space-y-1">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-              FACULTY REASON & CLINICAL CONTEXT
-            </div>
-            <p className="text-[11px] text-slate-600 leading-relaxed">
-              "Medical checkup and diagnostic tests scheduled at Chilika Health Center. All lecture presentations and reference notes for CS304 (Virtual Memory Management) are already published on the portal for asynchronous prep."
-            </p>
-          </div>
-
-          {/* Action Footer */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100">
-            <div className="flex items-center space-x-2">
-              <button className="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-lg text-xs font-semibold hover:bg-slate-50">
-                Withdraw Request
-              </button>
-              <button className="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-lg text-xs font-semibold hover:bg-slate-50">
-                Edit Submission
-              </button>
-            </div>
-
-            <button
-              onClick={() => setNudged(true)}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center space-x-1.5"
-            >
-              <Bell className="w-3.5 h-3.5" />
-              <span>{nudged ? 'Coordinator Nudged ✓' : 'Nudge Coordinator'}</span>
-            </button>
-          </div>
+          )}
         </div>
       </div>
+
+      {/* Submit New Request Modal */}
+      {showNewModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="font-black text-slate-900 text-base flex items-center space-x-2">
+                <Plus className="w-5 h-5 text-blue-600" />
+                <span>Submit Faculty Academic Request</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowNewModal(false)}
+                className="p-1 hover:bg-slate-100 rounded-lg text-slate-400"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {submitError && (
+              <div className="p-3 bg-red-50 border border-red-200 text-red-800 rounded-xl text-xs">
+                {submitError}
+              </div>
+            )}
+
+            <form onSubmit={handleCreateRequest} className="space-y-3 text-xs">
+              <div>
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Title / Subject</label>
+                <input
+                  type="text"
+                  required
+                  value={formTitle}
+                  onChange={(e) => setFormTitle(e.target.value)}
+                  placeholder="e.g. Extra Lab Session: Computer Networks"
+                  className="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-semibold"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Category</label>
+                  <select
+                    value={formCategory}
+                    onChange={(e) => setFormCategory(e.target.value)}
+                    className="w-full mt-1 px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-semibold"
+                  >
+                    <option value="guest_lecture">Guest Lecture / Seminar</option>
+                    <option value="reschedule">Class Reschedule</option>
+                    <option value="remedial">Remedial Session</option>
+                    <option value="duty_swap">Invigilation Swap</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Expected Attendance</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="500"
+                    required
+                    value={formAttendance}
+                    onChange={(e) => setFormAttendance(Number(e.target.value))}
+                    className="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-semibold"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Day</label>
+                  <select
+                    value={formDay}
+                    onChange={(e) => setFormDay(e.target.value)}
+                    className="w-full mt-1 px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-semibold"
+                  >
+                    <option value="MON">Monday</option>
+                    <option value="TUE">Tuesday</option>
+                    <option value="WED">Wednesday</option>
+                    <option value="THU">Thursday</option>
+                    <option value="FRI">Friday</option>
+                    <option value="SAT">Saturday</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Start Period</label>
+                  <select
+                    value={formStartPeriod}
+                    onChange={(e) => setFormStartPeriod(Number(e.target.value))}
+                    className="w-full mt-1 px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-semibold"
+                  >
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((p) => (
+                      <option key={p} value={p}>
+                        Period {p} ({p + 7}:00)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Duration</label>
+                  <select
+                    value={formDuration}
+                    onChange={(e) => setFormDuration(Number(e.target.value))}
+                    className="w-full mt-1 px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-semibold"
+                  >
+                    <option value="1">1 Hour (1 Period)</option>
+                    <option value="2">2 Hours (2 Periods)</option>
+                    <option value="3">3 Hours (3 Periods)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Preferred Room</label>
+                <select
+                  value={formRoom}
+                  onChange={(e) => setFormRoom(e.target.value)}
+                  className="w-full mt-1 px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-semibold"
+                >
+                  <option value="L-301">L-301 (Aud. B)</option>
+                  <option value="L-302">L-302 Lecture Hall</option>
+                  <option value="L-204">L-204 Seminar Room</option>
+                  <option value="Turing-Lab-02">Turing Lab 02</option>
+                  <option value="VLSI-Lab-3">VLSI Micro Lab 3</option>
+                  <option value="Networks-Lab-A">Networks Lab A</option>
+                  <option value="Bose-Hall">Bose Hall</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Reason / Justification</label>
+                <textarea
+                  rows={3}
+                  required
+                  value={formReason}
+                  onChange={(e) => setFormReason(e.target.value)}
+                  placeholder="Provide background, syllabus rationale, or student consensus..."
+                  className="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs"
+                />
+              </div>
+
+              <div className="flex items-center justify-end space-x-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowNewModal(false)}
+                  className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl text-xs font-semibold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitLoading}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-sm cursor-pointer disabled:opacity-50"
+                >
+                  {submitLoading ? 'Submitting...' : 'Submit to Registry'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

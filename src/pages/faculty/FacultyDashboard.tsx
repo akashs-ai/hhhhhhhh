@@ -22,32 +22,97 @@ interface FacultyDashboardProps {
   onNavigateTab: (tab: string) => void;
 }
 
+import { googleSignIn, getGoogleAccessToken, googleSignOut } from '../../services/googleAuth';
+
 export const FacultyDashboard: React.FC<FacultyDashboardProps> = ({
   currentUser,
   onNavigateTab,
 }) => {
   const [attendanceStarted, setAttendanceStarted] = useState(false);
   const [calendarSyncing, setCalendarSyncing] = useState(false);
-  const [syncFeedback, setSyncFeedback] = useState<string | null>(null);
+  const [syncFeedback, setSyncFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [calendarConn, setCalendarConn] = useState<{
+    connected: boolean;
+    email: string | null;
+    last_synced_at: string | null;
+    events_synced: number;
+  }>({ connected: false, email: null, last_synced_at: null, events_synced: 0 });
+
+  React.useEffect(() => {
+    fetch('/api/calendar/status', {
+      headers: { Authorization: `Bearer ${currentUser.token || currentUser.id}` },
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.success && data.connection) {
+          setCalendarConn(data.connection);
+        }
+      })
+      .catch(() => {});
+  }, [currentUser]);
 
   const handleSyncCalendar = async () => {
     setCalendarSyncing(true);
     setSyncFeedback(null);
     try {
+      let gToken = getGoogleAccessToken();
+      if (!calendarConn.connected || !gToken) {
+        const authRes = await googleSignIn();
+        if (authRes) {
+          gToken = authRes.accessToken;
+          await fetch('/api/calendar/connect', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${currentUser.token || currentUser.id}`,
+            },
+            body: JSON.stringify({
+              googleEmail: authRes.user.email,
+              calendarId: 'primary',
+              googleAccessToken: gToken,
+            }),
+          });
+          setCalendarConn((prev) => ({ ...prev, connected: true, email: authRes.user.email }));
+        } else {
+          setSyncFeedback({
+            type: 'error',
+            text: 'Google authorization window was closed.',
+          });
+          setCalendarSyncing(false);
+          return;
+        }
+      }
+
       const res = await fetch('/api/calendar/sync', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${currentUser.token}`,
+          Authorization: `Bearer ${currentUser.token || currentUser.id}`,
+          'X-Google-Token': gToken || '',
         },
+        body: JSON.stringify({
+          googleAccessToken: gToken,
+        }),
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
         throw new Error(data.error?.message || 'Google Workspace calendar sync error.');
       }
-      setSyncFeedback(`Synchronized: ${data.events_synced} events updated.`);
+      setCalendarConn((prev) => ({
+        ...prev,
+        connected: true,
+        last_synced_at: data.last_synced_at,
+        events_synced: data.events_synced,
+      }));
+      setSyncFeedback({
+        type: 'success',
+        text: `Synchronized: ${data.events_synced} faculty timetable events to Google Calendar.`,
+      });
     } catch (err: any) {
-      setSyncFeedback(err.message || 'Sync encountered an error.');
+      setSyncFeedback({
+        type: 'error',
+        text: err.message || 'Sync encountered an error.',
+      });
     } finally {
       setCalendarSyncing(false);
     }
@@ -303,26 +368,55 @@ export const FacultyDashboard: React.FC<FacultyDashboardProps> = ({
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2 font-bold text-slate-800">
                 <Calendar className="w-4 h-4 text-blue-600" />
-                <span>Calendar Integration</span>
+                <span>Google Calendar</span>
               </div>
-              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
-                Connected ✓
+              <span
+                className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                  calendarConn.connected
+                    ? 'text-emerald-700 bg-emerald-50 border border-emerald-200'
+                    : 'text-slate-600 bg-slate-100 border border-slate-200'
+                }`}
+              >
+                {calendarConn.connected ? 'Connected ✓' : 'Not Connected'}
               </span>
             </div>
             <div className="p-2.5 bg-slate-50 rounded-xl text-[11px] text-slate-600">
-              Synced: <strong>dr.pattnaik@cit.ac.in</strong> • Last: Today, 10:45 AM
+              {calendarConn.connected ? (
+                <span>
+                  Linked: <strong>{calendarConn.email || currentUser.email}</strong>
+                  {calendarConn.last_synced_at && (
+                    <span className="block text-[10px] text-slate-400 mt-0.5">
+                      Last sync: {new Date(calendarConn.last_synced_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} ({calendarConn.events_synced} sessions)
+                    </span>
+                  )}
+                </span>
+              ) : (
+                'Link Google account to push faculty classes & invigilations directly to Google Calendar.'
+              )}
             </div>
             <button
               onClick={handleSyncCalendar}
               disabled={calendarSyncing}
-              className="w-full py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl font-bold text-xs transition-colors flex items-center justify-center space-x-1.5 cursor-pointer disabled:opacity-50"
+              className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs transition-colors flex items-center justify-center space-x-1.5 cursor-pointer disabled:opacity-50 shadow-2xs"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${calendarSyncing ? 'animate-spin' : ''}`} />
-              <span>{calendarSyncing ? 'Synchronizing with Google Workspace...' : 'Sync Schedule Now'}</span>
+              <span>
+                {calendarSyncing
+                  ? 'Synchronizing with Google...'
+                  : calendarConn.connected
+                  ? 'Sync Schedule Now'
+                  : 'Connect & Sync Google Calendar'}
+              </span>
             </button>
             {syncFeedback && (
-              <div className="p-2 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-lg text-[11px] font-semibold text-center">
-                {syncFeedback}
+              <div
+                className={`p-2 rounded-lg text-[11px] font-semibold text-center border ${
+                  syncFeedback.type === 'success'
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                    : 'bg-red-50 text-red-800 border-red-200'
+                }`}
+              >
+                {syncFeedback.text}
               </div>
             )}
             <button

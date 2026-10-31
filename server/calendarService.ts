@@ -68,6 +68,7 @@ export interface GoogleCalendarEventModel {
       citDay: string;
       citStartPeriod: number;
       citRoomId: string;
+      citFacultyId?: string;
     };
   };
 }
@@ -264,6 +265,7 @@ export class CalendarService {
               citDay: item.day,
               citStartPeriod: item.start_period,
               citRoomId: item.room_id,
+              citFacultyId: meta.faculty_id,
             },
           },
         });

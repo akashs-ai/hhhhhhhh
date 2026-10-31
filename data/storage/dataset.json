@@ -5555,6 +5555,46 @@
       "needs_accessible": false,
       "basket_slot": "OEB-3",
       "fixed_slot": null
+    },
+    {
+      "id": "CS_AUTO_1793477218073",
+      "course_id": "CS-777",
+      "kind": "theory",
+      "duration": 2,
+      "faculty_id": "F01",
+      "groups": [
+        "CSE-3"
+      ]
+    },
+    {
+      "id": "CS_AUTO_1793477248775",
+      "course_id": "CS-777",
+      "kind": "theory",
+      "duration": 2,
+      "faculty_id": "F01",
+      "groups": [
+        "CSE-3"
+      ]
+    },
+    {
+      "id": "CS_AUTO_1793477352991",
+      "course_id": "CS-777",
+      "kind": "theory",
+      "duration": 2,
+      "faculty_id": "F01",
+      "groups": [
+        "CSE-3"
+      ]
+    },
+    {
+      "id": "CS_AUTO_1793478314934",
+      "course_id": "CS-777",
+      "kind": "theory",
+      "duration": 2,
+      "faculty_id": "F01",
+      "groups": [
+        "CSE-3"
+      ]
     }
   ],
   "booking_requests": [

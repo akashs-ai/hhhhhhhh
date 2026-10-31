@@ -64,6 +64,36 @@ router.get('/timetable', async (req: AuthenticatedRequest, res: Response) => {
     };
   });
 
+  // Also include approved venue booking events when requested
+  if (req.query.include_bookings === 'true') {
+    const allBookings = await storage.getAllBookings();
+    const approvedBookings = Object.values(allBookings).filter(
+      (b) => b.status === 'approved' && b.allocated_room && b.allocated_day && b.allocated_start_period
+    );
+    for (const b of approvedBookings) {
+      const rm: any = roomsMeta.get(b.allocated_room!) || {};
+      const dur = (b.allocated_end_period || b.allocated_start_period!) - b.allocated_start_period! + 1;
+      filteredSessions.push({
+        session_id: `booking-${b.id}`,
+        day: b.allocated_day!,
+        start_period: b.allocated_start_period!,
+        duration: dur,
+        end_period: b.allocated_end_period || b.allocated_start_period!,
+        room_id: b.allocated_room!,
+        room_name: rm.name || b.allocated_room!,
+        room_type: rm.type || 'seminar_hall',
+        course_id: b.title,
+        kind: b.effective_category || 'booking',
+        groups: b.mandatory_for_groups || [],
+        faculty_id: b.requester,
+        faculty_name: b.requester,
+        size: b.attendance,
+        basket_slot: null,
+        needs_accessible: false,
+      });
+    }
+  }
+
   if (groupFilter) {
     filteredSessions = filteredSessions.filter((s) => s.groups.includes(groupFilter));
   }
@@ -288,5 +318,310 @@ router.post('/timetable/:id/approve', requireRole('admin'), async (req: Authenti
     data: { id: promoted.id, status: promoted.status, approved_at: promoted.approved_at },
   });
 });
+
+// POST /api/timetable/sessions - Create an academic timetable session
+router.post(
+  '/timetable/sessions',
+  requireRole('admin', 'department_coordinator'),
+  async (req: AuthenticatedRequest, res: Response) => {
+    const {
+      course_id,
+      kind = 'theory',
+      day,
+      start_period,
+      duration = 1,
+      room_id,
+      faculty_id,
+      groups = [],
+      force = false,
+    } = req.body;
+
+    if (!course_id || !day || !start_period || !room_id || !faculty_id) {
+      res.status(400).json({
+        success: false,
+        error: {
+          code: 'INVALID_INPUT',
+          message: 'Missing required session fields: course_id, day, start_period, room_id, faculty_id',
+        },
+      });
+      return;
+    }
+
+    const schedule = await storage.getApprovedSchedule();
+    if (!schedule) {
+      res.status(404).json({
+        success: false,
+        error: { code: 'NO_APPROVED_SCHEDULE', message: 'No approved schedule available to add sessions to.' },
+      });
+      return;
+    }
+
+    const dataset = await storage.getDataset();
+    const sessionsMeta = new Map((dataset.sessions || []).map((s: any) => [s.id, s]));
+
+    const numStart = Number(start_period);
+    const numDur = Number(duration) || 1;
+    const numEnd = numStart + numDur - 1;
+
+    // Detect conflicts against existing sessions in schedule
+    const conflicts: string[] = [];
+    for (const item of schedule.sessions) {
+      if (item.day !== day) continue;
+
+      const meta: any = sessionsMeta.get(item.session_id) || {};
+      const itemStart = item.start_period;
+      const itemEnd = itemStart + (meta.duration || 1) - 1;
+
+      const overlaps = Math.max(numStart, itemStart) <= Math.min(numEnd, itemEnd);
+      if (!overlaps) continue;
+
+      if (item.room_id === room_id) {
+        conflicts.push(`Room collision: Room '${room_id}' is already occupied by session '${item.session_id}' (${meta.course_id || 'Class'}) on ${day} period ${itemStart}-${itemEnd}.`);
+      }
+
+      if (meta.faculty_id && meta.faculty_id === faculty_id) {
+        conflicts.push(`Faculty collision: Faculty '${faculty_id}' is already teaching session '${item.session_id}' (${meta.course_id || 'Class'}) on ${day} period ${itemStart}-${itemEnd}.`);
+      }
+
+      const overlappingGroups = (groups || []).filter((g: string) => (meta.groups || []).includes(g));
+      if (overlappingGroups.length > 0) {
+        conflicts.push(`Cohort collision: Group(s) ${overlappingGroups.join(', ')} already have class '${item.session_id}' on ${day} period ${itemStart}-${itemEnd}.`);
+      }
+    }
+
+    if (conflicts.length > 0 && !force) {
+      res.status(409).json({
+        success: false,
+        error: {
+          code: 'SCHEDULE_CONFLICT',
+          message: `Cannot schedule session due to ${conflicts.length} clash(es).`,
+          conflicts,
+        },
+      });
+      return;
+    }
+
+    const newSessionId = req.body.session_id || `${course_id}_${day}_P${numStart}_${Date.now().toString(36).slice(-4)}`;
+
+    schedule.sessions.push({
+      session_id: newSessionId,
+      day,
+      start_period: numStart,
+      room_id,
+    });
+
+    if (!dataset.sessions) dataset.sessions = [];
+    dataset.sessions.push({
+      id: newSessionId,
+      course_id,
+      kind,
+      duration: numDur,
+      faculty_id,
+      groups: Array.isArray(groups) ? groups : [groups],
+    });
+
+    await storage.saveSchedule(schedule);
+    await storage.saveDataset(dataset);
+
+    await storage.logAudit({
+      user_id: req.user!.id,
+      user_name: req.user!.name,
+      role: req.user!.role,
+      action: 'CREATE_TIMETABLE_SESSION',
+      resource_type: 'timetable',
+      resource_id: newSessionId,
+      details: { day, start_period: numStart, duration: numDur, room_id, faculty_id, course_id },
+      status: 'success',
+    });
+
+    res.status(201).json({
+      success: true,
+      message: `Session '${newSessionId}' created successfully in master timetable.`,
+      session: {
+        session_id: newSessionId,
+        course_id,
+        kind,
+        day,
+        start_period: numStart,
+        duration: numDur,
+        room_id,
+        faculty_id,
+        groups,
+      },
+    });
+  }
+);
+
+// PUT /api/timetable/sessions/:id - Update an academic timetable session
+router.put(
+  '/timetable/sessions/:id',
+  requireRole('admin', 'department_coordinator'),
+  async (req: AuthenticatedRequest, res: Response) => {
+    const sid = req.params.id;
+    const { day, start_period, duration, room_id, faculty_id, groups, force = false } = req.body;
+
+    const schedule = await storage.getApprovedSchedule();
+    if (!schedule) {
+      res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'No approved schedule available' } });
+      return;
+    }
+
+    const sessionIndex = schedule.sessions.findIndex((s) => s.session_id === sid);
+    if (sessionIndex === -1) {
+      res.status(404).json({ success: false, error: { code: 'SESSION_NOT_FOUND', message: `Session '${sid}' not found in timetable` } });
+      return;
+    }
+
+    const dataset = await storage.getDataset();
+    const metaIndex = (dataset.sessions || []).findIndex((s: any) => s.id === sid);
+    const existingMeta = metaIndex >= 0 ? dataset.sessions[metaIndex] : {};
+
+    const targetDay = day || schedule.sessions[sessionIndex].day;
+    const targetStart = start_period !== undefined ? Number(start_period) : schedule.sessions[sessionIndex].start_period;
+    const targetDuration = duration !== undefined ? Number(duration) : (existingMeta.duration || 1);
+    const targetRoom = room_id || schedule.sessions[sessionIndex].room_id;
+    const targetFaculty = faculty_id || existingMeta.faculty_id;
+    const targetGroups = groups || existingMeta.groups || [];
+
+    const numEnd = targetStart + targetDuration - 1;
+
+    // Conflict check against other sessions
+    const conflicts: string[] = [];
+    const sessionsMeta = new Map((dataset.sessions || []).map((s: any) => [s.id, s]));
+
+    for (const item of schedule.sessions) {
+      if (item.session_id === sid) continue;
+      if (item.day !== targetDay) continue;
+
+      const meta: any = sessionsMeta.get(item.session_id) || {};
+      const itemStart = item.start_period;
+      const itemEnd = itemStart + (meta.duration || 1) - 1;
+
+      const overlaps = Math.max(targetStart, itemStart) <= Math.min(numEnd, itemEnd);
+      if (!overlaps) continue;
+
+      if (item.room_id === targetRoom) {
+        conflicts.push(`Room collision with session '${item.session_id}' in room '${targetRoom}'.`);
+      }
+      if (meta.faculty_id && meta.faculty_id === targetFaculty) {
+        conflicts.push(`Faculty collision with session '${item.session_id}' for faculty '${targetFaculty}'.`);
+      }
+      const overlappingGroups = (targetGroups || []).filter((g: string) => (meta.groups || []).includes(g));
+      if (overlappingGroups.length > 0) {
+        conflicts.push(`Cohort collision with session '${item.session_id}' for group(s) ${overlappingGroups.join(', ')}.`);
+      }
+    }
+
+    if (conflicts.length > 0 && !force) {
+      res.status(409).json({
+        success: false,
+        error: {
+          code: 'SCHEDULE_CONFLICT',
+          message: `Cannot update session due to ${conflicts.length} clash(es).`,
+          conflicts,
+        },
+      });
+      return;
+    }
+
+    schedule.sessions[sessionIndex].day = targetDay;
+    schedule.sessions[sessionIndex].start_period = targetStart;
+    schedule.sessions[sessionIndex].room_id = targetRoom;
+
+    if (metaIndex >= 0) {
+      dataset.sessions[metaIndex].duration = targetDuration;
+      if (faculty_id) dataset.sessions[metaIndex].faculty_id = targetFaculty;
+      if (groups) dataset.sessions[metaIndex].groups = targetGroups;
+    }
+
+    await storage.saveSchedule(schedule);
+    await storage.saveDataset(dataset);
+
+    await storage.logAudit({
+      user_id: req.user!.id,
+      user_name: req.user!.name,
+      role: req.user!.role,
+      action: 'UPDATE_TIMETABLE_SESSION',
+      resource_type: 'timetable',
+      resource_id: sid,
+      details: { day: targetDay, start_period: targetStart, room_id: targetRoom, faculty_id: targetFaculty },
+      status: 'success',
+    });
+
+    res.json({
+      success: true,
+      message: `Session '${sid}' updated successfully.`,
+      session: {
+        session_id: sid,
+        day: targetDay,
+        start_period: targetStart,
+        duration: targetDuration,
+        room_id: targetRoom,
+        faculty_id: targetFaculty,
+        groups: targetGroups,
+      },
+    });
+  }
+);
+
+// DELETE /api/timetable/sessions/:id - Delete an academic timetable session
+router.delete(
+  '/timetable/sessions/:id',
+  requireRole('admin', 'department_coordinator'),
+  async (req: AuthenticatedRequest, res: Response) => {
+    const sid = req.params.id;
+    const schedule = await storage.getApprovedSchedule();
+    if (!schedule) {
+      res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'No approved schedule available' } });
+      return;
+    }
+
+    const sessionIndex = schedule.sessions.findIndex((s) => s.session_id === sid);
+    if (sessionIndex === -1) {
+      res.status(404).json({ success: false, error: { code: 'SESSION_NOT_FOUND', message: `Session '${sid}' not found in timetable` } });
+      return;
+    }
+
+    schedule.sessions.splice(sessionIndex, 1);
+    await storage.saveSchedule(schedule);
+
+    // If Google token is present and event is mapped, delete remote Google Calendar event
+    const googleAccessToken =
+      (req.headers['x-google-token'] as string) ||
+      (req.headers['x-google-access-token'] as string);
+
+    if (googleAccessToken) {
+      const syncData = await storage.getCalendarSyncData();
+      const googleEventId = syncData.event_mappings?.[sid];
+      if (googleEventId) {
+        try {
+          const { GoogleCalendarSyncService } = await import('../googleCalendarSync.js');
+          await GoogleCalendarSyncService.deleteEvent({
+            accessToken: googleAccessToken,
+            googleEventId,
+          });
+          delete syncData.event_mappings[sid];
+          await storage.saveCalendarSyncData(syncData);
+        } catch (_) {}
+      }
+    }
+
+    await storage.logAudit({
+      user_id: req.user!.id,
+      user_name: req.user!.name,
+      role: req.user!.role,
+      action: 'DELETE_TIMETABLE_SESSION',
+      resource_type: 'timetable',
+      resource_id: sid,
+      status: 'success',
+    });
+
+    res.json({
+      success: true,
+      message: `Session '${sid}' deleted from timetable.`,
+      deleted_session_id: sid,
+    });
+  }
+);
 
 export default router;

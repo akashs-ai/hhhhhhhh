@@ -108,10 +108,12 @@ router.get('/calendar/status', requireAuth, async (req: AuthenticatedRequest, re
   const connection = syncData.connections[targetUserId] || {
     connected: false,
     calendar_id: null,
-    sync_status: 'idle',
+    sync_status: 'not_connected',
     last_synced_version: null,
     last_synced_at: null,
-    note: 'Live Google Calendar synchronization will be activated in Calendar milestone.',
+    events_synced: 0,
+    email: null,
+    note: 'Google Calendar not connected. Click Connect Google Calendar to link account.',
   };
 
   res.json({
@@ -119,6 +121,108 @@ router.get('/calendar/status', requireAuth, async (req: AuthenticatedRequest, re
     user_id: targetUserId,
     user_role: req.user!.role,
     connection,
+  });
+});
+
+// POST /api/calendar/connect - Link authenticated Google account
+router.post('/calendar/connect', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  const { googleEmail, calendarId = 'primary', googleAccessToken } = req.body;
+
+  let verifiedEmail = googleEmail || null;
+  if (googleAccessToken) {
+    const { GoogleCalendarSyncService } = await import('../googleCalendarSync.js');
+    const tokenInfo = await GoogleCalendarSyncService.validateToken(googleAccessToken);
+    if (!tokenInfo.valid) {
+      res.status(401).json({
+        success: false,
+        error: {
+          code: 'INVALID_GOOGLE_TOKEN',
+          message: tokenInfo.error || 'The provided Google OAuth access token could not be verified.',
+        },
+      });
+      return;
+    }
+    if (tokenInfo.email) {
+      verifiedEmail = tokenInfo.email;
+    } else {
+      try {
+        const calRes = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary', {
+          headers: { Authorization: `Bearer ${googleAccessToken}` },
+        });
+        if (calRes.ok) {
+          const calData = await calRes.json();
+          verifiedEmail = calData.id || verifiedEmail;
+        }
+      } catch (_) {}
+    }
+  }
+
+  const syncData = await storage.getCalendarSyncData();
+  const now = new Date().toISOString();
+  const finalEmail = verifiedEmail || (req.body.googleEmail ? req.body.googleEmail : null);
+
+  syncData.connections[req.user!.id] = {
+    connected: true,
+    email: finalEmail,
+    calendar_id: calendarId,
+    sync_status: 'idle',
+    last_synced_version: syncData.connections[req.user!.id]?.last_synced_version || null,
+    last_synced_at: syncData.connections[req.user!.id]?.last_synced_at || null,
+    events_synced: syncData.connections[req.user!.id]?.events_synced || 0,
+    connected_at: now,
+    note: finalEmail ? `Google Calendar linked for ${finalEmail}` : 'Google Calendar linked.',
+  };
+
+  await storage.saveCalendarSyncData(syncData);
+
+  await storage.logAudit({
+    user_id: req.user!.id,
+    user_name: req.user!.name,
+    role: req.user!.role,
+    action: 'CALENDAR_CONNECTED',
+    resource_type: 'calendar',
+    resource_id: calendarId,
+    details: { email: verifiedEmail },
+    status: 'success',
+  });
+
+  res.json({
+    success: true,
+    message: 'Google Calendar linked successfully.',
+    connection: syncData.connections[req.user!.id],
+  });
+});
+
+// POST /api/calendar/disconnect - Unlink Google account
+router.post('/calendar/disconnect', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  const syncData = await storage.getCalendarSyncData();
+
+  syncData.connections[req.user!.id] = {
+    connected: false,
+    email: null,
+    calendar_id: null,
+    sync_status: 'disconnected',
+    last_synced_version: null,
+    last_synced_at: null,
+    events_synced: 0,
+    disconnected_at: new Date().toISOString(),
+    note: 'Account disconnected by user.',
+  };
+
+  await storage.saveCalendarSyncData(syncData);
+
+  await storage.logAudit({
+    user_id: req.user!.id,
+    user_name: req.user!.name,
+    role: req.user!.role,
+    action: 'CALENDAR_DISCONNECTED',
+    resource_type: 'calendar',
+    status: 'success',
+  });
+
+  res.json({
+    success: true,
+    message: 'Google Calendar disconnected successfully.',
   });
 });
 
@@ -166,7 +270,10 @@ router.get('/calendar/ics', async (req: AuthenticatedRequest, res: Response) => 
 router.post('/calendar/sync', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   const schedule = await storage.getApprovedSchedule();
   if (!schedule) {
-    res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'No approved schedule available to synchronize.' } });
+    res.status(400).json({
+      success: false,
+      error: { code: 'NO_APPROVED_SCHEDULE', message: 'Safety constraint: Only approved schedule versions can be synchronized with Google Calendar.' },
+    });
     return;
   }
 
@@ -178,6 +285,12 @@ router.post('/calendar/sync', requireAuth, async (req: AuthenticatedRequest, res
     effectiveFaculty = (req.body.faculty as string) || effectiveFaculty;
   }
 
+  // Check Google token: from body, or X-Google-Token / X-Google-Access-Token header
+  const googleAccessToken =
+    (req.body.googleAccessToken as string) ||
+    (req.headers['x-google-token'] as string) ||
+    (req.headers['x-google-access-token'] as string);
+
   try {
     const events = await CalendarService.generateCalendarEvents(schedule, {
       studentGroupId: effectiveGroup,
@@ -185,16 +298,112 @@ router.post('/calendar/sync', requireAuth, async (req: AuthenticatedRequest, res
     });
 
     const syncData = await storage.getCalendarSyncData();
+    const existingMappings = syncData.event_mappings || {};
     const now = new Date().toISOString();
 
+    let pushStats = {
+      totalEvents: events.length,
+      created: googleAccessToken ? 0 : events.length,
+      updated: 0,
+      deleted: 0,
+      skipped: 0,
+      errors: [] as any[],
+    };
+
+    let pulledStats = {
+      total: 0,
+      managed: 0,
+      personal: 0,
+      conflicts: 0,
+    };
+
+    let personalEvents: any[] = [];
+    let conflicts: any[] = [];
+    let verifiedTokenEmail: string | null = null;
+
+    if (googleAccessToken) {
+      // Execute live Google Calendar REST API bidirectional sync
+      const { GoogleCalendarSyncService } = await import('../googleCalendarSync.js');
+
+      // Verify token
+      const tokenInfo = await GoogleCalendarSyncService.validateToken(googleAccessToken);
+      if (!tokenInfo.valid) {
+        res.status(401).json({
+          success: false,
+          error: {
+            code: 'GOOGLE_AUTH_EXPIRED',
+            message: tokenInfo.error || 'Your Google account session has expired. Please re-authenticate.',
+          },
+        });
+        return;
+      }
+      verifiedTokenEmail = tokenInfo.email || null;
+
+      const bidiResult = await GoogleCalendarSyncService.syncBidirectional({
+        accessToken: googleAccessToken,
+        calendarId: syncData.connections[req.user!.id]?.calendar_id || 'primary',
+        events,
+        existingMappings,
+      });
+
+      pushStats = {
+        totalEvents: bidiResult.pushed.totalEvents,
+        created: bidiResult.pushed.created,
+        updated: bidiResult.pushed.updated,
+        deleted: bidiResult.pushed.deleted,
+        skipped: bidiResult.pushed.skipped,
+        errors: bidiResult.pushed.errors,
+      };
+
+      pulledStats = bidiResult.pulled;
+      personalEvents = bidiResult.personalEvents;
+      conflicts = bidiResult.conflicts;
+
+      // Update mappings and personal events in storage
+      syncData.event_mappings = bidiResult.eventMappings;
+      if (!(syncData as any).personal_events) (syncData as any).personal_events = {};
+      (syncData as any).personal_events[req.user!.id] = personalEvents;
+      if (!(syncData as any).conflicts) (syncData as any).conflicts = {};
+      (syncData as any).conflicts[req.user!.id] = conflicts;
+    }
+
+    const totalSynced = pushStats.created + pushStats.updated;
+    const hasPushErrors = pushStats.errors.length > 0;
+
+    // Guard against reporting false success when all events fail
+    if (googleAccessToken && hasPushErrors && totalSynced === 0 && pulledStats.total === 0) {
+      res.status(502).json({
+        success: false,
+        error: {
+          code: 'GOOGLE_CALENDAR_SYNC_FAILED',
+          message: `Failed to synchronize events with Google Calendar: ${pushStats.errors[0]?.error || 'Unknown error'}`,
+        },
+        details: {
+          created: 0,
+          updated: 0,
+          errors: pushStats.errors,
+        },
+      });
+      return;
+    }
+
+    // Update connection record
     syncData.connections[req.user!.id] = {
       connected: true,
-      calendar_id: `primary`,
-      sync_status: 'synced',
+      email: syncData.connections[req.user!.id]?.email || verifiedTokenEmail,
+      calendar_id: syncData.connections[req.user!.id]?.calendar_id || 'primary',
+      sync_status: hasPushErrors ? 'partial' : 'synced',
       last_synced_version: schedule.id,
       last_synced_at: now,
-      events_synced: events.length,
-      note: 'Institutional Google Calendar synchronization active.',
+      events_synced: totalSynced,
+      last_result: {
+        created: pushStats.created,
+        updated: pushStats.updated,
+        deleted: pushStats.deleted,
+        errors: pushStats.errors,
+        pulled: pulledStats,
+      },
+      note: `Synchronized ${totalSynced} events (${pushStats.created} new, ${pushStats.updated} updated) and pulled ${pulledStats.personal} personal items.`,
     };
 
     await storage.saveCalendarSyncData(syncData);
@@ -207,16 +416,27 @@ router.post('/calendar/sync', requireAuth, async (req: AuthenticatedRequest, res
       resource_type: 'calendar',
       resource_id: schedule.id,
       details: {
-        events_synced: events.length,
+        events_synced: totalSynced,
+        live_google_api: Boolean(googleAccessToken),
         user: req.user!.email,
+        conflicts_count: conflicts.length,
       },
-      status: 'success',
+      status: hasPushErrors ? 'failure' : 'success',
     });
 
     res.json({
       success: true,
-      message: `Successfully synchronized ${events.length} timetable events to institutional Google Workspace Calendar.`,
-      events_synced: events.length,
+      message: `Synchronized ${totalSynced} timetable events with Google Calendar.`,
+      events_synced: totalSynced,
+      details: {
+        created: pushStats.created,
+        updated: pushStats.updated,
+        deleted: pushStats.deleted,
+        errors: pushStats.errors,
+        pulled: pulledStats,
+      },
+      personal_events: personalEvents,
+      conflicts,
       last_synced_at: now,
       schedule_version: schedule.id,
     });
@@ -225,5 +445,49 @@ router.post('/calendar/sync', requireAuth, async (req: AuthenticatedRequest, res
   }
 });
 
+// GET /api/calendar/events - Fetch combined calendar events (approved timetable + personal overlay)
+router.get('/calendar/events', async (req: AuthenticatedRequest, res: Response) => {
+  const schedule = await storage.getApprovedSchedule();
+  if (!schedule) {
+    res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'No approved schedule available.' } });
+    return;
+  }
+
+  const groupFilter = req.query.group as string | undefined;
+  const facultyFilter = req.query.faculty as string | undefined;
+
+  let effectiveGroup = groupFilter;
+  let effectiveFaculty = facultyFilter;
+
+  if (req.user?.role === 'student') {
+    effectiveGroup = req.user.studentGroupId;
+  } else if (req.user?.role === 'faculty') {
+    effectiveFaculty = req.user.facultyId;
+  }
+
+  try {
+    const events = await CalendarService.generateCalendarEvents(schedule, {
+      studentGroupId: effectiveGroup,
+      facultyId: effectiveFaculty,
+    });
+
+    const syncData = await storage.getCalendarSyncData() as any;
+    const personalEvents = req.user ? (syncData.personal_events?.[req.user.id] || []) : [];
+    const conflicts = req.user ? (syncData.conflicts?.[req.user.id] || []) : [];
+
+    res.json({
+      success: true,
+      count: events.length,
+      schedule_version: schedule.id,
+      events,
+      personal_events: personalEvents,
+      conflicts,
+    });
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: { code: 'EVENTS_ERROR', message: err.message } });
+  }
+});
+
 export default router;
+
 

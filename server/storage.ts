@@ -336,6 +336,14 @@ export class StorageManager implements IStorage {
     this.writeJsonAtomic(this.bookingsFile, bookings);
   }
 
+  public async deleteBooking(id: string): Promise<boolean> {
+    const all = await this.getAllBookings();
+    if (!all[id]) return false;
+    delete all[id];
+    this.writeJsonAtomic(this.bookingsFile, all);
+    return true;
+  }
+
   // --- DISRUPTIONS ---
   public async getAllDisruptions(): Promise<Record<string, DisruptionRecord>> {
     return this.readJson<Record<string, DisruptionRecord>>(this.disruptionsFile, {});

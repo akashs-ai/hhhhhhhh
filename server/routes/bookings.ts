@@ -264,7 +264,7 @@ router.post('/bookings', requireAuth, async (req: AuthenticatedRequest, res: Res
   });
 });
 
-router.post('/bookings/:id/decision', requireRole('admin'), async (req: AuthenticatedRequest, res: Response) => {
+router.post('/bookings/:id/decision', requireRole('admin', 'department_coordinator'), async (req: AuthenticatedRequest, res: Response) => {
   const booking = await storage.getBookingById(req.params.id);
   if (!booking) {
     res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: `Booking ${req.params.id} not found` } });
@@ -366,7 +366,7 @@ router.post('/bookings/:id/decision', requireRole('admin'), async (req: Authenti
   });
 });
 
-router.post('/bookings/:id/approve', requireRole('admin'), async (req: AuthenticatedRequest, res: Response) => {
+router.post('/bookings/:id/approve', requireRole('admin', 'department_coordinator'), async (req: AuthenticatedRequest, res: Response) => {
   req.body.status = 'approved';
   // Forward to decision handler
   const booking = await storage.getBookingById(req.params.id);
@@ -389,6 +389,11 @@ router.post('/bookings/:id/approve', requireRole('admin'), async (req: Authentic
   booking.decided_by = req.user!.id;
   booking.decided_at = new Date().toISOString();
 
+  if (req.body.room_id) booking.allocated_room = req.body.room_id;
+  if (req.body.day) booking.allocated_day = req.body.day;
+  if (req.body.start_period) booking.allocated_start_period = Number(req.body.start_period);
+  if (req.body.end_period) booking.allocated_end_period = Number(req.body.end_period);
+
   await storage.saveBooking(booking);
   await storage.logAudit({
     user_id: req.user!.id,
@@ -403,7 +408,7 @@ router.post('/bookings/:id/approve', requireRole('admin'), async (req: Authentic
   res.json({ success: true, message: `Booking ${booking.id} approved.`, data: booking });
 });
 
-router.post('/bookings/:id/reject', requireRole('admin'), async (req: AuthenticatedRequest, res: Response) => {
+router.post('/bookings/:id/reject', requireRole('admin', 'department_coordinator'), async (req: AuthenticatedRequest, res: Response) => {
   const booking = await storage.getBookingById(req.params.id);
   if (!booking) {
     res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: `Booking ${req.params.id} not found` } });
@@ -436,6 +441,63 @@ router.post('/bookings/:id/reject', requireRole('admin'), async (req: Authentica
   });
 
   res.json({ success: true, message: `Booking ${booking.id} rejected.`, data: booking });
+});
+
+// DELETE /api/bookings/:id - Withdraw or cancel a booking request
+router.delete('/bookings/:id', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  const booking = await storage.getBookingById(req.params.id);
+  if (!booking) {
+    res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: `Booking ${req.params.id} not found` } });
+    return;
+  }
+
+  // Only creator or admin can delete/withdraw
+  if (booking.created_by !== req.user!.id && req.user!.role !== 'admin') {
+    res.status(403).json({
+      success: false,
+      error: { code: 'UNAUTHORIZED_WITHDRAWAL', message: 'You can only withdraw booking requests that you created.' },
+    });
+    return;
+  }
+
+  await storage.deleteBooking(booking.id);
+  await storage.logAudit({
+    user_id: req.user!.id,
+    user_name: req.user!.name,
+    role: req.user!.role,
+    action: 'BOOKING_WITHDRAWN',
+    resource_type: 'booking',
+    resource_id: booking.id,
+    details: { title: booking.title },
+    status: 'success',
+  });
+
+  res.json({ success: true, message: `Booking ${booking.id} withdrawn successfully.` });
+});
+
+// POST /api/bookings/:id/nudge - Send reminder notification for a pending booking
+router.post('/bookings/:id/nudge', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  const booking = await storage.getBookingById(req.params.id);
+  if (!booking) {
+    res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: `Booking ${req.params.id} not found` } });
+    return;
+  }
+
+  await storage.logAudit({
+    user_id: req.user!.id,
+    user_name: req.user!.name,
+    role: req.user!.role,
+    action: 'BOOKING_NUDGED',
+    resource_type: 'booking',
+    resource_id: booking.id,
+    details: { title: booking.title, requested_by: req.user!.name },
+    status: 'success',
+  });
+
+  res.json({
+    success: true,
+    message: `Reminder nudge dispatched to Timetable Chair for booking ${booking.id}.`,
+  });
 });
 
 export default router;

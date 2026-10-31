@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   FileText,
   Sliders,
@@ -12,27 +12,171 @@ import {
   ChevronRight,
   User,
   Share2,
+  RefreshCw,
+  Building2,
+  MapPin,
+  Calendar,
 } from 'lucide-react';
 import { UserItem } from '../../types';
+
+interface BookingRecord {
+  id: string;
+  submitted_at: string;
+  requester: string;
+  role: string;
+  requested_category: string;
+  effective_category: string;
+  title: string;
+  attendance: number;
+  duration_periods: number;
+  windows: Array<{ day: string; start_period: number; end_period: number }>;
+  room_types: string[];
+  needs: string[];
+  requested_room?: string | null;
+  mandatory_for_groups?: string[];
+  raw_text?: string;
+  status: 'pending' | 'approved' | 'rejected' | 'alternative_offered';
+  created_by: string;
+  allocated_room?: string | null;
+  allocated_day?: string | null;
+  allocated_start_period?: number | null;
+  allocated_end_period?: number | null;
+  decision_reason?: string | null;
+  decided_by?: string;
+  decided_at?: string;
+}
 
 interface AdminRequestsProps {
   currentUser: UserItem;
 }
 
 export const AdminRequests: React.FC<AdminRequestsProps> = ({ currentUser }) => {
-  const [selectedDocketId, setSelectedDocketId] = useState('REQ-ADM-9042');
-  const [activeTab, setActiveTab] = useState('all');
-  const [endorsed, setEndorsed] = useState(false);
+  const [bookings, setBookings] = useState<BookingRecord[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedDocketId, setSelectedDocketId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+  const [roleFilter, setRoleFilter] = useState<string>('All');
   const [noteText, setNoteText] = useState('');
-  const [notes, setNotes] = useState<string[]>([
-    'Prof. R. Mohanty (HOD CSE): Recommended for fast-track clearance. The symposium is mandatory for all 4th year seniors.',
-  ]);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
-  const handlePostNote = () => {
-    if (!noteText.trim()) return;
-    setNotes([...notes, `Dr. S. Panda (Dean Academics): ${noteText.trim()}`]);
-    setNoteText('');
+  // Approval allocation form overrides
+  const [allocRoom, setAllocRoom] = useState('L-301');
+  const [allocDay, setAllocDay] = useState('MON');
+  const [allocStartPeriod, setAllocStartPeriod] = useState(2);
+  const [allocEndPeriod, setAllocEndPeriod] = useState(2);
+  const [decisionReason, setDecisionReason] = useState('');
+
+  const fetchBookings = async () => {
+    setLoading(true);
+    setActionError(null);
+    try {
+      const res = await fetch('/api/bookings', {
+        headers: {
+          Authorization: `Bearer ${currentUser.token || currentUser.id}`,
+        },
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data)) {
+          setBookings(json.data);
+          if (!selectedDocketId && json.data.length > 0) {
+            setSelectedDocketId(json.data[0].id);
+          }
+        }
+      }
+    } catch (err: any) {
+      setActionError('Failed to fetch requisitions: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => {
+    fetchBookings();
+    const interval = setInterval(fetchBookings, 15000);
+    const handleFocus = () => fetchBookings();
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [currentUser]);
+
+  const selectedBooking = bookings.find((b) => b.id === selectedDocketId) || bookings[0] || null;
+
+  // When selected booking changes, populate default allocation form
+  useEffect(() => {
+    if (selectedBooking) {
+      if (selectedBooking.requested_room) setAllocRoom(selectedBooking.requested_room);
+      if (selectedBooking.windows && selectedBooking.windows[0]) {
+        setAllocDay(selectedBooking.windows[0].day || 'MON');
+        setAllocStartPeriod(selectedBooking.windows[0].start_period || 2);
+        setAllocEndPeriod(
+          selectedBooking.windows[0].end_period ||
+            (selectedBooking.windows[0].start_period || 2) + (selectedBooking.duration_periods || 1) - 1
+        );
+      }
+      setDecisionReason('');
+      setActionError(null);
+      setActionSuccess(null);
+    }
+  }, [selectedDocketId]);
+
+  // Handle Decision: approve, reject, or alternative_offered
+  const handleDecision = async (status: 'approved' | 'rejected' | 'alternative_offered') => {
+    if (!selectedBooking) return;
+    setActionLoading(true);
+    setActionError(null);
+    setActionSuccess(null);
+
+    try {
+      const bodyPayload: any = {
+        status,
+        reason: decisionReason.trim() || `Decision recorded by ${currentUser.name} (${currentUser.role})`,
+      };
+
+      if (status === 'approved' || status === 'alternative_offered') {
+        bodyPayload.room_id = allocRoom;
+        bodyPayload.day = allocDay;
+        bodyPayload.start_period = Number(allocStartPeriod);
+        bodyPayload.end_period = Number(allocEndPeriod);
+      }
+
+      const res = await fetch(`/api/bookings/${encodeURIComponent(selectedBooking.id)}/decision`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${currentUser.token || currentUser.id}`,
+        },
+        body: JSON.stringify(bodyPayload),
+      });
+
+      const resData = await res.json();
+      if (!res.ok || !resData.success) {
+        throw new Error(resData.error?.message || `Failed to record ${status} decision.`);
+      }
+
+      setActionSuccess(`Requisition ${selectedBooking.id} successfully marked as ${status.toUpperCase()}!`);
+      await fetchBookings();
+    } catch (err: any) {
+      setActionError(err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Filter bookings list
+  const filteredBookings = bookings.filter((b) => {
+    if (activeTab !== 'all' && b.status !== activeTab) return false;
+    if (roleFilter !== 'All' && b.role !== roleFilter.toLowerCase()) return false;
+    return true;
+  });
+
+  const totalPending = bookings.filter((b) => b.status === 'pending').length;
+  const totalApproved = bookings.filter((b) => b.status === 'approved').length;
+  const totalRejected = bookings.filter((b) => b.status === 'rejected' || b.status === 'alternative_offered').length;
 
   return (
     <div className="p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
@@ -48,24 +192,19 @@ export const AdminRequests: React.FC<AdminRequestsProps> = ({ currentUser }) => 
             Central Administrative Requests & Requisitions Hub
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-            Chilika Institute of Technology Central Registry • Real-time SAT verification & deanery sign-offs
+            Chilika Institute of Technology Central Registry • Real-time venue reservations, schedule changes & approvals
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          <button className="px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-2xs flex items-center space-x-1.5">
-            <FileText className="w-3.5 h-3.5 text-slate-500" />
-            <span>Export Requisition Log</span>
-          </button>
-          <button className="px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-2xs flex items-center space-x-1.5">
-            <Sliders className="w-3.5 h-3.5 text-slate-500" />
-            <span>Configure Approval Rules</span>
-          </button>
           <button
-            onClick={() => alert('Batch endorsed 3 pending high-SLA requisitions.')}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-sm"
+            onClick={fetchBookings}
+            disabled={loading}
+            className="p-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold shadow-2xs flex items-center space-x-1.5 cursor-pointer disabled:opacity-50"
+            title="Refresh Requisitions"
           >
-            Batch Endorse (3)
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-blue-600' : ''}`} />
+            <span>Refresh</span>
           </button>
         </div>
       </div>
@@ -73,320 +212,378 @@ export const AdminRequests: React.FC<AdminRequestsProps> = ({ currentUser }) => 
       {/* 4 Stat Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs">
-          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">TOTAL ACTIVE REQUESTS</div>
-          <div className="text-3xl font-black text-slate-900 mt-1">14</div>
-          <div className="text-[11px] text-slate-500 mt-2">+2 newly queued since 08:00 AM shift</div>
+          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">TOTAL REQUESTS</div>
+          <div className="text-3xl font-black text-slate-900 mt-1">{bookings.length}</div>
+          <div className="text-[11px] text-slate-500 mt-2">Active records in master registry</div>
         </div>
 
         <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs">
-          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">AWAITING DEAN CLEARANCE</div>
-          <div className="text-3xl font-black text-red-600 mt-1">3</div>
-          <div className="text-[11px] text-red-600 font-semibold mt-2">Immediate Dean sign-off required</div>
+          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">PENDING APPROVAL</div>
+          <div className="text-3xl font-black text-amber-600 mt-1">{totalPending}</div>
+          <div className="text-[11px] text-amber-700 font-semibold mt-2">Awaiting chair sign-off</div>
         </div>
 
         <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs">
-          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">AVERAGE TURNAROUND SLA</div>
-          <div className="flex items-baseline space-x-1 mt-1">
-            <span className="text-3xl font-black text-slate-900">2.4</span>
-            <span className="text-xs font-bold text-slate-500">hrs</span>
-          </div>
-          <div className="text-[11px] text-emerald-600 font-semibold mt-2">18% faster than Autumn 2025 avg</div>
+          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">APPROVED SESSIONS</div>
+          <div className="text-3xl font-black text-emerald-600 mt-1">{totalApproved}</div>
+          <div className="text-[11px] text-emerald-700 font-semibold mt-2">Applied to timetable & calendar</div>
         </div>
 
         <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs">
-          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">AUTO-VERIFIED BY SAT</div>
-          <div className="flex items-baseline space-x-1 mt-1">
-            <span className="text-3xl font-black text-slate-900">11</span>
-            <span className="text-xs font-bold text-slate-500">/ 14</span>
-          </div>
-          <div className="text-[11px] text-blue-600 font-semibold mt-2">78.5% solver accuracy • 0 human clash</div>
+          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">RESOLVED / REJECTED</div>
+          <div className="text-3xl font-black text-slate-700 mt-1">{totalRejected}</div>
+          <div className="text-[11px] text-slate-500 font-semibold mt-2">Closed or alternative offered</div>
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* Filter Tabs */}
       <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
         <div className="flex items-center space-x-2">
           <button
             onClick={() => setActiveTab('all')}
-            className={`px-3 py-1.5 rounded-xl font-bold transition-all ${
-              activeTab === 'all' ? 'bg-blue-600 text-white shadow-2xs' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+            className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
+              activeTab === 'all'
+                ? 'bg-blue-600 text-white shadow-2xs'
+                : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
             }`}
           >
-            All (14)
+            All ({bookings.length})
           </button>
           <button
-            onClick={() => setActiveTab('reschedule')}
-            className={`px-3 py-1.5 rounded-xl font-bold transition-all ${
-              activeTab === 'reschedule' ? 'bg-blue-600 text-white shadow-2xs' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+            onClick={() => setActiveTab('pending')}
+            className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
+              activeTab === 'pending'
+                ? 'bg-blue-600 text-white shadow-2xs'
+                : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
             }`}
           >
-            Class Reschedules (5)
+            Pending ({totalPending})
           </button>
           <button
-            onClick={() => setActiveTab('venue')}
-            className={`px-3 py-1.5 rounded-xl font-bold transition-all ${
-              activeTab === 'venue' ? 'bg-blue-600 text-white shadow-2xs' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+            onClick={() => setActiveTab('approved')}
+            className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
+              activeTab === 'approved'
+                ? 'bg-blue-600 text-white shadow-2xs'
+                : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
             }`}
           >
-            Venue Requisitions (4)
+            Approved ({totalApproved})
+          </button>
+          <button
+            onClick={() => setActiveTab('rejected')}
+            className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
+              activeTab === 'rejected'
+                ? 'bg-blue-600 text-white shadow-2xs'
+                : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            Rejected / Other ({totalRejected})
           </button>
         </div>
 
         <div className="flex items-center space-x-2">
-          <select className="bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-700">
-            <option>All Requesters</option>
-            <option>Faculty Only</option>
-            <option>Student Clubs</option>
-          </select>
-          <select className="bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-700">
-            <option>Sort: Urgency Priority</option>
-            <option>Sort: Newest First</option>
+          <select
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value)}
+            className="bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-700 cursor-pointer font-medium"
+          >
+            <option value="All">All Requesters</option>
+            <option value="faculty">Faculty</option>
+            <option value="club">Student Clubs</option>
+            <option value="department_coordinator">Coordinators</option>
           </select>
         </div>
       </div>
+
+      {actionError && (
+        <div className="p-3 bg-red-50 border border-red-200 text-red-800 rounded-xl text-xs flex items-center space-x-2">
+          <AlertTriangle className="w-4 h-4 shrink-0 text-red-600" />
+          <span>{actionError}</span>
+        </div>
+      )}
+
+      {actionSuccess && (
+        <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs flex items-center space-x-2">
+          <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+          <span>{actionSuccess}</span>
+        </div>
+      )}
 
       {/* Main Grid: Dockets Feed (5 Cols) + Docket Review Drawer (7 Cols) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Dockets */}
         <div className="lg:col-span-5 space-y-3">
           <div className="flex items-center justify-between text-xs font-bold text-slate-700">
-            <span>Showing 14 Requisition Dockets</span>
+            <span>Showing {filteredBookings.length} Requisitions</span>
             <span className="text-blue-600 font-semibold flex items-center space-x-1">
               <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
-              <span>Live Solver Feed</span>
+              <span>Live Master Queue</span>
             </span>
           </div>
 
-          {/* Docket 1 */}
-          <div
-            onClick={() => setSelectedDocketId('REQ-ADM-9042')}
-            className={`p-4 rounded-2xl border cursor-pointer transition-all ${
-              selectedDocketId === 'REQ-ADM-9042'
-                ? 'border-blue-600 bg-white ring-2 ring-blue-500/20 shadow-sm'
-                : 'border-slate-200 bg-white hover:border-slate-300'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="font-mono text-xs font-bold text-blue-600">REQ-ADM-9042</span>
-              <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
-                Pending Dean Review
-              </span>
+          {filteredBookings.length === 0 ? (
+            <div className="p-8 text-center bg-white border border-slate-200 rounded-2xl text-xs text-slate-500">
+              No requisitions matching current filters.
             </div>
-            <div className="text-xs font-bold text-slate-900 mt-2">
-              Er. P. Das <span className="font-normal text-slate-500">• CSE Dept (UID: FAC-4102)</span>
-            </div>
-            <div className="text-[11px] text-slate-600 mt-1">
-              Class Reschedule • <strong>CS401 Distributed Systems</strong> (LHC-204 → AUD-02)
-            </div>
-            <div className="flex items-center justify-between text-[10px] text-slate-400 mt-3 pt-2.5 border-t border-slate-100">
-              <span className="text-emerald-600 font-bold">✓ SAT Verified: 0 Clashes</span>
-              <span className="font-semibold text-slate-600">Tier 3 / 3</span>
-            </div>
-          </div>
+          ) : (
+            filteredBookings.map((b) => {
+              const isSelected = selectedDocketId === b.id;
+              const statusColor =
+                b.status === 'approved'
+                  ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
+                  : b.status === 'rejected'
+                  ? 'text-red-700 bg-red-50 border-red-200'
+                  : b.status === 'alternative_offered'
+                  ? 'text-blue-700 bg-blue-50 border-blue-200'
+                  : 'text-amber-700 bg-amber-50 border-amber-200';
 
-          {/* Docket 2 */}
-          <div
-            onClick={() => setSelectedDocketId('REQ-ADM-9039')}
-            className={`p-4 rounded-2xl border cursor-pointer transition-all ${
-              selectedDocketId === 'REQ-ADM-9039'
-                ? 'border-blue-600 bg-white ring-2 ring-blue-500/20 shadow-sm'
-                : 'border-slate-200 bg-white hover:border-slate-300'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="font-mono text-xs font-bold text-blue-600">REQ-ADM-9039</span>
-              <span className="text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">
-                SAT Verified
-              </span>
-            </div>
-            <div className="text-xs font-bold text-slate-900 mt-2">
-              Spectra Coding Club <span className="font-normal text-slate-500">• CIT Innovation Cell</span>
-            </div>
-            <div className="text-[11px] text-slate-600 mt-1">
-              Venue Requisition • <strong>Central Amphitheatre</strong> (Capacity: 450)
-            </div>
-            <div className="flex items-center justify-between text-[10px] text-slate-400 mt-3 pt-2.5 border-t border-slate-100">
-              <span className="text-blue-600 font-bold">SAT Verified: Auto-Allocated</span>
-              <span className="font-semibold text-slate-600">Tier 2 / 3</span>
-            </div>
-          </div>
-
-          {/* Docket 3 */}
-          <div
-            onClick={() => setSelectedDocketId('REQ-ADM-9034')}
-            className={`p-4 rounded-2xl border cursor-pointer transition-all ${
-              selectedDocketId === 'REQ-ADM-9034'
-                ? 'border-blue-600 bg-white ring-2 ring-blue-500/20 shadow-sm'
-                : 'border-slate-200 bg-white hover:border-slate-300'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="font-mono text-xs font-bold text-blue-600">REQ-ADM-9034</span>
-              <span className="text-[10px] font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">
-                Under HOD Review
-              </span>
-            </div>
-            <div className="text-xs font-bold text-slate-900 mt-2">
-              Dr. M. Sen <span className="font-normal text-slate-500">• Mechanical Engineering Dept</span>
-            </div>
-            <div className="text-[11px] text-slate-600 mt-1">
-              Duty Swap • Midterm Invigilation (Hall 3A → Dr. Rao)
-            </div>
-            <div className="flex items-center justify-between text-[10px] text-slate-400 mt-3 pt-2.5 border-t border-slate-100">
-              <span>HOD Approval Pending</span>
-              <span className="font-semibold text-slate-600">Tier 1 / 3</span>
-            </div>
-          </div>
+              return (
+                <div
+                  key={b.id}
+                  onClick={() => setSelectedDocketId(b.id)}
+                  className={`p-4 rounded-2xl border cursor-pointer transition-all ${
+                    isSelected
+                      ? 'border-blue-600 bg-white ring-2 ring-blue-500/20 shadow-sm'
+                      : 'border-slate-200 bg-white hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-xs font-bold text-blue-600">{b.id}</span>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${statusColor}`}>
+                      {b.status.toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="text-xs font-bold text-slate-900 mt-2">
+                    {b.requester} <span className="font-normal text-slate-500">• {b.role}</span>
+                  </div>
+                  <div className="text-[11px] text-slate-700 mt-1 line-clamp-1">
+                    <strong>{b.title}</strong>
+                  </div>
+                  <div className="flex items-center justify-between text-[10px] text-slate-400 mt-3 pt-2.5 border-t border-slate-100">
+                    <span>
+                      {b.windows && b.windows[0] ? `${b.windows[0].day} Period ${b.windows[0].start_period}` : 'Flexible'}
+                    </span>
+                    <span className="font-semibold text-slate-600">
+                      Att: {b.attendance} • {b.duration_periods} Period(s)
+                    </span>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
 
-        {/* Right Column: Docket Inspector */}
+        {/* Right Column: Docket Review Drawer */}
         <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-5">
-          <div className="flex items-start justify-between pb-3 border-b border-slate-100">
-            <div>
-              <div className="flex items-center space-x-2">
-                <span className="font-mono font-bold text-sm text-blue-600">REQ-ADM-9042</span>
-                <span className="text-[10px] font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">
-                  Tier-3 Dean Clearance Escalation
-                </span>
-              </div>
-              <h2 className="text-base font-black text-slate-900 mt-1">
-                Emergency Slot Rescheduling: CS401 Distributed Systems
-              </h2>
-              <div className="text-[11px] text-slate-500 mt-0.5">
-                Submitted on 28 Oct 2026, 09:14 AM • Registry Priority: <strong className="text-red-600">High SLA (45m Remaining)</strong>
-              </div>
-            </div>
-
-            <button className="p-1.5 hover:bg-slate-50 rounded-lg text-slate-400">
-              <Share2 className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Requester Box */}
-          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
-            <div>
-              <div className="font-bold text-slate-800">Er. Pradeep Das (Faculty Regular)</div>
-              <div className="text-[10px] text-slate-400 mt-0.5">UID: FAC-CIT-4102 • Ramanujan Computing Block L3</div>
-            </div>
-            <div className="text-right">
-              <span className="text-[10px] text-slate-400 uppercase font-mono block">COHORT IMPACT</span>
-              <span className="font-bold text-slate-800">142 Registered Undergrads</span>
-              <div className="text-[10px] text-slate-500">B.Tech CSE • Sem 7</div>
-            </div>
-          </div>
-
-          {/* Justification */}
-          <div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-              OFFICIAL REQUESTER JUSTIFICATION & RATIONALE
-            </div>
-            <p className="text-xs text-slate-600 mt-1 leading-relaxed bg-slate-50/50 p-3 rounded-xl border border-slate-100">
-              "We have scheduled the annual ACM Distinguished Lecture series with Dr. Leslie Lamport online symposium on Friday from 14:00 to 16:00 IST. The mandatory CS401 lecture directly collides with this mandatory departmental broadcast. I propose shifting Lecture CS401-L2 to Thursday slot 16:30 - 17:30 IST. Department Head Prof. R. Mohanty has granted oral clearance. The student batch representatives (Shreya & Aniket) have acknowledged zero conflicts on cohort poll."
-            </p>
-          </div>
-
-          {/* SAT Solver Engine Conflict Evaluation */}
-          <div className="p-3.5 bg-blue-50/60 border border-blue-200 rounded-xl space-y-2">
-            <div className="flex items-center justify-between text-xs font-bold text-blue-900">
-              <span>SAT Solver Engine Conflict Evaluation</span>
-              <span className="text-[10px] bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-mono">Engine v4.8 • 0 Clashes Found</span>
-            </div>
-            <div className="grid grid-cols-2 gap-3 text-xs pt-1">
-              <div className="p-2.5 bg-white rounded-lg border border-red-200 text-red-950">
-                <div className="text-[10px] font-bold text-red-700">ORIGINAL DISRUPTED SLOT</div>
-                <div className="font-bold mt-1">Friday, 14:00 - 15:30</div>
-                <div className="text-[10px] text-slate-500">Room: LHC-204 • 150 Cap</div>
-                <div className="text-[10px] text-red-600 mt-1">Collides with ACM Symposium Keynote</div>
-              </div>
-              <div className="p-2.5 bg-white rounded-lg border border-emerald-200 text-emerald-950">
-                <div className="text-[10px] font-bold text-emerald-700">PROPOSED TARGET SLOT (SOLVER VALIDATED)</div>
-                <div className="font-bold mt-1">Thursday, 16:30 - 17:30</div>
-                <div className="text-[10px] text-slate-500">Room: LHC-204 (Retained) • Free slot</div>
-                <div className="text-[10px] text-emerald-700 mt-1">Zero faculty overlap • Zero cohort crossover</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Multi-Tier Pipeline */}
-          <div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">
-              INSTITUTIONAL MULTI-TIER APPROVAL PIPELINE
-            </div>
-            <div className="grid grid-cols-3 gap-2 text-xs">
-              <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl">
-                <div className="text-[10px] font-bold text-emerald-700">Step 1: HOD Endorsement</div>
-                <div className="font-bold text-slate-800 mt-0.5">Endorsed ✓</div>
-                <div className="text-[9px] text-slate-500 mt-0.5">Prof. R. Mohanty (CSE)</div>
-              </div>
-
-              <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl">
-                <div className="text-[10px] font-bold text-emerald-700">Step 2: SAT Verification</div>
-                <div className="font-bold text-slate-800 mt-0.5">Constraints Passed ✓</div>
-                <div className="text-[9px] text-slate-500 mt-0.5">412/412 checks clear</div>
-              </div>
-
-              <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl">
-                <div className="text-[10px] font-bold text-amber-700">Step 3: Dean Sign-off</div>
-                <div className="font-bold text-slate-800 mt-0.5">
-                  {endorsed ? 'Signed by Dean ✓' : 'Pending Central Dean'}
+          {selectedBooking ? (
+            <>
+              <div className="flex items-start justify-between pb-3 border-b border-slate-100">
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <span className="font-mono font-bold text-sm text-blue-600">{selectedBooking.id}</span>
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                        selectedBooking.status === 'approved'
+                          ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                          : selectedBooking.status === 'rejected'
+                          ? 'bg-red-50 border-red-200 text-red-700'
+                          : 'bg-amber-50 border-amber-200 text-amber-700'
+                      }`}
+                    >
+                      {selectedBooking.status.toUpperCase()}
+                    </span>
+                    <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono">
+                      Category: {selectedBooking.effective_category}
+                    </span>
+                  </div>
+                  <h2 className="text-base font-black text-slate-900 mt-1">{selectedBooking.title}</h2>
+                  <div className="text-[11px] text-slate-500 mt-0.5">
+                    Submitted: {new Date(selectedBooking.submitted_at).toLocaleString()}
+                  </div>
                 </div>
-                <div className="text-[9px] text-slate-500 mt-0.5">Awaiting your authorization</div>
               </div>
-            </div>
-          </div>
 
-          {/* Response Thread & Notes */}
-          <div className="space-y-2 pt-1 border-t border-slate-100">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-              ADMINISTRATIVE RESPONSE THREAD & AUDIT LOG
-            </div>
-            <div className="space-y-1.5 text-xs text-slate-600 max-h-28 overflow-y-auto">
-              {notes.map((n, i) => (
-                <div key={i} className="p-2 bg-slate-50 rounded-lg border border-slate-100 text-[11px]">
-                  {n}
+              {/* Requester Box */}
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
+                <div>
+                  <div className="font-bold text-slate-800">{selectedBooking.requester}</div>
+                  <div className="text-[10px] text-slate-500 mt-0.5">
+                    Role: <strong className="uppercase">{selectedBooking.role}</strong> • User ID: {selectedBooking.created_by}
+                  </div>
                 </div>
-              ))}
-            </div>
+                <div className="text-right">
+                  <span className="text-[10px] text-slate-400 uppercase font-mono block">EXPECTED ATTENDANCE</span>
+                  <span className="font-bold text-slate-800">{selectedBooking.attendance} Attendees</span>
+                  <div className="text-[10px] text-slate-500">Duration: {selectedBooking.duration_periods} slot(s)</div>
+                </div>
+              </div>
 
-            <div className="flex items-center space-x-2 pt-1">
-              <input
-                type="text"
-                value={noteText}
-                onChange={(e) => setNoteText(e.target.value)}
-                placeholder="Add administrative note or stipulation (visible to registry)..."
-                className="flex-1 px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-700 placeholder-slate-400"
-              />
-              <button
-                type="button"
-                onClick={handlePostNote}
-                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-semibold"
-              >
-                Post Note
-              </button>
-            </div>
-          </div>
+              {/* Rationale / Text */}
+              {selectedBooking.raw_text && (
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    REQUEST DETAILS & RATIONALE
+                  </div>
+                  <p className="text-xs text-slate-600 mt-1 leading-relaxed bg-slate-50/50 p-3 rounded-xl border border-slate-100">
+                    "{selectedBooking.raw_text}"
+                  </p>
+                </div>
+              )}
 
-          {/* Action Buttons */}
-          <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-            <div className="text-[10px] text-slate-400 flex items-center space-x-1">
-              <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
-              <span>Cryptographic Dean signature will be appended to Autumn '26 Master Graph.</span>
-            </div>
+              {/* Existing Decision / Current Status */}
+              {selectedBooking.status !== 'pending' && (
+                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1 text-xs">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">DECISION RECORD</span>
+                  <div className="font-semibold text-slate-800">
+                    Status: <span className="uppercase text-blue-700">{selectedBooking.status}</span>
+                  </div>
+                  {selectedBooking.allocated_room && (
+                    <div className="text-slate-600">
+                      Allocated: <strong>{selectedBooking.allocated_room}</strong> on {selectedBooking.allocated_day} (Periods{' '}
+                      {selectedBooking.allocated_start_period}–{selectedBooking.allocated_end_period})
+                    </div>
+                  )}
+                  {selectedBooking.decision_reason && (
+                    <div className="text-slate-500 italic mt-1">"{selectedBooking.decision_reason}"</div>
+                  )}
+                </div>
+              )}
 
-            <div className="flex items-center space-x-2">
-              <button className="px-3 py-1.5 bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded-xl text-xs font-bold transition-all">
-                Reject with Reason
-              </button>
-              <button
-                onClick={() => setEndorsed(true)}
-                disabled={endorsed}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center space-x-1.5"
-              >
-                <Check className="w-4 h-4" />
-                <span>{endorsed ? 'Endorsed & Applied ✓' : 'Endorse & Apply to Schedule'}</span>
-              </button>
+              {/* Action Decision Form (for Admin/Coordinator) */}
+              <div className="p-4 bg-blue-50/40 border border-blue-200 rounded-xl space-y-3 text-xs">
+                <div className="font-bold text-blue-900 flex items-center space-x-1.5">
+                  <ShieldCheck className="w-4 h-4 text-blue-600" />
+                  <span>Administrative Allocation & Review Action</span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">Room</label>
+                    <select
+                      value={allocRoom}
+                      onChange={(e) => setAllocRoom(e.target.value)}
+                      className="w-full mt-1 bg-white border border-slate-200 rounded-lg p-1.5 font-semibold text-slate-700"
+                    >
+                      <option value="L-301">L-301 (Aud. B)</option>
+                      <option value="L-302">L-302 Lecture Hall</option>
+                      <option value="L-204">L-204 Seminar Room</option>
+                      <option value="Turing-Lab-02">Turing Lab 02</option>
+                      <option value="VLSI-Lab-3">VLSI Micro Lab 3</option>
+                      <option value="Networks-Lab-A">Networks Lab A</option>
+                      <option value="Bose-Hall">Bose Hall</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">Day</label>
+                    <select
+                      value={allocDay}
+                      onChange={(e) => setAllocDay(e.target.value)}
+                      className="w-full mt-1 bg-white border border-slate-200 rounded-lg p-1.5 font-semibold text-slate-700"
+                    >
+                      <option value="MON">MON</option>
+                      <option value="TUE">TUE</option>
+                      <option value="WED">WED</option>
+                      <option value="THU">THU</option>
+                      <option value="FRI">FRI</option>
+                      <option value="SAT">SAT</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">Start Period</label>
+                    <select
+                      value={allocStartPeriod}
+                      onChange={(e) => {
+                        const sp = Number(e.target.value);
+                        setAllocStartPeriod(sp);
+                        if (allocEndPeriod < sp) setAllocEndPeriod(sp);
+                      }}
+                      className="w-full mt-1 bg-white border border-slate-200 rounded-lg p-1.5 font-semibold text-slate-700"
+                    >
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((p) => (
+                        <option key={p} value={p}>
+                          Period {p} ({p + 7}:00)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">End Period</label>
+                    <select
+                      value={allocEndPeriod}
+                      onChange={(e) => setAllocEndPeriod(Number(e.target.value))}
+                      className="w-full mt-1 bg-white border border-slate-200 rounded-lg p-1.5 font-semibold text-slate-700"
+                    >
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+                        .filter((p) => p >= allocStartPeriod)
+                        .map((p) => (
+                          <option key={p} value={p}>
+                            Period {p} ({p + 8}:00)
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Decision Reason / Stipulation</label>
+                  <input
+                    type="text"
+                    value={decisionReason}
+                    onChange={(e) => setDecisionReason(e.target.value)}
+                    placeholder="Enter approval conditions, room remarks, or rejection grounds..."
+                    className="w-full mt-1 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-800 placeholder-slate-400 text-xs"
+                  />
+                </div>
+
+                {/* Self-Approval Warning */}
+                {selectedBooking.created_by === currentUser.id && (
+                  <div className="p-2.5 bg-amber-50 border border-amber-200 text-amber-900 rounded-lg text-[11px] flex items-center space-x-1.5">
+                    <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                    <span>
+                      Governance Rule: You created this request ({selectedBooking.created_by}). Self-approval is prevented by
+                      institutional policy. Another administrator or coordinator must review.
+                    </span>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-blue-200/50">
+                  <button
+                    type="button"
+                    onClick={() => handleDecision('rejected')}
+                    disabled={actionLoading || selectedBooking.created_by === currentUser.id}
+                    className="px-3.5 py-1.5 bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded-xl text-xs font-bold transition-all disabled:opacity-50 cursor-pointer"
+                  >
+                    Reject Requisition
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDecision('alternative_offered')}
+                    disabled={actionLoading || selectedBooking.created_by === currentUser.id}
+                    className="px-3.5 py-1.5 bg-white border border-blue-200 text-blue-700 hover:bg-blue-50 rounded-xl text-xs font-bold transition-all disabled:opacity-50 cursor-pointer"
+                  >
+                    Offer Alternative
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDecision('approved')}
+                    disabled={actionLoading || selectedBooking.created_by === currentUser.id}
+                    className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center space-x-1.5 disabled:opacity-50 cursor-pointer"
+                  >
+                    <Check className="w-4 h-4" />
+                    <span>{actionLoading ? 'Recording...' : 'Approve & Allocate'}</span>
+                  </button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-12 text-slate-400 text-xs">
+              Select a requisition from the left to view details and record decisions.
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

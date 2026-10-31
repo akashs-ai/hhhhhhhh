@@ -21,6 +21,8 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { TimetableSession, UserItem } from '../../types';
+import { GoogleCalendarBanner } from '../../components/GoogleCalendarBanner';
+import { GoogleStyleCalendar } from '../../components/GoogleStyleCalendar';
 
 interface AdminTimetableProps {
   currentUser: UserItem;
@@ -235,6 +237,9 @@ export const AdminTimetable: React.FC<AdminTimetableProps> = ({
         </div>
       </div>
 
+      {/* Google Calendar Institutional Sync */}
+      <GoogleCalendarBanner currentUser={currentUser} />
+
       {/* Main Title & Action Buttons */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -330,151 +335,14 @@ export const AdminTimetable: React.FC<AdminTimetableProps> = ({
         </div>
       </div>
 
-      {/* Grid Tabs & Controls Toolbar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs">
-        <div className="flex items-center space-x-1 bg-slate-100 p-1 rounded-xl">
-          <button
-            onClick={() => setActiveView('weekly')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              activeView === 'weekly' ? 'bg-white text-blue-700 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            Weekly Grid
-          </button>
-          <button
-            onClick={() => setActiveView('monthly')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              activeView === 'monthly' ? 'bg-white text-blue-700 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            Monthly View
-          </button>
-          <button
-            onClick={() => setActiveView('matrix')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              activeView === 'matrix' ? 'bg-white text-blue-700 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            Matrix Matrix
-          </button>
-        </div>
-
-        <div className="flex items-center space-x-2">
-          <button className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-50">
-            Today
-          </button>
-          <div className="flex items-center space-x-1 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs text-slate-700 font-semibold">
-            <button className="p-0.5 hover:text-blue-600"><ChevronLeft className="w-3.5 h-3.5" /></button>
-            <span>Oct 19 – Oct 24, 2026</span>
-            <button className="p-0.5 hover:text-blue-600"><ChevronRight className="w-3.5 h-3.5" /></button>
-          </div>
-        </div>
-      </div>
-
-      {/* Pedagogic Formats Legend */}
-      <div className="flex flex-wrap items-center justify-between text-xs text-slate-500 gap-2 px-1">
-        <div className="flex items-center space-x-4">
-          <span className="font-semibold text-slate-700">Pedagogic Formats:</span>
-          <span className="flex items-center space-x-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
-            <span>Theory Lecture</span>
-          </span>
-          <span className="flex items-center space-x-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-sky-400"></span>
-            <span>Laboratory / Practical</span>
-          </span>
-          <span className="flex items-center space-x-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-indigo-300"></span>
-            <span>Tutorial / Seminar</span>
-          </span>
-          <span className="flex items-center space-x-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
-            <span>Common Academic Recess</span>
-          </span>
-        </div>
-        <span className="text-[11px] text-slate-400">Click & drag blocks to reschedule</span>
-      </div>
-
-      {/* Main Grid + Right Drawers */}
+      {/* Interactive Google Calendar-Style Timetable */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Weekly Grid (9 Cols) */}
-        <div className="lg:col-span-9 bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-x-auto">
-          <div className="min-w-[760px]">
-            {/* Header row */}
-            <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50/70 text-[11px] font-bold text-slate-500 p-2.5">
-              <div>TIME / DAY</div>
-              <div>08:00 - 09:00</div>
-              <div>09:00 - 10:00</div>
-              <div>10:00 - 11:00</div>
-              <div>11:00 - 12:00</div>
-              <div>12:00 - 13:00</div>
-              <div className="bg-amber-50/70 text-amber-800 text-center rounded">13:00 - 14:00</div>
-            </div>
-
-            {/* Daily Rows */}
-            <div className="divide-y divide-slate-100">
-              {sampleSlots.map((row) => (
-                <div key={row.day} className="grid grid-cols-7 p-2.5 gap-2 items-stretch min-h-[96px]">
-                  {/* Day Label */}
-                  <div className="flex flex-col justify-center pr-2 border-r border-slate-100">
-                    <span className="text-xs font-black text-slate-900">{row.day}</span>
-                    <span className="text-[10px] text-slate-400">{row.date}</span>
-                  </div>
-
-                  {/* Slots */}
-                  {row.slots.map((slot: any, sIdx) => {
-                    if (slot.isAdd) {
-                      return (
-                        <button
-                          key={sIdx}
-                          className="h-full border border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center text-slate-400 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50/30 transition-all p-2 text-center"
-                        >
-                          <Plus className="w-3.5 h-3.5 mb-0.5" />
-                          <span className="text-[10px] font-semibold">Add Slot</span>
-                        </button>
-                      );
-                    }
-
-                    return (
-                      <div
-                        key={sIdx}
-                        className={`p-2 rounded-xl border flex flex-col justify-between text-left transition-all ${
-                          slot.type.includes('Lab')
-                            ? 'bg-sky-50/70 border-sky-200 text-sky-900 col-span-2'
-                            : slot.type === 'Tutorial'
-                            ? 'bg-indigo-50/70 border-indigo-200 text-indigo-900'
-                            : slot.type === 'Capstone'
-                            ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900 col-span-2'
-                            : 'bg-blue-50/80 border-blue-200 text-blue-950'
-                        }`}
-                      >
-                        <div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-[11px] font-black">{slot.code}</span>
-                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-white/70">
-                              {slot.type}
-                            </span>
-                          </div>
-                          <div className="text-[10px] font-semibold line-clamp-1 mt-0.5">{slot.title}</div>
-                        </div>
-
-                        <div className="text-[9px] text-slate-600 mt-2">
-                          <div className="truncate">{slot.prof}</div>
-                          <div className="font-mono text-[8.5px] text-slate-500 mt-0.5">{slot.room}</div>
-                        </div>
-                      </div>
-                    );
-                  })}
-
-                  {/* Recess Column */}
-                  <div className="bg-amber-50/50 border border-amber-200/50 rounded-xl flex flex-col items-center justify-center p-1 text-center text-amber-800">
-                    <span className="text-[10px] font-bold">RECESS</span>
-                    <span className="text-[8px] text-amber-600 mt-0.5">Lunch</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+        <div className="lg:col-span-9">
+          <GoogleStyleCalendar
+            currentUser={currentUser}
+            sessions={sessions}
+            onRefreshNeeded={onTriggerSolver}
+          />
         </div>
 
         {/* Right Sidebar: Unscheduled Queue + Resolved Overlaps (3 Cols) */}

@@ -13,12 +13,15 @@ import {
   UploadCloud,
 } from 'lucide-react';
 import { UserItem } from '../../types';
+import { GoogleCalendarBanner } from '../../components/GoogleCalendarBanner';
+import { GoogleStyleCalendar } from '../../components/GoogleStyleCalendar';
 
 interface FacultyTimetableProps {
   currentUser: UserItem;
 }
 
 export const FacultyTimetable: React.FC<FacultyTimetableProps> = ({ currentUser }) => {
+  const [activeTab, setActiveTab] = useState<'calendar' | 'generator'>('calendar');
   const [workloadHours, setWorkloadHours] = useState(6.0);
   const [isRunning, setIsRunning] = useState(false);
   const [solverCompleted, setSolverCompleted] = useState(true);
@@ -51,6 +54,35 @@ export const FacultyTimetable: React.FC<FacultyTimetableProps> = ({ currentUser 
         </div>
       </div>
 
+      {/* Sub-Tab Navigation */}
+      <div className="flex items-center space-x-2 bg-slate-100 p-1 rounded-xl w-fit">
+        <button
+          type="button"
+          onClick={() => setActiveTab('calendar')}
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            activeTab === 'calendar' ? 'bg-white text-blue-700 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          My Teaching Calendar (Google Sync)
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('generator')}
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            activeTab === 'generator' ? 'bg-white text-blue-700 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          Algorithmic Generator
+        </button>
+      </div>
+
+      {activeTab === 'calendar' ? (
+        <div className="space-y-6">
+          <GoogleCalendarBanner currentUser={currentUser} />
+          <GoogleStyleCalendar currentUser={currentUser} />
+        </div>
+      ) : (
+        <>
       {/* 4-Step Process Wizard */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="p-3 bg-white border border-emerald-300 rounded-xl flex items-center space-x-2 text-xs">
@@ -315,6 +347,8 @@ export const FacultyTimetable: React.FC<FacultyTimetableProps> = ({ currentUser 
           </div>
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 };

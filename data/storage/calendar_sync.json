@@ -1,4 +1,27 @@
 {
-  "connections": {},
+  "connections": {
+    "usr-admin": {
+      "connected": true,
+      "email": "dean.academics@cit.ac.in",
+      "calendar_id": "primary",
+      "sync_status": "idle",
+      "last_synced_version": null,
+      "last_synced_at": null,
+      "events_synced": 0,
+      "connected_at": "2026-10-31T20:25:13.352Z",
+      "note": "Google Calendar linked for dean.academics@cit.ac.in"
+    },
+    "usr-coord-cse": {
+      "connected": true,
+      "email": "matcreature0@gmail.com",
+      "calendar_id": "primary",
+      "sync_status": "idle",
+      "last_synced_version": null,
+      "last_synced_at": null,
+      "events_synced": 0,
+      "connected_at": "2026-10-31T20:25:14.831Z",
+      "note": "Google Calendar linked for matcreature0@gmail.com"
+    }
+  },
   "event_mappings": {}
 }

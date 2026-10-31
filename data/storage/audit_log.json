@@ -2954,5 +2954,1590 @@
       "effectiveCategory": "club_event"
     },
     "status": "success"
+  },
+  {
+    "id": "audit-1793467931317-ja8vn7",
+    "timestamp": "2026-10-31T17:32:11.317Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "TIMETABLE_GENERATE_PROPOSED",
+    "resource_type": "timetable",
+    "resource_id": "v_1793467931291",
+    "details": {
+      "session_count": 189,
+      "execution_time_ms": 732,
+      "soft_total": 170
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793467931478-4zf2j",
+    "timestamp": "2026-10-31T17:32:11.478Z",
+    "user_id": "usr-club-drama",
+    "user_name": "Kabir Varma (Dramatics Society)",
+    "role": "club",
+    "action": "CREATE_BOOKING_REQUEST",
+    "resource_type": "booking",
+    "resource_id": "BR-1476",
+    "details": {
+      "title": "Shakespeare Night Practice",
+      "attendance": 35,
+      "effectiveCategory": "club_event"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793467932205-kisqeg",
+    "timestamp": "2026-10-31T17:32:12.205Z",
+    "user_id": "usr-coord-cse",
+    "user_name": "Prof. Ananya Sen (CSE Coordinator)",
+    "role": "department_coordinator",
+    "action": "PROPOSE_DISRUPTION",
+    "resource_type": "disruption",
+    "resource_id": "disruption-1793467931493",
+    "details": {
+      "title": "Emergency Lab Maintenance",
+      "moved": 0
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793467932220-4wg9u6",
+    "timestamp": "2026-10-31T17:32:12.220Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CREATE_BOOKING_REQUEST",
+    "resource_type": "booking",
+    "resource_id": "BR-2218",
+    "details": {
+      "title": "Dean Academics Special Assembly",
+      "attendance": 250,
+      "effectiveCategory": "club_event"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793470599144-k1wmxi",
+    "timestamp": "2026-10-31T18:16:39.144Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CALENDAR_CONNECTED",
+    "resource_type": "calendar",
+    "resource_id": "primary",
+    "details": {
+      "email": "dean.academics@cit.ac.in"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793470599153-c4lxn",
+    "timestamp": "2026-10-31T18:16:39.153Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CALENDAR_DISCONNECTED",
+    "resource_type": "calendar",
+    "status": "success"
+  },
+  {
+    "id": "audit-1793470599158-ccm3fq",
+    "timestamp": "2026-10-31T18:16:39.158Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CALENDAR_CONNECTED",
+    "resource_type": "calendar",
+    "resource_id": "primary",
+    "details": {
+      "email": "dean.academics@cit.ac.in"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793470635480-uttnjs",
+    "timestamp": "2026-10-31T18:17:15.480Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CALENDAR_CONNECTED",
+    "resource_type": "calendar",
+    "resource_id": "primary",
+    "details": {
+      "email": "dean.academics@cit.ac.in"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793470635490-b5uczh",
+    "timestamp": "2026-10-31T18:17:15.490Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CALENDAR_DISCONNECTED",
+    "resource_type": "calendar",
+    "status": "success"
+  },
+  {
+    "id": "audit-1793470635498-dpeopl",
+    "timestamp": "2026-10-31T18:17:15.498Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CALENDAR_CONNECTED",
+    "resource_type": "calendar",
+    "resource_id": "primary",
+    "details": {
+      "email": "dean.academics@cit.ac.in"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793470675450-2izxt",
+    "timestamp": "2026-10-31T18:17:55.450Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CALENDAR_CONNECTED",
+    "resource_type": "calendar",
+    "resource_id": "primary",
+    "details": {
+      "email": "dean.academics@cit.ac.in"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793470675460-o82nts",
+    "timestamp": "2026-10-31T18:17:55.460Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CALENDAR_DISCONNECTED",
+    "resource_type": "calendar",
+    "status": "success"
+  },
+  {
+    "id": "audit-1793470675464-tmw0i4",
+    "timestamp": "2026-10-31T18:17:55.465Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CALENDAR_CONNECTED",
+    "resource_type": "calendar",
+    "resource_id": "primary",
+    "details": {
+      "email": "dean.academics@cit.ac.in"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793470683728-fdsrqd",
+    "timestamp": "2026-10-31T18:18:03.728Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "TIMETABLE_GENERATE_PROPOSED",
+    "resource_type": "timetable",
+    "resource_id": "v_1793470683701",
+    "details": {
+      "session_count": 189,
+      "execution_time_ms": 666,
+      "soft_total": 170
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793470683886-y2iwkn",
+    "timestamp": "2026-10-31T18:18:03.886Z",
+    "user_id": "usr-club-drama",
+    "user_name": "Kabir Varma (Dramatics Society)",
+    "role": "club",
+    "action": "CREATE_BOOKING_REQUEST",
+    "resource_type": "booking",
+    "resource_id": "BR-3883",
+    "details": {
+      "title": "Shakespeare Night Practice",
+      "attendance": 35,
+      "effectiveCategory": "club_event"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793470684623-116hh",
+    "timestamp": "2026-10-31T18:18:04.623Z",
+    "user_id": "usr-coord-cse",
+    "user_name": "Prof. Ananya Sen (CSE Coordinator)",
+    "role": "department_coordinator",
+    "action": "PROPOSE_DISRUPTION",
+    "resource_type": "disruption",
+    "resource_id": "disruption-1793470683898",
+    "details": {
+      "title": "Emergency Lab Maintenance",
+      "moved": 0
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793470684633-ezsrbs",
+    "timestamp": "2026-10-31T18:18:04.633Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CREATE_BOOKING_REQUEST",
+    "resource_type": "booking",
+    "resource_id": "BR-4631",
+    "details": {
+      "title": "Dean Academics Special Assembly",
+      "attendance": 250,
+      "effectiveCategory": "club_event"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793470697207-niliit",
+    "timestamp": "2026-10-31T18:18:17.207Z",
+    "user_id": "usr-student-cse3",
+    "user_name": "Aarav Patel (Student)",
+    "role": "student",
+    "action": "CREATE_BOOKING_REQUEST",
+    "resource_type": "booking",
+    "resource_id": "BR-7205",
+    "details": {
+      "title": "Privilege Escalation Test",
+      "attendance": 50,
+      "effectiveCategory": "club_event"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793470697265-5kydq",
+    "timestamp": "2026-10-31T18:18:17.265Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "UPDATE_ROOM",
+    "resource_type": "room",
+    "resource_id": "AUD",
+    "details": {
+      "features": [
+        "projector",
+        "mic",
+        "stage",
+        "ac"
+      ]
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793470697270-9ebppe",
+    "timestamp": "2026-10-31T18:18:17.270Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CREATE_BOOKING_REQUEST",
+    "resource_type": "booking",
+    "resource_id": "BR-7267",
+    "details": {
+      "title": "Dean Review Meeting",
+      "attendance": 20,
+      "effectiveCategory": "club_event"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793470697278-qbq58n",
+    "timestamp": "2026-10-31T18:18:17.278Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CREATE_USER_ACCOUNT",
+    "resource_type": "user",
+    "resource_id": "usr-test-persistent-1793470697275",
+    "details": {
+      "username": "testuser.1793470697275",
+      "role": "faculty"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793470749163-rtjpga",
+    "timestamp": "2026-10-31T18:19:09.163Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CALENDAR_CONNECTED",
+    "resource_type": "calendar",
+    "resource_id": "primary",
+    "details": {
+      "email": "dean.academics@cit.ac.in"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793470749172-1ymyoj",
+    "timestamp": "2026-10-31T18:19:09.172Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CALENDAR_DISCONNECTED",
+    "resource_type": "calendar",
+    "status": "success"
+  },
+  {
+    "id": "audit-1793470749177-0zg3tf",
+    "timestamp": "2026-10-31T18:19:09.177Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CALENDAR_CONNECTED",
+    "resource_type": "calendar",
+    "resource_id": "primary",
+    "details": {
+      "email": "dean.academics@cit.ac.in"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793470756911-zyxjtd",
+    "timestamp": "2026-10-31T18:19:16.911Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "TIMETABLE_GENERATE_PROPOSED",
+    "resource_type": "timetable",
+    "resource_id": "v_1793470756886",
+    "details": {
+      "session_count": 189,
+      "execution_time_ms": 609,
+      "soft_total": 170
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793470757068-ydyuhb5",
+    "timestamp": "2026-10-31T18:19:17.068Z",
+    "user_id": "usr-club-drama",
+    "user_name": "Kabir Varma (Dramatics Society)",
+    "role": "club",
+    "action": "CREATE_BOOKING_REQUEST",
+    "resource_type": "booking",
+    "resource_id": "BR-7066",
+    "details": {
+      "title": "Shakespeare Night Practice",
+      "attendance": 35,
+      "effectiveCategory": "club_event"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793470757782-dvkby6",
+    "timestamp": "2026-10-31T18:19:17.782Z",
+    "user_id": "usr-coord-cse",
+    "user_name": "Prof. Ananya Sen (CSE Coordinator)",
+    "role": "department_coordinator",
+    "action": "PROPOSE_DISRUPTION",
+    "resource_type": "disruption",
+    "resource_id": "disruption-1793470757084",
+    "details": {
+      "title": "Emergency Lab Maintenance",
+      "moved": 0
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793470757791-d9fo4z",
+    "timestamp": "2026-10-31T18:19:17.791Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CREATE_BOOKING_REQUEST",
+    "resource_type": "booking",
+    "resource_id": "BR-7789",
+    "details": {
+      "title": "Dean Academics Special Assembly",
+      "attendance": 250,
+      "effectiveCategory": "club_event"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793470770151-i4xdts",
+    "timestamp": "2026-10-31T18:19:30.151Z",
+    "user_id": "usr-student-cse3",
+    "user_name": "Aarav Patel (Student)",
+    "role": "student",
+    "action": "CREATE_BOOKING_REQUEST",
+    "resource_type": "booking",
+    "resource_id": "BR-0149",
+    "details": {
+      "title": "Privilege Escalation Test",
+      "attendance": 50,
+      "effectiveCategory": "club_event"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793470770198-e106ms",
+    "timestamp": "2026-10-31T18:19:30.198Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "UPDATE_ROOM",
+    "resource_type": "room",
+    "resource_id": "AUD",
+    "details": {
+      "features": [
+        "projector",
+        "mic",
+        "stage",
+        "ac"
+      ]
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793470770203-qwm9g5",
+    "timestamp": "2026-10-31T18:19:30.203Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CREATE_BOOKING_REQUEST",
+    "resource_type": "booking",
+    "resource_id": "BR-0200",
+    "details": {
+      "title": "Dean Review Meeting",
+      "attendance": 20,
+      "effectiveCategory": "club_event"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793470770211-o9qpo",
+    "timestamp": "2026-10-31T18:19:30.211Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CREATE_USER_ACCOUNT",
+    "resource_type": "user",
+    "resource_id": "usr-test-persistent-1793470770207",
+    "details": {
+      "username": "testuser.1793470770207",
+      "role": "faculty"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793474230561-lm8fcg",
+    "timestamp": "2026-10-31T19:17:10.561Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "TIMETABLE_GENERATE_PROPOSED",
+    "resource_type": "timetable",
+    "resource_id": "v_1793474230535",
+    "details": {
+      "session_count": 189,
+      "execution_time_ms": 622,
+      "soft_total": 170
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793474230720-6eie58",
+    "timestamp": "2026-10-31T19:17:10.720Z",
+    "user_id": "usr-club-drama",
+    "user_name": "Kabir Varma (Dramatics Society)",
+    "role": "club",
+    "action": "CREATE_BOOKING_REQUEST",
+    "resource_type": "booking",
+    "resource_id": "BR-0717",
+    "details": {
+      "title": "Shakespeare Night Practice",
+      "attendance": 35,
+      "effectiveCategory": "club_event"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793474231427-h8ug7k",
+    "timestamp": "2026-10-31T19:17:11.427Z",
+    "user_id": "usr-coord-cse",
+    "user_name": "Prof. Ananya Sen (CSE Coordinator)",
+    "role": "department_coordinator",
+    "action": "PROPOSE_DISRUPTION",
+    "resource_type": "disruption",
+    "resource_id": "disruption-1793474230736",
+    "details": {
+      "title": "Emergency Lab Maintenance",
+      "moved": 0
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793474231439-d97ceh",
+    "timestamp": "2026-10-31T19:17:11.439Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CREATE_BOOKING_REQUEST",
+    "resource_type": "booking",
+    "resource_id": "BR-1436",
+    "details": {
+      "title": "Dean Academics Special Assembly",
+      "attendance": 250,
+      "effectiveCategory": "club_event"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793474297449-0943rc",
+    "timestamp": "2026-10-31T19:18:17.449Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CALENDAR_CONNECTED",
+    "resource_type": "calendar",
+    "resource_id": "primary",
+    "details": {
+      "email": "dean.academics@cit.ac.in"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793474297459-4y3ewg",
+    "timestamp": "2026-10-31T19:18:17.459Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CALENDAR_DISCONNECTED",
+    "resource_type": "calendar",
+    "status": "success"
+  },
+  {
+    "id": "audit-1793474297463-nvu85s",
+    "timestamp": "2026-10-31T19:18:17.463Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CALENDAR_CONNECTED",
+    "resource_type": "calendar",
+    "resource_id": "primary",
+    "details": {
+      "email": "dean.academics@cit.ac.in"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793474399031-097ub",
+    "timestamp": "2026-10-31T19:19:59.031Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CALENDAR_CONNECTED",
+    "resource_type": "calendar",
+    "resource_id": "primary",
+    "details": {
+      "email": "dean.academics@cit.ac.in"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793474399048-9324s",
+    "timestamp": "2026-10-31T19:19:59.048Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CALENDAR_DISCONNECTED",
+    "resource_type": "calendar",
+    "status": "success"
+  },
+  {
+    "id": "audit-1793474399058-0x093u",
+    "timestamp": "2026-10-31T19:19:59.058Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CALENDAR_CONNECTED",
+    "resource_type": "calendar",
+    "resource_id": "primary",
+    "details": {
+      "email": "dean.academics@cit.ac.in"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793474410081-8dixi",
+    "timestamp": "2026-10-31T19:20:10.081Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "TIMETABLE_GENERATE_PROPOSED",
+    "resource_type": "timetable",
+    "resource_id": "v_1793474410054",
+    "details": {
+      "session_count": 189,
+      "execution_time_ms": 640,
+      "soft_total": 170
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793474410272-21hcg4",
+    "timestamp": "2026-10-31T19:20:10.272Z",
+    "user_id": "usr-club-drama",
+    "user_name": "Kabir Varma (Dramatics Society)",
+    "role": "club",
+    "action": "CREATE_BOOKING_REQUEST",
+    "resource_type": "booking",
+    "resource_id": "BR-0269",
+    "details": {
+      "title": "Shakespeare Night Practice",
+      "attendance": 35,
+      "effectiveCategory": "club_event"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793474411026-qqw72g",
+    "timestamp": "2026-10-31T19:20:11.026Z",
+    "user_id": "usr-coord-cse",
+    "user_name": "Prof. Ananya Sen (CSE Coordinator)",
+    "role": "department_coordinator",
+    "action": "PROPOSE_DISRUPTION",
+    "resource_type": "disruption",
+    "resource_id": "disruption-1793474410290",
+    "details": {
+      "title": "Emergency Lab Maintenance",
+      "moved": 0
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793474411038-1dp66l",
+    "timestamp": "2026-10-31T19:20:11.038Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CREATE_BOOKING_REQUEST",
+    "resource_type": "booking",
+    "resource_id": "BR-1036",
+    "details": {
+      "title": "Dean Academics Special Assembly",
+      "attendance": 250,
+      "effectiveCategory": "club_event"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793474448290-1csqn9",
+    "timestamp": "2026-10-31T19:20:48.290Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CALENDAR_CONNECTED",
+    "resource_type": "calendar",
+    "resource_id": "primary",
+    "details": {
+      "email": "dean.academics@cit.ac.in"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793474448302-nceqkd",
+    "timestamp": "2026-10-31T19:20:48.302Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CALENDAR_DISCONNECTED",
+    "resource_type": "calendar",
+    "status": "success"
+  },
+  {
+    "id": "audit-1793474448308-e7e8pc",
+    "timestamp": "2026-10-31T19:20:48.308Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CALENDAR_CONNECTED",
+    "resource_type": "calendar",
+    "resource_id": "primary",
+    "details": {
+      "email": "dean.academics@cit.ac.in"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793476646956-k6uayh",
+    "timestamp": "2026-10-31T19:57:26.956Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CALENDAR_CONNECTED",
+    "resource_type": "calendar",
+    "resource_id": "primary",
+    "details": {
+      "email": "dean.academics@cit.ac.in"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793476646969-b9btn2",
+    "timestamp": "2026-10-31T19:57:26.969Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CALENDAR_DISCONNECTED",
+    "resource_type": "calendar",
+    "status": "success"
+  },
+  {
+    "id": "audit-1793476646975-797oz4",
+    "timestamp": "2026-10-31T19:57:26.975Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CALENDAR_CONNECTED",
+    "resource_type": "calendar",
+    "resource_id": "primary",
+    "details": {
+      "email": "dean.academics@cit.ac.in"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793476653472-ch6laq",
+    "timestamp": "2026-10-31T19:57:33.472Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "TIMETABLE_GENERATE_PROPOSED",
+    "resource_type": "timetable",
+    "resource_id": "v_1793476653448",
+    "details": {
+      "session_count": 189,
+      "execution_time_ms": 600,
+      "soft_total": 170
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793476653626-juqsb",
+    "timestamp": "2026-10-31T19:57:33.626Z",
+    "user_id": "usr-club-drama",
+    "user_name": "Kabir Varma (Dramatics Society)",
+    "role": "club",
+    "action": "CREATE_BOOKING_REQUEST",
+    "resource_type": "booking",
+    "resource_id": "BR-3623",
+    "details": {
+      "title": "Shakespeare Night Practice",
+      "attendance": 35,
+      "effectiveCategory": "club_event"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793476654310-hsvqewm",
+    "timestamp": "2026-10-31T19:57:34.310Z",
+    "user_id": "usr-coord-cse",
+    "user_name": "Prof. Ananya Sen (CSE Coordinator)",
+    "role": "department_coordinator",
+    "action": "PROPOSE_DISRUPTION",
+    "resource_type": "disruption",
+    "resource_id": "disruption-1793476653639",
+    "details": {
+      "title": "Emergency Lab Maintenance",
+      "moved": 0
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793476654321-jbocxh",
+    "timestamp": "2026-10-31T19:57:34.321Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CREATE_BOOKING_REQUEST",
+    "resource_type": "booking",
+    "resource_id": "BR-4318",
+    "details": {
+      "title": "Dean Academics Special Assembly",
+      "attendance": 250,
+      "effectiveCategory": "club_event"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793477217975-wgd449",
+    "timestamp": "2026-10-31T20:06:57.975Z",
+    "user_id": "usr-coord-cse",
+    "user_name": "Prof. Ananya Sen (CSE Coordinator)",
+    "role": "department_coordinator",
+    "action": "CALENDAR_CONNECTED",
+    "resource_type": "calendar",
+    "resource_id": "primary",
+    "details": {
+      "email": "matcreature0@gmail.com"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793477218115-vyxdjw",
+    "timestamp": "2026-10-31T20:06:58.115Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CREATE_TIMETABLE_SESSION",
+    "resource_type": "timetable",
+    "resource_id": "CS_AUTO_1793477218073",
+    "details": {
+      "day": "SAT",
+      "start_period": 10,
+      "duration": 1,
+      "room_id": "L-301",
+      "faculty_id": "F01",
+      "course_id": "CS-777"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793477218166-7kmxce",
+    "timestamp": "2026-10-31T20:06:58.166Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "UPDATE_TIMETABLE_SESSION",
+    "resource_type": "timetable",
+    "resource_id": "CS_AUTO_1793477218073",
+    "details": {
+      "day": "SAT",
+      "start_period": 9,
+      "room_id": "L-301",
+      "faculty_id": "F01"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793477218210-cc6slp",
+    "timestamp": "2026-10-31T20:06:58.210Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "DELETE_TIMETABLE_SESSION",
+    "resource_type": "timetable",
+    "resource_id": "CS_AUTO_1793477218073",
+    "status": "success"
+  },
+  {
+    "id": "audit-1793477230060-ti2qxe",
+    "timestamp": "2026-10-31T20:07:10.060Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CALENDAR_CONNECTED",
+    "resource_type": "calendar",
+    "resource_id": "primary",
+    "details": {
+      "email": "dean.academics@cit.ac.in"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793477230081-anr8ea",
+    "timestamp": "2026-10-31T20:07:10.081Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CALENDAR_DISCONNECTED",
+    "resource_type": "calendar",
+    "status": "success"
+  },
+  {
+    "id": "audit-1793477230088-lk9iij",
+    "timestamp": "2026-10-31T20:07:10.088Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CALENDAR_CONNECTED",
+    "resource_type": "calendar",
+    "resource_id": "primary",
+    "details": {
+      "email": "dean.academics@cit.ac.in"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793477242421-sj3aje",
+    "timestamp": "2026-10-31T20:07:22.421Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CALENDAR_CONNECTED",
+    "resource_type": "calendar",
+    "resource_id": "primary",
+    "details": {
+      "email": "dean.academics@cit.ac.in"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793477242437-19fdef",
+    "timestamp": "2026-10-31T20:07:22.437Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CALENDAR_DISCONNECTED",
+    "resource_type": "calendar",
+    "status": "success"
+  },
+  {
+    "id": "audit-1793477242448-3od53",
+    "timestamp": "2026-10-31T20:07:22.448Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CALENDAR_CONNECTED",
+    "resource_type": "calendar",
+    "resource_id": "primary",
+    "details": {
+      "email": "dean.academics@cit.ac.in"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793477248665-j3y8u",
+    "timestamp": "2026-10-31T20:07:28.665Z",
+    "user_id": "usr-coord-cse",
+    "user_name": "Prof. Ananya Sen (CSE Coordinator)",
+    "role": "department_coordinator",
+    "action": "CALENDAR_CONNECTED",
+    "resource_type": "calendar",
+    "resource_id": "primary",
+    "details": {
+      "email": "matcreature0@gmail.com"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793477248821-crj7xv",
+    "timestamp": "2026-10-31T20:07:28.821Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CREATE_TIMETABLE_SESSION",
+    "resource_type": "timetable",
+    "resource_id": "CS_AUTO_1793477248775",
+    "details": {
+      "day": "SAT",
+      "start_period": 10,
+      "duration": 1,
+      "room_id": "L-301",
+      "faculty_id": "F01",
+      "course_id": "CS-777"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793477248871-7ij3kw",
+    "timestamp": "2026-10-31T20:07:28.871Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "UPDATE_TIMETABLE_SESSION",
+    "resource_type": "timetable",
+    "resource_id": "CS_AUTO_1793477248775",
+    "details": {
+      "day": "SAT",
+      "start_period": 9,
+      "room_id": "L-301",
+      "faculty_id": "F01"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793477248921-v1x83",
+    "timestamp": "2026-10-31T20:07:28.921Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "DELETE_TIMETABLE_SESSION",
+    "resource_type": "timetable",
+    "resource_id": "CS_AUTO_1793477248775",
+    "status": "success"
+  },
+  {
+    "id": "audit-1793477346592-9vvki",
+    "timestamp": "2026-10-31T20:09:06.592Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "TIMETABLE_GENERATE_PROPOSED",
+    "resource_type": "timetable",
+    "resource_id": "v_1793477346564",
+    "details": {
+      "session_count": 189,
+      "execution_time_ms": 694,
+      "soft_total": 170
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793477346787-ot5egb",
+    "timestamp": "2026-10-31T20:09:06.787Z",
+    "user_id": "usr-club-drama",
+    "user_name": "Kabir Varma (Dramatics Society)",
+    "role": "club",
+    "action": "CREATE_BOOKING_REQUEST",
+    "resource_type": "booking",
+    "resource_id": "BR-6785",
+    "details": {
+      "title": "Shakespeare Night Practice",
+      "attendance": 35,
+      "effectiveCategory": "club_event"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793477347591-mfaek8",
+    "timestamp": "2026-10-31T20:09:07.591Z",
+    "user_id": "usr-coord-cse",
+    "user_name": "Prof. Ananya Sen (CSE Coordinator)",
+    "role": "department_coordinator",
+    "action": "PROPOSE_DISRUPTION",
+    "resource_type": "disruption",
+    "resource_id": "disruption-1793477346802",
+    "details": {
+      "title": "Emergency Lab Maintenance",
+      "moved": 0
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793477347608-5bvp06",
+    "timestamp": "2026-10-31T20:09:07.608Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CREATE_BOOKING_REQUEST",
+    "resource_type": "booking",
+    "resource_id": "BR-7605",
+    "details": {
+      "title": "Dean Academics Special Assembly",
+      "attendance": 250,
+      "effectiveCategory": "club_event"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793477351082-uznss",
+    "timestamp": "2026-10-31T20:09:11.082Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CALENDAR_CONNECTED",
+    "resource_type": "calendar",
+    "resource_id": "primary",
+    "details": {
+      "email": "dean.academics@cit.ac.in"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793477351092-hnlc88",
+    "timestamp": "2026-10-31T20:09:11.092Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CALENDAR_DISCONNECTED",
+    "resource_type": "calendar",
+    "status": "success"
+  },
+  {
+    "id": "audit-1793477351098-44tm9",
+    "timestamp": "2026-10-31T20:09:11.098Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CALENDAR_CONNECTED",
+    "resource_type": "calendar",
+    "resource_id": "primary",
+    "details": {
+      "email": "dean.academics@cit.ac.in"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793477352872-ykosxq",
+    "timestamp": "2026-10-31T20:09:12.872Z",
+    "user_id": "usr-coord-cse",
+    "user_name": "Prof. Ananya Sen (CSE Coordinator)",
+    "role": "department_coordinator",
+    "action": "CALENDAR_CONNECTED",
+    "resource_type": "calendar",
+    "resource_id": "primary",
+    "details": {
+      "email": "matcreature0@gmail.com"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793477353053-l5cv4",
+    "timestamp": "2026-10-31T20:09:13.053Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CREATE_TIMETABLE_SESSION",
+    "resource_type": "timetable",
+    "resource_id": "CS_AUTO_1793477352991",
+    "details": {
+      "day": "SAT",
+      "start_period": 10,
+      "duration": 1,
+      "room_id": "L-301",
+      "faculty_id": "F01",
+      "course_id": "CS-777"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793477353107-am9ko",
+    "timestamp": "2026-10-31T20:09:13.107Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "UPDATE_TIMETABLE_SESSION",
+    "resource_type": "timetable",
+    "resource_id": "CS_AUTO_1793477352991",
+    "details": {
+      "day": "SAT",
+      "start_period": 9,
+      "room_id": "L-301",
+      "faculty_id": "F01"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793477353155-m5f1ic",
+    "timestamp": "2026-10-31T20:09:13.155Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "DELETE_TIMETABLE_SESSION",
+    "resource_type": "timetable",
+    "resource_id": "CS_AUTO_1793477352991",
+    "status": "success"
+  },
+  {
+    "id": "audit-1793478238392-0iu2aq",
+    "timestamp": "2026-10-31T20:23:58.392Z",
+    "user_id": "usr-faculty-f19",
+    "user_name": "Prof. S. Ramanujan (Faculty)",
+    "role": "faculty",
+    "action": "CREATE_BOOKING_REQUEST",
+    "resource_type": "booking",
+    "resource_id": "BR-8387",
+    "details": {
+      "title": "Advanced AI Seminar 2026",
+      "attendance": 80,
+      "effectiveCategory": "guest_lecture"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793478238417-hsyf",
+    "timestamp": "2026-10-31T20:23:58.417Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CREATE_BOOKING_REQUEST",
+    "resource_type": "booking",
+    "resource_id": "BR-8413",
+    "details": {
+      "title": "Deanery Annual Review Meeting",
+      "attendance": 20,
+      "effectiveCategory": "institute_event"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793478238454-o9tyio",
+    "timestamp": "2026-10-31T20:23:58.454Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "BOOKING_APPROVED",
+    "resource_type": "booking",
+    "resource_id": "BR-8387",
+    "details": {
+      "reason": "Approved by Deanery. Venue allocated.",
+      "room_id": "L-301",
+      "day": "SAT"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793478238462-u3tj5",
+    "timestamp": "2026-10-31T20:23:58.462Z",
+    "user_id": "usr-faculty-f19",
+    "user_name": "Prof. S. Ramanujan (Faculty)",
+    "role": "faculty",
+    "action": "CREATE_BOOKING_REQUEST",
+    "resource_type": "booking",
+    "resource_id": "BR-8458",
+    "details": {
+      "title": "Conflicting Robotics Workshop",
+      "attendance": 40,
+      "effectiveCategory": "guest_lecture"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793478238498-dxjbzk",
+    "timestamp": "2026-10-31T20:23:58.498Z",
+    "user_id": "usr-faculty-f19",
+    "user_name": "Prof. S. Ramanujan (Faculty)",
+    "role": "faculty",
+    "action": "BOOKING_NUDGED",
+    "resource_type": "booking",
+    "resource_id": "BR-8458",
+    "details": {
+      "title": "Conflicting Robotics Workshop",
+      "requested_by": "Prof. S. Ramanujan (Faculty)"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793478238514-3o7e4f",
+    "timestamp": "2026-10-31T20:23:58.514Z",
+    "user_id": "usr-faculty-f19",
+    "user_name": "Prof. S. Ramanujan (Faculty)",
+    "role": "faculty",
+    "action": "BOOKING_WITHDRAWN",
+    "resource_type": "booking",
+    "resource_id": "BR-8458",
+    "details": {
+      "title": "Conflicting Robotics Workshop"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793478252506-uoomiu",
+    "timestamp": "2026-10-31T20:24:12.506Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "TIMETABLE_GENERATE_PROPOSED",
+    "resource_type": "timetable",
+    "resource_id": "v_1793478252476",
+    "details": {
+      "session_count": 189,
+      "execution_time_ms": 655,
+      "soft_total": 170
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793478252698-06hgeq",
+    "timestamp": "2026-10-31T20:24:12.698Z",
+    "user_id": "usr-club-drama",
+    "user_name": "Kabir Varma (Dramatics Society)",
+    "role": "club",
+    "action": "CREATE_BOOKING_REQUEST",
+    "resource_type": "booking",
+    "resource_id": "BR-2695",
+    "details": {
+      "title": "Shakespeare Night Practice",
+      "attendance": 35,
+      "effectiveCategory": "club_event"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793478253447-xucwo",
+    "timestamp": "2026-10-31T20:24:13.447Z",
+    "user_id": "usr-coord-cse",
+    "user_name": "Prof. Ananya Sen (CSE Coordinator)",
+    "role": "department_coordinator",
+    "action": "PROPOSE_DISRUPTION",
+    "resource_type": "disruption",
+    "resource_id": "disruption-1793478252714",
+    "details": {
+      "title": "Emergency Lab Maintenance",
+      "moved": 0
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793478253460-b6f4vf",
+    "timestamp": "2026-10-31T20:24:13.460Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CREATE_BOOKING_REQUEST",
+    "resource_type": "booking",
+    "resource_id": "BR-3458",
+    "details": {
+      "title": "Dean Academics Special Assembly",
+      "attendance": 250,
+      "effectiveCategory": "club_event"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793478308787-vzmcmc",
+    "timestamp": "2026-10-31T20:25:08.787Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "TIMETABLE_GENERATE_PROPOSED",
+    "resource_type": "timetable",
+    "resource_id": "v_1793478308731",
+    "details": {
+      "session_count": 189,
+      "execution_time_ms": 792,
+      "soft_total": 170
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793478309048-dy7n4f",
+    "timestamp": "2026-10-31T20:25:09.048Z",
+    "user_id": "usr-club-drama",
+    "user_name": "Kabir Varma (Dramatics Society)",
+    "role": "club",
+    "action": "CREATE_BOOKING_REQUEST",
+    "resource_type": "booking",
+    "resource_id": "BR-9044",
+    "details": {
+      "title": "Shakespeare Night Practice",
+      "attendance": 35,
+      "effectiveCategory": "club_event"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793478309966-2n6re5",
+    "timestamp": "2026-10-31T20:25:09.966Z",
+    "user_id": "usr-coord-cse",
+    "user_name": "Prof. Ananya Sen (CSE Coordinator)",
+    "role": "department_coordinator",
+    "action": "PROPOSE_DISRUPTION",
+    "resource_type": "disruption",
+    "resource_id": "disruption-1793478309073",
+    "details": {
+      "title": "Emergency Lab Maintenance",
+      "moved": 0
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793478309979-n2xdw9",
+    "timestamp": "2026-10-31T20:25:09.979Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CREATE_BOOKING_REQUEST",
+    "resource_type": "booking",
+    "resource_id": "BR-9976",
+    "details": {
+      "title": "Dean Academics Special Assembly",
+      "attendance": 250,
+      "effectiveCategory": "club_event"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793478313337-d5soef",
+    "timestamp": "2026-10-31T20:25:13.337Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CALENDAR_CONNECTED",
+    "resource_type": "calendar",
+    "resource_id": "primary",
+    "details": {
+      "email": "dean.academics@cit.ac.in"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793478313348-4ib69",
+    "timestamp": "2026-10-31T20:25:13.348Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CALENDAR_DISCONNECTED",
+    "resource_type": "calendar",
+    "status": "success"
+  },
+  {
+    "id": "audit-1793478313353-dmcnj",
+    "timestamp": "2026-10-31T20:25:13.353Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CALENDAR_CONNECTED",
+    "resource_type": "calendar",
+    "resource_id": "primary",
+    "details": {
+      "email": "dean.academics@cit.ac.in"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793478314832-cro3se",
+    "timestamp": "2026-10-31T20:25:14.832Z",
+    "user_id": "usr-coord-cse",
+    "user_name": "Prof. Ananya Sen (CSE Coordinator)",
+    "role": "department_coordinator",
+    "action": "CALENDAR_CONNECTED",
+    "resource_type": "calendar",
+    "resource_id": "primary",
+    "details": {
+      "email": "matcreature0@gmail.com"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793478314978-fmr9tq",
+    "timestamp": "2026-10-31T20:25:14.978Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CREATE_TIMETABLE_SESSION",
+    "resource_type": "timetable",
+    "resource_id": "CS_AUTO_1793478314934",
+    "details": {
+      "day": "SAT",
+      "start_period": 10,
+      "duration": 1,
+      "room_id": "L-301",
+      "faculty_id": "F01",
+      "course_id": "CS-777"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793478315034-6ekb5r",
+    "timestamp": "2026-10-31T20:25:15.034Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "UPDATE_TIMETABLE_SESSION",
+    "resource_type": "timetable",
+    "resource_id": "CS_AUTO_1793478314934",
+    "details": {
+      "day": "SAT",
+      "start_period": 9,
+      "room_id": "L-301",
+      "faculty_id": "F01"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793478315083-e4u5z",
+    "timestamp": "2026-10-31T20:25:15.083Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "DELETE_TIMETABLE_SESSION",
+    "resource_type": "timetable",
+    "resource_id": "CS_AUTO_1793478314934",
+    "status": "success"
+  },
+  {
+    "id": "audit-1793478316533-73hwcv",
+    "timestamp": "2026-10-31T20:25:16.533Z",
+    "user_id": "usr-faculty-f19",
+    "user_name": "Prof. S. Ramanujan (Faculty)",
+    "role": "faculty",
+    "action": "CREATE_BOOKING_REQUEST",
+    "resource_type": "booking",
+    "resource_id": "BR-6529",
+    "details": {
+      "title": "Advanced AI Seminar 2026",
+      "attendance": 80,
+      "effectiveCategory": "guest_lecture"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793478316550-txik35",
+    "timestamp": "2026-10-31T20:25:16.550Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "CREATE_BOOKING_REQUEST",
+    "resource_type": "booking",
+    "resource_id": "BR-6548",
+    "details": {
+      "title": "Deanery Annual Review Meeting",
+      "attendance": 20,
+      "effectiveCategory": "institute_event"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793478316580-ssm94b",
+    "timestamp": "2026-10-31T20:25:16.580Z",
+    "user_id": "usr-admin",
+    "user_name": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "action": "BOOKING_APPROVED",
+    "resource_type": "booking",
+    "resource_id": "BR-6529",
+    "details": {
+      "reason": "Approved by Deanery. Venue allocated.",
+      "room_id": "L-301",
+      "day": "SAT"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793478316588-gl3xj",
+    "timestamp": "2026-10-31T20:25:16.588Z",
+    "user_id": "usr-faculty-f19",
+    "user_name": "Prof. S. Ramanujan (Faculty)",
+    "role": "faculty",
+    "action": "CREATE_BOOKING_REQUEST",
+    "resource_type": "booking",
+    "resource_id": "BR-6584",
+    "details": {
+      "title": "Conflicting Robotics Workshop",
+      "attendance": 40,
+      "effectiveCategory": "guest_lecture"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793478316628-gmzmv",
+    "timestamp": "2026-10-31T20:25:16.628Z",
+    "user_id": "usr-faculty-f19",
+    "user_name": "Prof. S. Ramanujan (Faculty)",
+    "role": "faculty",
+    "action": "BOOKING_NUDGED",
+    "resource_type": "booking",
+    "resource_id": "BR-6584",
+    "details": {
+      "title": "Conflicting Robotics Workshop",
+      "requested_by": "Prof. S. Ramanujan (Faculty)"
+    },
+    "status": "success"
+  },
+  {
+    "id": "audit-1793478316638-yuyis",
+    "timestamp": "2026-10-31T20:25:16.638Z",
+    "user_id": "usr-faculty-f19",
+    "user_name": "Prof. S. Ramanujan (Faculty)",
+    "role": "faculty",
+    "action": "BOOKING_WITHDRAWN",
+    "resource_type": "booking",
+    "resource_id": "BR-6584",
+    "details": {
+      "title": "Conflicting Robotics Workshop"
+    },
+    "status": "success"
   }
 ]
