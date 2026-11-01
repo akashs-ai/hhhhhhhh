@@ -103,7 +103,7 @@ const DEFAULT_COLUMNS: FooterColumn[] = [
     links: [
       { label: "Campus Map and Venues", href: "#" },
       { label: "Academic Regulations", href: "#" },
-      { label: "SLA and Audit Logs", href: "#" },
+      { label: "Privacy Policy", href: "/privacy-policy" },
       { label: "IT Helpdesk and Support", href: "#" },
     ],
   },
@@ -502,7 +502,19 @@ export default function HalftoneWordmarkFooter({
             <ul>
               {col.links.map((l) => (
                 <li key={l.label}>
-                  <a href={l.href || "#"}>{l.label}</a>
+                  <a
+                    href={l.href || "#"}
+                    onClick={(e) => {
+                      if (l.href && l.href.startsWith("/")) {
+                        e.preventDefault();
+                        window.history.pushState(null, "", l.href);
+                        window.dispatchEvent(new PopStateEvent("popstate"));
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }
+                    }}
+                  >
+                    {l.label}
+                  </a>
                 </li>
               ))}
             </ul>

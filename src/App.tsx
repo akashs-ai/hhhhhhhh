@@ -6,6 +6,7 @@ import { Sidebar } from './components/Sidebar';
 // Public Pages
 import { LandingPage } from './pages/public/LandingPage';
 import { RoleSelectLogin } from './pages/public/RoleSelectLogin';
+import { PrivacyPolicyPage } from './pages/public/PrivacyPolicyPage';
 
 // Admin Pages
 import { AdminDashboard } from './pages/admin/AdminDashboard';
@@ -36,10 +37,13 @@ import { FacultyReports } from './pages/faculty/FacultyReports';
 
 export default function App() {
   // Navigation & Authentication state
-  const [currentView, setCurrentView] = useState<'app' | 'landing' | 'login'>(() => {
+  const [currentView, setCurrentView] = useState<'app' | 'landing' | 'login' | 'privacy'>(() => {
     if (typeof window !== 'undefined') {
-      if (window.location.hash === '#login') return 'login';
-      if (window.location.hash === '#landing') return 'landing';
+      const path = window.location.pathname;
+      const hash = window.location.hash;
+      if (path === '/privacy-policy' || hash === '#privacy-policy') return 'privacy';
+      if (hash === '#login') return 'login';
+      if (hash === '#landing') return 'landing';
       if (localStorage.getItem('cit_auth_token')) return 'app';
     }
     return 'landing'; // New user arrives at cinematic campus landing experience
@@ -56,9 +60,12 @@ export default function App() {
 
   // Restore authenticated session from localStorage if present
   useEffect(() => {
-    const handleHashChange = () => {
+    const handleNavigation = () => {
+      const path = window.location.pathname;
       const hash = window.location.hash;
-      if (hash === '#landing') {
+      if (path === '/privacy-policy' || hash === '#privacy-policy') {
+        setCurrentView('privacy');
+      } else if (hash === '#landing') {
         setCurrentView('landing');
       } else if (hash === '#login') {
         setCurrentView('login');
@@ -68,9 +75,16 @@ export default function App() {
         } else {
           setCurrentView('login');
         }
+      } else if (path === '/' && !hash) {
+        if (localStorage.getItem('cit_auth_token')) {
+          setCurrentView('app');
+        } else {
+          setCurrentView('landing');
+        }
       }
     };
-    window.addEventListener('hashchange', handleHashChange);
+    window.addEventListener('hashchange', handleNavigation);
+    window.addEventListener('popstate', handleNavigation);
 
     const savedToken = localStorage.getItem('cit_auth_token');
     if (savedToken) {
@@ -118,7 +132,10 @@ export default function App() {
       setCurrentView((prev) => (window.location.hash === '#login' ? 'login' : 'landing'));
     }
 
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    return () => {
+      window.removeEventListener('hashchange', handleNavigation);
+      window.removeEventListener('popstate', handleNavigation);
+    };
   }, []);
 
   // Fetch initial data from existing backend API routes
@@ -207,6 +224,24 @@ export default function App() {
     setCurrentView('login');
     window.location.hash = '#login';
   };
+
+  // 0. Render Public Privacy Policy Page (accessible without logging in)
+  if (currentView === 'privacy') {
+    return (
+      <PrivacyPolicyPage
+        onBackToHome={() => {
+          window.history.pushState(null, '', '/');
+          setCurrentView('landing');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+        onSignIn={() => {
+          window.location.hash = '#login';
+          setCurrentView('login');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+      />
+    );
+  }
 
   // 1. Render Public Landing Page
   if (currentView === 'landing') {
