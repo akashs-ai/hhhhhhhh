@@ -13,7 +13,8 @@
       "admin"
     ],
     "created_at": "2026-10-31T08:03:52.015Z",
-    "updated_at": "2026-10-31T08:03:52.015Z"
+    "updated_at": "2026-11-01T01:44:59.622Z",
+    "last_login_at": "2026-11-01T01:44:59.620Z"
   },
   "usr-coord-cse": {
     "id": "usr-coord-cse",
@@ -113,7 +114,7 @@
   "usr-student-cse3": {
     "id": "usr-student-cse3",
     "username": "student.aarav",
-    "display_name": "Aarav Patel (Student)",
+    "display_name": "Aarav Patel",
     "email": "aarav.cse3@cit.ac.in",
     "role": "student",
     "status": "active",
@@ -125,7 +126,9 @@
       "student"
     ],
     "created_at": "2026-10-31T08:03:52.015Z",
-    "updated_at": "2026-10-31T08:03:52.015Z"
+    "updated_at": "2026-11-01T01:44:59.566Z",
+    "last_login_at": "2026-11-01T01:44:59.563Z",
+    "google_id": "google-sub-aarav-12345"
   },
   "usr-student-y1a": {
     "id": "usr-student-y1a",
@@ -832,5 +835,181 @@
     ],
     "created_at": "2026-11-01T01:15:02.206Z",
     "updated_at": "2026-11-01T01:15:02.206Z"
+  },
+  "usr-fac-turing": {
+    "id": "usr-fac-turing",
+    "username": "prof.turing",
+    "display_name": "Prof. Alan Turing",
+    "email": "prof.turing@cit.ac.in",
+    "role": "faculty",
+    "status": "active",
+    "department": "CSE",
+    "faculty_id": "F01",
+    "auth_tokens": [
+      "token-usr-fac-turing-1793497086235"
+    ],
+    "password_hash": "c6802e6bbf0996605f0588f33fa3284540b5eac1d6453eb65d0ec57dbbd36ae1",
+    "created_at": "2026-11-01T01:38:06.237Z",
+    "updated_at": "2026-11-01T01:44:59.685Z",
+    "last_login_at": "2026-11-01T01:44:59.681Z"
+  },
+  "usr-fac-ramanujan": {
+    "id": "usr-fac-ramanujan",
+    "username": "prof.ramanujan",
+    "display_name": "Prof. S. Ramanujan",
+    "email": "prof.ramanujan@cit.ac.in",
+    "role": "faculty",
+    "status": "active",
+    "department": "MA",
+    "faculty_id": "F19",
+    "auth_tokens": [
+      "token-usr-fac-ramanujan-1793497134881"
+    ],
+    "password_hash": "030b27b1de423dcd97e562285856c7b469b701b5c42d3791e0c7506e79aefb36",
+    "created_at": "2026-11-01T01:38:54.885Z",
+    "updated_at": "2026-11-01T01:38:54.885Z"
+  },
+  "usr-fac-lovelace": {
+    "id": "usr-fac-lovelace",
+    "username": "prof.lovelace",
+    "display_name": "Prof. Ada Lovelace",
+    "email": "prof.lovelace@cit.ac.in",
+    "role": "faculty",
+    "status": "active",
+    "department": "CSE",
+    "faculty_id": "F02",
+    "auth_tokens": [
+      "token-usr-fac-lovelace-1793497134898"
+    ],
+    "password_hash": "ffc5d2f550395594f90cc3141424e23f169ce29ba7f88e44ba9c35da31ff78a4",
+    "created_at": "2026-11-01T01:38:54.904Z",
+    "updated_at": "2026-11-01T01:38:54.904Z"
+  },
+  "usr-fac-shannon": {
+    "id": "usr-fac-shannon",
+    "username": "prof.shannon",
+    "display_name": "Prof. Claude Shannon",
+    "email": "prof.shannon@cit.ac.in",
+    "role": "faculty",
+    "status": "active",
+    "department": "ECE",
+    "faculty_id": "F09",
+    "auth_tokens": [
+      "token-usr-fac-shannon-1793497134915"
+    ],
+    "password_hash": "62b378989d4706cdd967799a0def733561ed3912bf58481e273725d6e2e0978f",
+    "created_at": "2026-11-01T01:38:54.921Z",
+    "updated_at": "2026-11-01T01:38:54.921Z"
+  },
+  "usr-fac-hopper": {
+    "id": "usr-fac-hopper",
+    "username": "prof.hopper",
+    "display_name": "Prof. Grace Hopper",
+    "email": "prof.hopper@cit.ac.in",
+    "role": "faculty",
+    "status": "active",
+    "department": "CSE",
+    "faculty_id": "F04",
+    "auth_tokens": [
+      "token-usr-fac-hopper-1793497134932"
+    ],
+    "password_hash": "bef3f989d943be5533e3bb93bd29ea98f1ce02319f3199559959f7c3f6f3962c",
+    "created_at": "2026-11-01T01:38:54.935Z",
+    "updated_at": "2026-11-01T01:38:54.935Z"
+  },
+  "usr-fac-tesla": {
+    "id": "usr-fac-tesla",
+    "username": "prof.tesla",
+    "display_name": "Prof. Nikola Tesla",
+    "email": "prof.tesla@cit.ac.in",
+    "role": "faculty",
+    "status": "active",
+    "department": "EE",
+    "faculty_id": "F14",
+    "auth_tokens": [
+      "token-usr-fac-tesla-1793497134946"
+    ],
+    "password_hash": "d3f969738a093f648d7bc9147f78d9ca6238b7f170870c374e707b2823d7461e",
+    "created_at": "2026-11-01T01:38:54.950Z",
+    "updated_at": "2026-11-01T01:38:54.950Z"
+  },
+  "usr-fac-curie": {
+    "id": "usr-fac-curie",
+    "username": "prof.curie",
+    "display_name": "Prof. Marie Curie",
+    "email": "prof.curie@cit.ac.in",
+    "role": "faculty",
+    "status": "active",
+    "department": "PH",
+    "faculty_id": "F21",
+    "auth_tokens": [
+      "token-usr-fac-curie-1793497134960"
+    ],
+    "password_hash": "8d42a7bb404e342058b73cebc8abf1cbc127b9d2e1813245fa44fdf89d2b0966",
+    "created_at": "2026-11-01T01:38:54.964Z",
+    "updated_at": "2026-11-01T01:38:54.964Z"
+  },
+  "usr-fac-feynman": {
+    "id": "usr-fac-feynman",
+    "username": "prof.feynman",
+    "display_name": "Prof. Richard Feynman",
+    "email": "prof.feynman@cit.ac.in",
+    "role": "faculty",
+    "status": "active",
+    "department": "PH",
+    "faculty_id": "F22",
+    "auth_tokens": [
+      "token-usr-fac-feynman-1793497134974"
+    ],
+    "password_hash": "8669c025a5d7fe26e6a58234a4c2ff3d590b819f12819083dccdc2acb354a6f5",
+    "created_at": "2026-11-01T01:38:54.978Z",
+    "updated_at": "2026-11-01T01:38:54.978Z"
+  },
+  "usr-fac-brunel": {
+    "id": "usr-fac-brunel",
+    "username": "prof.brunel",
+    "display_name": "Prof. Isambard Brunel",
+    "email": "prof.brunel@cit.ac.in",
+    "role": "faculty",
+    "status": "active",
+    "department": "CE",
+    "faculty_id": "F31",
+    "auth_tokens": [
+      "token-usr-fac-brunel-1793497134988"
+    ],
+    "password_hash": "ecc60b593631a7bb2a682e81d768d693417a27400cf63ac8b6679119e480bd32",
+    "created_at": "2026-11-01T01:38:54.995Z",
+    "updated_at": "2026-11-01T01:38:54.995Z"
+  },
+  "usr-fac-watt": {
+    "id": "usr-fac-watt",
+    "username": "prof.watt",
+    "display_name": "Prof. James Watt",
+    "email": "prof.watt@cit.ac.in",
+    "role": "faculty",
+    "status": "active",
+    "department": "ME",
+    "faculty_id": "F25",
+    "auth_tokens": [
+      "token-usr-fac-watt-1793497135005"
+    ],
+    "password_hash": "259c503f83893999ad9d6e59c64dc5b009fa3b909f39c0620d893b06c59fbdb1",
+    "created_at": "2026-11-01T01:38:55.008Z",
+    "updated_at": "2026-11-01T01:38:55.008Z"
+  },
+  "usr-test-persistent-1793497473989": {
+    "id": "usr-test-persistent-1793497473989",
+    "username": "testuser.1793497473989",
+    "display_name": "Test Persistent Engineer",
+    "email": "test.1793497473989@cit.ac.in",
+    "role": "faculty",
+    "status": "active",
+    "department": "CSE",
+    "faculty_id": "F01",
+    "auth_tokens": [
+      "token-usr-test-persistent-1793497473989-1793497473993"
+    ],
+    "created_at": "2026-11-01T01:44:33.995Z",
+    "updated_at": "2026-11-01T01:44:33.995Z"
   }
 }

@@ -884,6 +884,9 @@ export class PostgresStorage implements IStorage {
       club_name: row.club_name || undefined,
       auth_tokens: tokens,
       password_hash: row.password_hash || undefined,
+      google_id: row.google_id || undefined,
+      password_reset_token: row.password_reset_token || undefined,
+      password_reset_expires_at: row.password_reset_expires_at ? (row.password_reset_expires_at instanceof Date ? row.password_reset_expires_at.toISOString() : String(row.password_reset_expires_at)) : undefined,
       created_at: row.created_at instanceof Date ? row.created_at.toISOString() : String(row.created_at),
       updated_at: row.updated_at instanceof Date ? row.updated_at.toISOString() : String(row.updated_at),
       last_login_at: row.last_login_at ? (row.last_login_at instanceof Date ? row.last_login_at.toISOString() : String(row.last_login_at)) : undefined,
@@ -967,8 +970,8 @@ export class PostgresStorage implements IStorage {
     try {
       await client.query('BEGIN');
       await client.query(
-        `INSERT INTO users (id, username, display_name, email, role, status, department_code, faculty_id, student_group_id, club_name, password_hash, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        `INSERT INTO users (id, username, display_name, email, role, status, department_code, faculty_id, student_group_id, club_name, password_hash, google_id, password_reset_token, password_reset_expires_at, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
          ON CONFLICT (id) DO UPDATE SET
            display_name = EXCLUDED.display_name,
            email = EXCLUDED.email,
@@ -978,6 +981,10 @@ export class PostgresStorage implements IStorage {
            faculty_id = EXCLUDED.faculty_id,
            student_group_id = EXCLUDED.student_group_id,
            club_name = EXCLUDED.club_name,
+           password_hash = COALESCE(EXCLUDED.password_hash, users.password_hash),
+           google_id = COALESCE(EXCLUDED.google_id, users.google_id),
+           password_reset_token = EXCLUDED.password_reset_token,
+           password_reset_expires_at = EXCLUDED.password_reset_expires_at,
            updated_at = EXCLUDED.updated_at`,
         [
           user.id,
@@ -991,6 +998,9 @@ export class PostgresStorage implements IStorage {
           user.student_group_id || null,
           user.club_name || null,
           user.password_hash || null,
+          user.google_id || null,
+          user.password_reset_token || null,
+          user.password_reset_expires_at || null,
           user.created_at,
           user.updated_at,
         ]

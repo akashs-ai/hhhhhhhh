@@ -1,8 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { premiumEase } from './components/ui/motion';
 import { UserItem, TimetableSession, Booking, ExamItem, DisruptionItem } from './types';
-import { INITIAL_USERS } from './data/demoData';
 import { Navbar } from './components/Navbar';
 import { Sidebar } from './components/Sidebar';
 
@@ -39,8 +36,15 @@ import { FacultyReports } from './pages/faculty/FacultyReports';
 
 export default function App() {
   // Navigation & Authentication state
-  const [currentView, setCurrentView] = useState<'app' | 'landing' | 'login'>('app');
-  const [currentUser, setCurrentUser] = useState<UserItem>(INITIAL_USERS[0]); // Default to Dr. S. Panda (Admin)
+  const [currentView, setCurrentView] = useState<'app' | 'landing' | 'login'>(() => {
+    if (typeof window !== 'undefined') {
+      if (window.location.hash === '#landing') return 'landing';
+      if (window.location.hash === '#login') return 'login';
+      if (localStorage.getItem('cit_auth_token')) return 'app';
+    }
+    return 'login';
+  });
+  const [currentUser, setCurrentUser] = useState<UserItem | null>(null);
   const [currentTab, setCurrentTab] = useState<string>('dashboard');
 
   // Backend live state integration
@@ -52,6 +56,22 @@ export default function App() {
 
   // Restore authenticated session from localStorage if present
   useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash;
+      if (hash === '#landing') {
+        setCurrentView('landing');
+      } else if (hash === '#login') {
+        setCurrentView('login');
+      } else if (hash === '#dashboard' || hash.startsWith('#')) {
+        if (localStorage.getItem('cit_auth_token')) {
+          setCurrentView('app');
+        } else {
+          setCurrentView('login');
+        }
+      }
+    };
+    window.addEventListener('hashchange', handleHashChange);
+
     const savedToken = localStorage.getItem('cit_auth_token');
     if (savedToken) {
       fetch('/api/users/me', {
@@ -82,14 +102,26 @@ export default function App() {
               email: u.email,
               token: savedToken,
             });
+            setCurrentView((prev) => (prev === 'landing' ? 'landing' : 'app'));
+          } else {
+            localStorage.removeItem('cit_auth_token');
+            setCurrentUser(null);
+            setCurrentView((prev) => (prev === 'landing' ? 'landing' : 'login'));
           }
         })
-        .catch(() => {});
+        .catch(() => {
+          // In case of transient network error, stay on current safe view
+        });
+    } else {
+      setCurrentView((prev) => (prev === 'landing' ? 'landing' : 'login'));
     }
+
+    return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
   // Fetch initial data from existing backend API routes
   const refreshBackendData = async () => {
+    if (!currentUser || !currentUser.token) return;
     setLoadingData(true);
     try {
       const headers: Record<string, string> = {
@@ -159,41 +191,53 @@ export default function App() {
     };
   }, [currentUser]);
 
-  // Handle User Switching
-  const handleSelectUser = (user: UserItem) => {
-    setCurrentUser(user);
-    if (user.token) {
-      localStorage.setItem('cit_auth_token', user.token);
+  const handleLogout = async () => {
+    if (currentUser?.token) {
+      try {
+        await fetch('/api/auth/logout', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${currentUser.token}` },
+        });
+      } catch (_) {}
     }
-    setCurrentTab('dashboard');
-    setCurrentView('app');
-  };
-
-  const handleLogout = () => {
     localStorage.removeItem('cit_auth_token');
+    setCurrentUser(null);
     setCurrentView('login');
+    window.location.hash = '#login';
   };
 
   // 1. Render Public Landing Page
   if (currentView === 'landing') {
     return (
       <LandingPage
-        onGetStarted={() => setCurrentView('login')}
-        onSignIn={() => setCurrentView('login')}
+        onGetStarted={() => {
+          window.location.hash = '#login';
+          setCurrentView('login');
+        }}
+        onSignIn={() => {
+          window.location.hash = '#login';
+          setCurrentView('login');
+        }}
       />
     );
   }
 
-  // 2. Render Role Selection and Login Page
-  if (currentView === 'login') {
+  // 2. Render Login Page (or protected route guard if unauthenticated)
+  if (currentView === 'login' || !currentUser) {
     return (
       <RoleSelectLogin
+        currentUser={currentUser}
         onLoginSuccess={(user) => {
           setCurrentUser(user);
           setCurrentTab('dashboard');
           setCurrentView('app');
+          window.location.hash = '#dashboard';
         }}
-        onBackToLanding={() => setCurrentView('landing')}
+        onBackToLanding={() => {
+          window.location.hash = '#landing';
+          setCurrentView('landing');
+        }}
+        onLogout={handleLogout}
       />
     );
   }
@@ -347,22 +391,20 @@ export default function App() {
         <div className="flex-1 flex flex-col min-w-0">
           <Navbar
             currentUser={currentUser}
-            onSelectUser={handleSelectUser}
             onLogout={handleLogout}
-            onOpenPublicLanding={() => setCurrentView('landing')}
+            onOpenPublicLanding={() => {
+              window.location.hash = '#landing';
+              setCurrentView('landing');
+            }}
           />
 
           <main className="flex-1 overflow-y-auto">
-            <motion.div
+            <div
               key={currentTab}
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.16, ease: premiumEase }}
-              style={{ willChange: 'opacity, transform' }}
-              className="min-h-full"
+              className="min-h-full cit-page-blend"
             >
               {renderRolePage()}
-            </motion.div>
+            </div>
           </main>
         </div>
       </div>

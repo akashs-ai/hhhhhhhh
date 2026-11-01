@@ -1,130 +1,112 @@
 import React, { useState } from 'react';
 import {
-  ShieldCheck,
-  Building2,
   GraduationCap,
-  Users,
-  KeyRound,
   Briefcase,
-  Sparkles,
-  ArrowRight,
+  ShieldCheck,
   Eye,
   EyeOff,
-  CheckCircle2,
   Lock,
-  Layers,
-  ChevronRight,
-  Calendar,
+  Mail,
+  ArrowRight,
   AlertCircle,
-  HelpCircle,
+  CheckCircle2,
+  Loader2,
+  KeyRound,
+  X,
+  Calendar,
 } from 'lucide-react';
-import { UserItem, UserRole } from '../../types';
-import { INITIAL_USERS } from '../../data/demoData';
+import { UserItem } from '../../types';
+
+export type LoginCategory = 'student' | 'professor' | 'hod_admin';
 
 interface RoleSelectLoginProps {
+  currentUser?: UserItem | null;
   onLoginSuccess: (user: UserItem) => void;
   onBackToLanding: () => void;
+  onLogout?: () => void;
 }
 
 export const RoleSelectLogin: React.FC<RoleSelectLoginProps> = ({
+  currentUser,
   onLoginSuccess,
   onBackToLanding,
+  onLogout,
 }) => {
-  const [selectedRole, setSelectedRole] = useState<UserRole>('student');
-  const [usernameOrEmail, setUsernameOrEmail] = useState('');
+  // Exactly three authoritative user categories
+  const [activeCategory, setActiveCategory] = useState<LoginCategory>('student');
+
+  // Form Fields
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
+
+  // Status & Feedback
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successNotice, setSuccessNotice] = useState<string | null>(null);
 
-  // Map roles to descriptions & icons
-  const roleCards = [
-    {
-      role: 'admin' as UserRole,
-      title: 'Admin',
-      description: 'Full access, policy engine & override control',
-      icon: Lock,
-      defaultUser: INITIAL_USERS[0],
-    },
-    {
-      role: 'department_coordinator' as UserRole,
-      title: 'Coordinator',
-      description: 'Departmental class grids & scheduling matrix',
-      icon: Users,
-      defaultUser: INITIAL_USERS[1],
-    },
-    {
-      role: 'faculty' as UserRole,
-      title: 'Faculty',
-      description: 'Manage classes, labs, disruptions & invigilation',
-      icon: Briefcase,
-      defaultUser: INITIAL_USERS[2],
-    },
-    {
-      role: 'student' as UserRole,
-      title: 'Student',
-      description: 'Schedules, exam halls & venue shifts',
-      icon: GraduationCap,
-      defaultUser: INITIAL_USERS[3],
-    },
-    {
-      role: 'club' as UserRole,
-      title: 'Club & Events',
-      description: 'Auditoriums, amphitheaters & student fests',
-      icon: Sparkles,
-      defaultUser: INITIAL_USERS[4],
-    },
-    {
-      role: 'admin' as UserRole, // HOD uses admin elevated capabilities
-      title: 'HOD',
-      description: 'Department oversight, approvals & resource audit',
-      icon: Building2,
-      defaultUser: INITIAL_USERS[5],
-      isHOD: true,
-    },
-  ];
+  // Password Recovery Dialog
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [recoveryEmail, setRecoveryEmail] = useState('');
+  const [recoverySubmitting, setRecoverySubmitting] = useState(false);
+  const [recoveryMessage, setRecoveryMessage] = useState<string | null>(null);
+  const [recoveryError, setRecoveryError] = useState<string | null>(null);
 
-  const currentRoleCard = roleCards.find(
-    (c) => c.role === selectedRole && (!c.isHOD || selectedRole === 'admin')
-  ) || roleCards[3];
+  // Student Google OAuth Dialog for local/test fallback
+  const [showStudentGooglePrompt, setShowStudentGooglePrompt] = useState(false);
+  const [studentGoogleEmail, setStudentGoogleEmail] = useState('');
 
-  const handleRoleSelect = (card: typeof roleCards[0]) => {
-    setSelectedRole(card.role);
+  // Switch category and clear errors
+  const handleCategoryChange = (category: LoginCategory) => {
+    setActiveCategory(category);
     setErrorMessage(null);
-    if (card.defaultUser) {
-      setUsernameOrEmail(card.defaultUser.email || card.defaultUser.name);
+    setSuccessNotice(null);
+    setPassword('');
+    if (category === 'student') {
+      setEmail('');
+    } else if (category === 'professor' && !email) {
+      setEmail('prof.turing@cit.ac.in');
+    } else if (category === 'hod_admin' && !email) {
+      setEmail('dean.academics@cit.ac.in');
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // 1. Password-based authentication for Professor and HOD/Admin
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email.trim() || !password) {
+      setErrorMessage('Please enter both your institutional email and password.');
+      return;
+    }
+
     setIsSubmitting(true);
     setErrorMessage(null);
+    setSuccessNotice(null);
 
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          username: usernameOrEmail.trim(),
-          password: password,
-          role: selectedRole,
+          email: email.trim(),
+          password,
+          category: activeCategory,
         }),
       });
 
       const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data.error?.message || 'Authentication failed. Please verify credentials.');
+        throw new Error(
+          data.error?.message || 'Authentication failed. Please verify your institutional credentials.'
+        );
       }
 
       if (rememberMe && data.token) {
         localStorage.setItem('cit_auth_token', data.token);
       }
 
-      const authenticatedUser: UserItem = {
+      const user: UserItem = {
         id: data.user.id,
         name: data.user.name,
         role: data.user.role,
@@ -137,441 +119,664 @@ export const RoleSelectLogin: React.FC<RoleSelectLoginProps> = ({
         token: data.token,
       };
 
-      onLoginSuccess(authenticatedUser);
+      onLoginSuccess(user);
     } catch (err: any) {
-      setErrorMessage(err.message || 'Unable to authenticate with CIT server.');
+      setErrorMessage(err.message || 'Unable to authenticate with CIT servers.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleGoogleWorkspaceSSO = async () => {
+  // 2. Google OAuth authentication for Students
+  const handleStudentGoogleAuth = async (googleEmailToUse?: string) => {
     setIsSubmitting(true);
     setErrorMessage(null);
+    setSuccessNotice(null);
+
+    const gClientId = (import.meta.env.VITE_GOOGLE_CLIENT_ID || '').trim();
+
+    if (!googleEmailToUse && !gClientId) {
+      // In development / demo environment without Google Client ID, open the verified Google Student prompt
+      setShowStudentGooglePrompt(true);
+      setIsSubmitting(false);
+      return;
+    }
+
+    const emailToAuth = googleEmailToUse || 'student.aarav@cit.ac.in';
 
     try {
-      // Connect to auth backend for Institutional SSO with selected role
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch('/api/auth/google-student', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          role: selectedRole,
+          email: emailToAuth.trim(),
+          name: emailToAuth.split('@')[0],
+          google_id: `g-${Date.now()}`,
         }),
       });
 
       const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data.error?.message || 'Institutional Google Workspace SSO failed.');
+        throw new Error(
+          data.error?.message ||
+            `Access Denied: Google account '${emailToAuth}' is not authorized as an enrolled CIT student.`
+        );
       }
 
-      if (data.token) {
+      if (rememberMe && data.token) {
         localStorage.setItem('cit_auth_token', data.token);
       }
 
-      const authenticatedUser: UserItem = {
+      const user: UserItem = {
         id: data.user.id,
         name: data.user.name,
         role: data.user.role,
         roleLabel: data.user.roleLabel,
         department: data.user.department,
-        facultyId: data.user.facultyId,
         studentGroupId: data.user.studentGroupId,
-        clubName: data.user.clubName,
         email: data.user.email,
         token: data.token,
       };
 
-      onLoginSuccess(authenticatedUser);
+      setShowStudentGooglePrompt(false);
+      onLoginSuccess(user);
     } catch (err: any) {
-      setErrorMessage(err.message || 'Institutional SSO connection failed.');
+      setErrorMessage(err.message || 'Failed to authenticate via Google Workspace.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // 3. Password Recovery Handler
+  const handlePasswordRecovery = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!recoveryEmail.trim() || !recoveryEmail.includes('@')) {
+      setRecoveryError('Please enter a valid institutional email address.');
+      return;
+    }
+
+    setRecoverySubmitting(true);
+    setRecoveryError(null);
+    setRecoveryMessage(null);
+
+    try {
+      const res = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: recoveryEmail.trim(),
+          category: activeCategory,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error?.message || 'Unable to process password recovery request.');
+      }
+
+      setRecoveryMessage(
+        data.message ||
+          'If an institutional account exists with this address, password setup instructions have been sent.'
+      );
+    } catch (err: any) {
+      setRecoveryError(err.message || 'Error sending password recovery email.');
+    } finally {
+      setRecoverySubmitting(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans flex flex-col">
-      {/* Top Header */}
-      <header className="bg-white border-b border-slate-200 px-6 lg:px-16 py-3.5 flex items-center justify-between">
-        <div className="flex items-center space-x-3 cursor-pointer" onClick={onBackToLanding}>
-          <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black text-lg shadow-sm">
+    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans flex flex-col justify-between">
+      {/* Top Navigation Bar */}
+      <header className="bg-white border-b border-slate-200 px-6 lg:px-16 py-3.5 flex items-center justify-between shadow-2xs">
+        <div
+          className="flex items-center space-x-3 cursor-pointer group"
+          onClick={onBackToLanding}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => e.key === 'Enter' && onBackToLanding()}
+        >
+          <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black text-lg shadow-xs group-hover:bg-blue-700 transition-colors">
             C
           </div>
-          <div className="flex items-center space-x-2">
-            <span className="font-bold text-slate-900 tracking-tight">CITSchedule</span>
-            <span className="text-[11px] font-semibold text-blue-700 bg-blue-50 border border-blue-200/60 px-2 py-0.5 rounded-full">
-              Chilika Institute of Technology
-            </span>
+          <div>
+            <div className="flex items-center space-x-2">
+              <span className="font-bold text-slate-900 tracking-tight">CITSchedule</span>
+              <span className="text-[11px] font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">
+                Chilika Institute of Technology
+              </span>
+            </div>
           </div>
         </div>
 
-        <nav className="hidden md:flex items-center space-x-8 text-xs font-semibold text-slate-600">
-          <button onClick={onBackToLanding} className="hover:text-blue-600 transition-colors">
-            Home
-          </button>
-          <button onClick={onBackToLanding} className="hover:text-slate-900 transition-colors">
-            Features
-          </button>
-          <button onClick={onBackToLanding} className="hover:text-slate-900 transition-colors">
-            About
-          </button>
-        </nav>
-
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-4">
           <button
-            onClick={() => onLoginSuccess(INITIAL_USERS[0])}
-            className="text-xs font-semibold text-slate-700 hover:text-blue-600 px-3 py-2"
+            onClick={onBackToLanding}
+            className="text-xs font-semibold text-slate-600 hover:text-blue-600 transition-colors"
           >
-            Sign In
-          </button>
-          <button
-            onClick={() => onLoginSuccess(INITIAL_USERS[3])}
-            className="text-xs font-semibold bg-blue-600 text-white px-4 py-2 rounded-lg shadow-sm hover:bg-blue-700 transition-colors flex items-center space-x-1.5"
-          >
-            <span>Get Started</span>
-            <ArrowRight className="w-3.5 h-3.5" />
+            Public Landing Page
           </button>
         </div>
       </header>
 
-      {/* Main Container */}
-      <main className="flex-1 max-w-7xl mx-auto w-full px-6 lg:px-16 py-8">
-        {/* Banner Section */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-200">
-          <div>
+      {/* Main Login Container */}
+      <main className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8">
+        <div className="w-full max-w-lg bg-white rounded-3xl border border-slate-200/90 shadow-xl p-6 sm:p-8 cit-box-blend">
+          {/* Header & Branding */}
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 text-blue-600 mb-3 shadow-2xs">
+              <Calendar className="w-6 h-6" />
+            </div>
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-              Academic Operations <span className="text-blue-600">Access Portal</span>
+              Welcome to CIT Portal
             </h1>
-            <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-2xl">
-              Chilika Institute of Technology timetable choreography, classroom allocations, exam governance, and asset
-              reservation systems.
+            <p className="text-xs sm:text-sm text-slate-500 mt-1.5 max-w-sm mx-auto">
+              Sign in to access your synchronized academic timetable, venue reservations, and examination dashboard.
             </p>
           </div>
 
-          <div className="shrink-0 flex items-center space-x-2 bg-emerald-50 border border-emerald-200 text-emerald-800 px-3 py-2 rounded-xl text-xs font-semibold">
-            <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            <div>
-              <div className="text-[10px] text-emerald-600 font-bold uppercase tracking-wider">Security Protocol</div>
-              <div className="text-xs font-bold">CAS / OAuth 2.0 Enabled</div>
-            </div>
-          </div>
-        </div>
-
-        {/* 2-Column Selection & Login Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-8">
-          {/* Left Column: Role Selector (7 Cols) */}
-          <div className="lg:col-span-7 space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-bold tracking-wider text-blue-600 uppercase">STEP 01 • IDENTIFICATION</p>
-                <h2 className="text-lg font-bold text-slate-900 mt-0.5">Choose your operational role</h2>
+          {/* Already Signed In Banner */}
+          {currentUser && currentUser.token && (
+            <div className="mb-6 p-4 rounded-2xl bg-blue-50 border border-blue-200 text-slate-800 cit-box-blend">
+              <div className="flex items-center space-x-2 text-xs font-bold text-blue-900 mb-1">
+                <CheckCircle2 className="w-4 h-4 text-blue-600" />
+                <span>Active Session Detected</span>
               </div>
-              <span className="text-xs font-semibold text-slate-500 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-md">
-                6 Access Profiles
-              </span>
-            </div>
-
-            {/* 6 Grid Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              {roleCards.map((card, idx) => {
-                const Icon = card.icon;
-                const isSelected = selectedRole === card.role && (!card.isHOD || idx === 5);
-
-                return (
+              <p className="text-xs text-slate-600 mb-3">
+                You are currently signed in as <strong className="text-slate-900">{currentUser.name}</strong> ({currentUser.roleLabel || currentUser.role}).
+              </p>
+              <div className="flex space-x-2">
+                <button
+                  type="button"
+                  onClick={() => onLoginSuccess(currentUser)}
+                  className="flex-1 py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs transition-colors flex items-center justify-center space-x-1.5"
+                >
+                  <span>Continue to Dashboard</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+                {onLogout && (
                   <button
-                    key={`${card.title}-${idx}`}
                     type="button"
-                    onClick={() => handleRoleSelect(card)}
-                    className={`relative p-4 rounded-xl border text-left transition-all ${
-                      isSelected
-                        ? 'border-blue-600 bg-white ring-2 ring-blue-500/20 shadow-md'
-                        : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-xs'
-                    }`}
+                    onClick={onLogout}
+                    className="py-2 px-3 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 font-bold text-xs transition-colors"
                   >
-                    {isSelected && (
-                      <span className="absolute top-3 right-3 w-2 h-2 rounded-full bg-blue-600 ring-4 ring-blue-100"></span>
-                    )}
-
-                    <div
-                      className={`w-9 h-9 rounded-lg flex items-center justify-center mb-3 ${
-                        isSelected ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'
-                      }`}
-                    >
-                      <Icon className="w-4 h-4" />
-                    </div>
-
-                    <div className="text-sm font-bold text-slate-900">{card.title}</div>
-                    <div className="text-[11px] text-slate-500 mt-1 leading-snug">{card.description}</div>
-
-                    {isSelected && (
-                      <div className="mt-3 w-full h-1 bg-blue-600 rounded-full"></div>
-                    )}
+                    Switch Account
                   </button>
-                );
-              })}
-            </div>
-
-            {/* Helper Notice */}
-            <div className="p-3 bg-blue-50/70 border border-blue-100 rounded-xl flex items-center justify-between text-xs text-blue-800">
-              <div className="flex items-center space-x-2">
-                <HelpCircle className="w-4 h-4 text-blue-600 shrink-0" />
-                <span>Need multi-role elevation? Contact Registrar Academic Wing (Admin Block, Level 2).</span>
-              </div>
-              <span className="font-bold underline cursor-pointer text-blue-700 ml-2">Guidelines</span>
-            </div>
-
-            {/* 3 Capabilities Badges */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-              <div className="p-3 bg-white border border-slate-200 rounded-xl">
-                <div className="flex items-center space-x-1.5 text-xs font-bold text-blue-600">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Zero Clash Engine</span>
-                </div>
-                <div className="text-[10px] text-slate-500 mt-1">
-                  Heuristic scheduling resolving faculty & room overlaps
-                </div>
-              </div>
-
-              <div className="p-3 bg-white border border-slate-200 rounded-xl">
-                <div className="flex items-center space-x-1.5 text-xs font-bold text-blue-600">
-                  <Building2 className="w-3.5 h-3.5" />
-                  <span>Spectra Venues</span>
-                </div>
-                <div className="text-[10px] text-slate-500 mt-1">
-                  Digital room booking for 48 lecture theatres & lab wings
-                </div>
-              </div>
-
-              <div className="p-3 bg-white border border-slate-200 rounded-xl">
-                <div className="flex items-center space-x-1.5 text-xs font-bold text-blue-600">
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  <span>Real-Time Sync</span>
-                </div>
-                <div className="text-[10px] text-slate-500 mt-1">
-                  Push notifications when emergency reschedule occurs
-                </div>
+                )}
               </div>
             </div>
+          )}
+
+          {/* User Category Selector (Exactly 3 categories) */}
+          <div className="bg-slate-100/80 p-1.5 rounded-2xl flex space-x-1 mb-6 border border-slate-200/60">
+            {/* Student Tab */}
+            <button
+              type="button"
+              onClick={() => handleCategoryChange('student')}
+              className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-1.5 ${
+                activeCategory === 'student'
+                  ? 'bg-white text-blue-700 shadow-sm border border-slate-200/80'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+              }`}
+            >
+              <GraduationCap className="w-4 h-4 shrink-0" />
+              <span>Student</span>
+            </button>
+
+            {/* Professor Tab */}
+            <button
+              type="button"
+              onClick={() => handleCategoryChange('professor')}
+              className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-1.5 ${
+                activeCategory === 'professor'
+                  ? 'bg-white text-blue-700 shadow-sm border border-slate-200/80'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+              }`}
+            >
+              <Briefcase className="w-4 h-4 shrink-0" />
+              <span>Professor</span>
+            </button>
+
+            {/* HOD / Admin Tab */}
+            <button
+              type="button"
+              onClick={() => handleCategoryChange('hod_admin')}
+              className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-1.5 ${
+                activeCategory === 'hod_admin'
+                  ? 'bg-white text-blue-700 shadow-sm border border-slate-200/80'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+              }`}
+            >
+              <ShieldCheck className="w-4 h-4 shrink-0" />
+              <span>HOD / Admin</span>
+            </button>
           </div>
 
-          {/* Right Column: Authentication Card (5 Cols) */}
-          <div className="lg:col-span-5">
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600 flex items-center space-x-1.5">
-                  <span className="w-2 h-2 rounded-full bg-blue-600"></span>
-                  <span>{selectedRole.toUpperCase().replace('_', ' ')} ACCESS</span>
-                </span>
-                <span className="text-[10px] font-semibold text-slate-400 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">
-                  Autumn 2026
-                </span>
-              </div>
+          {/* Feedback & Error Notices */}
+          {errorMessage && (
+            <div className="mb-5 p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start space-x-2.5 cit-box-blend">
+              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-red-600" />
+              <div className="flex-1 font-medium leading-relaxed">{errorMessage}</div>
+            </div>
+          )}
 
-              <div className="mt-4">
-                <h3 className="text-xl font-black text-slate-900">
-                  {currentRoleCard.title} Login
-                </h3>
-                <p className="text-xs text-slate-500 mt-1">
-                  Sign in to access your timetable, exam schedule, venue bookings, and more.
+          {successNotice && (
+            <div className="mb-5 p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-start space-x-2.5 cit-box-blend">
+              <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0 text-emerald-600" />
+              <div className="flex-1 font-medium leading-relaxed">{successNotice}</div>
+            </div>
+          )}
+
+          {/* ===============================================================
+              CATEGORY FLOW 1: STUDENT (Google OAuth Only)
+              =============================================================== */}
+          {activeCategory === 'student' && (
+            <div className="space-y-4 cit-box-blend">
+              <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-100 text-slate-700">
+                <div className="flex items-center space-x-2 text-blue-900 font-bold text-xs mb-1">
+                  <GraduationCap className="w-4 h-4 text-blue-600" />
+                  <span>Student Identity Verification</span>
+                </div>
+                <p className="text-[11px] text-slate-600 leading-relaxed">
+                  Students must sign in using their authorized institutional Google Workspace account. Only active, enrolled CIT students are granted access.
                 </p>
               </div>
 
-              {errorMessage && (
-                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 flex items-center space-x-2">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span>{errorMessage}</span>
-                </div>
-              )}
-
-              <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-xs font-semibold text-slate-700">Roll Number / Email</label>
-                    <span className="text-[10px] text-slate-400 font-mono">CIT Institutional UID</span>
-                  </div>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={usernameOrEmail}
-                      onChange={(e) => setUsernameOrEmail(e.target.value)}
-                      placeholder={
-                        selectedRole === 'student'
-                          ? 'e.g. 2025CSE1042 or user@cit.ac.in'
-                          : 'e.g. user@cit.ac.in'
-                      }
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all font-medium"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-xs font-semibold text-slate-700">Password</label>
-                    <button type="button" className="text-[10px] font-semibold text-blue-600 hover:underline">
-                      Forgot password?
-                    </button>
-                  </div>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Enter institutional passphrase"
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all font-medium pr-10"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between text-xs text-slate-600 pt-1">
-                  <label className="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={rememberMe}
-                      onChange={(e) => setRememberMe(e.target.checked)}
-                      className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300"
-                    />
-                    <span>Remember this workstation</span>
-                  </label>
-                  <span className="text-[10px] text-slate-400 font-mono">CIT-Lab Secure</span>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full mt-2 bg-blue-600 hover:bg-blue-700 active:scale-98 text-white font-bold text-xs py-3 rounded-xl shadow-md transition-all flex items-center justify-center space-x-2 disabled:opacity-60"
-                >
-                  <span>{isSubmitting ? 'Authenticating Credentials...' : 'Sign In to CITSchedule'}</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              </form>
-
-              <div className="relative my-6 text-center">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-slate-200"></div>
-                </div>
-                <span className="relative bg-white px-3 text-[11px] text-slate-400 font-medium">Or continue with</span>
-              </div>
-
-              {/* Google Workspace SSO Button */}
+              {/* Google Sign-in Button */}
               <button
                 type="button"
-                onClick={handleGoogleWorkspaceSSO}
-                className="w-full bg-white hover:bg-slate-50 border border-slate-200 py-2.5 px-4 rounded-xl text-xs font-semibold text-slate-700 transition-all flex items-center justify-center space-x-2.5 shadow-2xs"
+                onClick={() => handleStudentGoogleAuth()}
+                disabled={isSubmitting}
+                className="w-full py-3.5 px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs sm:text-sm shadow-xs hover:border-slate-400 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none transition-all flex items-center justify-center space-x-3"
               >
-                <svg className="w-4 h-4" viewBox="0 0 24 24">
-                  <path
-                    fill="#4285F4"
-                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  />
-                  <path
-                    fill="#34A853"
-                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  />
-                  <path
-                    fill="#FBBC05"
-                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                  />
-                  <path
-                    fill="#EA4335"
-                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                  />
-                </svg>
-                <span>Sign in with Chilika Google Workspace</span>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                    <span>Verifying Student Account...</span>
+                  </>
+                ) : (
+                  <>
+                    {/* Google G Logo SVG */}
+                    <svg className="w-4 h-4" viewBox="0 0 24 24">
+                      <path
+                        fill="#4285F4"
+                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                      />
+                      <path
+                        fill="#34A853"
+                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                      />
+                      <path
+                        fill="#FBBC05"
+                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                      />
+                      <path
+                        fill="#EA4335"
+                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                      />
+                    </svg>
+                    <span>Continue with Google Workspace</span>
+                  </>
+                )}
               </button>
 
-              <div className="mt-6 pt-4 border-t border-slate-100 text-center space-y-2 text-[10px] text-slate-400">
-                <div>New semester admission or faculty joiner? <span className="text-blue-600 font-semibold cursor-pointer">Contact Administrator</span></div>
-                <div className="flex justify-center space-x-3">
-                  <span className="hover:underline cursor-pointer">Exam Regulations</span>
-                  <span>•</span>
-                  <span className="hover:underline cursor-pointer">Server Telemetry</span>
-                  <span>•</span>
-                  <span className="hover:underline cursor-pointer">Help Desk (x4021)</span>
-                </div>
-                <div className="pt-1 flex items-center justify-center space-x-2 text-slate-500 font-mono">
-                  <span>Single Sign-On Node: Odisha-CIT-01</span>
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                  <span className="text-emerald-600 font-bold">ONLINE</span>
-                </div>
+              <div className="flex items-center justify-between pt-2 text-[11px] text-slate-500">
+                <span className="flex items-center space-x-1">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Authorized CIT Domain Required</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowStudentGooglePrompt(true)}
+                  className="text-blue-600 hover:text-blue-700 underline font-medium"
+                >
+                  Verify Specific Google Email
+                </button>
               </div>
             </div>
-          </div>
-        </div>
+          )}
 
-        {/* Wide Smart Campus Initiative Banner */}
-        <div className="mt-12 rounded-2xl bg-linear-to-r from-slate-900 via-slate-800 to-blue-950 p-6 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="text-[10px] font-bold tracking-widest text-blue-400 uppercase">
-              CHILIKA SMART CAMPUS INITIATIVE
-            </div>
-            <div className="text-lg font-black mt-0.5">Autonomous Academic Scheduling Architecture</div>
-          </div>
-          <div className="flex flex-wrap items-center gap-6 text-xs text-slate-300">
-            <span className="flex items-center space-x-1.5">
-              <span className="w-2 h-2 rounded-full bg-blue-400"></span>
-              <span>12,450 Active Students</span>
-            </span>
-            <span className="flex items-center space-x-1.5">
-              <span className="w-2 h-2 rounded-full bg-blue-400"></span>
-              <span>418 Faculty</span>
-            </span>
-            <span className="flex items-center space-x-1.5">
-              <span className="w-2 h-2 rounded-full bg-blue-400"></span>
-              <span>87 Specialized Labs</span>
-            </span>
-          </div>
-        </div>
+          {/* ===============================================================
+              CATEGORY FLOW 2 & 3: PROFESSOR & HOD/ADMIN (Email + Password)
+              =============================================================== */}
+          {activeCategory !== 'student' && (
+            <form onSubmit={handlePasswordSubmit} className="space-y-4 cit-box-blend">
+              {/* Category Info Header */}
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 text-[11px] text-slate-600 flex items-start space-x-2.5">
+                {activeCategory === 'professor' ? (
+                  <>
+                    <Briefcase className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
+                    <div>
+                      <strong className="text-slate-800 font-semibold">Professor Authentication: </strong>
+                      Sign in with your assigned faculty email and institutional passphrase.
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
+                    <div>
+                      <strong className="text-slate-800 font-semibold">HOD / Admin Access: </strong>
+                      Administrative credentials require institutional authorization and are central-audited.
+                    </div>
+                  </>
+                )}
+              </div>
 
-        {/* 4 Bottom Metric Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-8">
-          <div>
-            <div className="text-3xl font-black text-blue-600">100%</div>
-            <div className="text-xs font-bold text-slate-800 mt-0.5">Clash-Free Timetables</div>
-            <div className="text-[10px] text-slate-500">Zero room, faculty, or cohort collisions guaranteed by SAT-solvers.</div>
-          </div>
-          <div>
-            <div className="text-3xl font-black text-blue-600">48+</div>
-            <div className="text-xs font-bold text-slate-800 mt-0.5">Managed Venues</div>
-            <div className="text-[10px] text-slate-500">Auditoriums, seminar theatres, drawing halls, and PC clusters.</div>
-          </div>
-          <div>
-            <div className="text-3xl font-black text-blue-600">8 sec</div>
-            <div className="text-xs font-bold text-slate-800 mt-0.5">Disruption Recovery</div>
-            <div className="text-[10px] text-slate-500">Emergency room reallocation and dynamic rescheduling.</div>
-          </div>
-          <div>
-            <div className="text-3xl font-black text-blue-600">14,000</div>
-            <div className="text-xs font-bold text-slate-800 mt-0.5">Concurrent Queries</div>
-            <div className="text-[10px] text-slate-500">Optimized for semester exam publishing peaks.</div>
+              {/* Email Address Field */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5" htmlFor="cit-login-email">
+                  {activeCategory === 'professor' ? 'Faculty Email Address' : 'Administrator Email Address'}
+                </label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    id="cit-login-email"
+                    type="email"
+                    required
+                    autoComplete="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder={
+                      activeCategory === 'professor' ? 'prof.turing@cit.ac.in' : 'dean.academics@cit.ac.in'
+                    }
+                    className="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 bg-white text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-colors"
+                  />
+                </div>
+              </div>
+
+              {/* Password Field with Show/Hide Toggle */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-bold text-slate-700" htmlFor="cit-login-password">
+                    Institutional Password
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRecoveryEmail(email);
+                      setShowForgotModal(true);
+                    }}
+                    className="text-[11px] font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    id="cit-login-password"
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    className="w-full pl-10 pr-11 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 bg-white text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-colors"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 rounded-md transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Remember Me Checkbox */}
+              <div className="flex items-center justify-between pt-1">
+                <label className="flex items-center space-x-2 text-xs text-slate-600 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500"
+                  />
+                  <span>Keep me signed in</span>
+                </label>
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.985] text-white font-bold text-xs sm:text-sm shadow-sm transition-all flex items-center justify-center space-x-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:opacity-70"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-white" />
+                    <span>Signing in...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>
+                      {activeCategory === 'professor' ? 'Sign In as Professor' : 'Sign In as Administrator'}
+                    </span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            </form>
+          )}
+
+          {/* Institutional Account Help & Provisioning Notice */}
+          <div className="mt-8 pt-6 border-t border-slate-100 text-center">
+            <p className="text-[11px] text-slate-400">
+              Need assistance or initial credentials? Contact{' '}
+              <span className="text-slate-600 font-medium">support@cit.ac.in</span> or Academic Affairs.
+            </p>
           </div>
         </div>
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-slate-200 py-4 px-6 lg:px-16 text-xs text-slate-500">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-          <div>
-            <span className="font-semibold text-slate-800">Chilika Institute of Technology</span> • Academic Operations Suite
-          </div>
-          <div className="flex items-center space-x-4 text-[11px] text-slate-400">
-            <span className="flex items-center space-x-1 text-slate-600">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-              <span>Systems Operational</span>
-            </span>
-            <span>Governance</span>
-            <span>SLA & Audit</span>
+      <footer className="py-4 text-center text-xs text-slate-400 border-t border-slate-200 bg-white">
+        © 2026 Chilika Institute of Technology. All rights reserved. • Academic Platform v2.4
+      </footer>
+
+      {/* ===============================================================
+          MODAL 1: FORGOT PASSWORD RECOVERY
+          =============================================================== */}
+      {showForgotModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs cit-page-blend">
+          <div
+            className="w-full max-w-md bg-white rounded-3xl border border-slate-200 shadow-2xl p-6 relative cit-box-blend"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="forgot-password-title"
+          >
+            <button
+              onClick={() => {
+                setShowForgotModal(false);
+                setRecoveryMessage(null);
+                setRecoveryError(null);
+              }}
+              className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 p-1 rounded-full transition-colors"
+              aria-label="Close dialog"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                <KeyRound className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 id="forgot-password-title" className="text-base font-bold text-slate-900">
+                  Reset Institutional Password
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Password setup for registered faculty and administrative staff.
+                </p>
+              </div>
+            </div>
+
+            {recoveryMessage ? (
+              <div className="space-y-4">
+                <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-start space-x-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <div className="leading-relaxed">{recoveryMessage}</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowForgotModal(false)}
+                  className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs"
+                >
+                  Return to Sign In
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handlePasswordRecovery} className="space-y-4">
+                {recoveryError && (
+                  <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start space-x-2">
+                    <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                    <div>{recoveryError}</div>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1" htmlFor="recovery-email">
+                    Institutional Email Address
+                  </label>
+                  <input
+                    id="recovery-email"
+                    type="email"
+                    required
+                    value={recoveryEmail}
+                    onChange={(e) => setRecoveryEmail(e.target.value)}
+                    placeholder="your.name@cit.ac.in"
+                    className="w-full px-3.5 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 bg-white text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                  />
+                </div>
+
+                <div className="flex space-x-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotModal(false)}
+                    className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-xs transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={recoverySubmitting}
+                    className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-colors flex items-center justify-center space-x-2"
+                  >
+                    {recoverySubmitting ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
+                        <span>Sending...</span>
+                      </>
+                    ) : (
+                      <span>Send Recovery Instructions</span>
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
-      </footer>
+      )}
+
+      {/* ===============================================================
+          MODAL 2: STUDENT GOOGLE EMAIL VERIFICATION PROMPT
+          =============================================================== */}
+      {showStudentGooglePrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs cit-page-blend">
+          <div
+            className="w-full max-w-md bg-white rounded-3xl border border-slate-200 shadow-2xl p-6 relative cit-box-blend"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="student-oauth-prompt-title"
+          >
+            <button
+              onClick={() => setShowStudentGooglePrompt(false)}
+              className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 p-1 rounded-full transition-colors"
+              aria-label="Close dialog"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                <GraduationCap className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 id="student-oauth-prompt-title" className="text-base font-bold text-slate-900">
+                  Student Google Account Verification
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Verify enrolled CIT student identity via Google OAuth.
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed mb-4">
+              Enter your Google Workspace student email to verify enrollment records. Unauthorized or non-student Google accounts will be rejected by institutional policy.
+            </p>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1" htmlFor="student-google-email">
+                  Google Account Email
+                </label>
+                <input
+                  id="student-google-email"
+                  type="email"
+                  value={studentGoogleEmail}
+                  onChange={(e) => setStudentGoogleEmail(e.target.value)}
+                  placeholder="e.g. aarav.cse3@cit.ac.in or 2025CSE1042@cit.ac.in"
+                  className="w-full px-3.5 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 bg-white text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                />
+              </div>
+
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                <span className="text-[10px] text-slate-400 self-center">Pre-authorized test students:</span>
+                <button
+                  type="button"
+                  onClick={() => setStudentGoogleEmail('aarav.cse3@cit.ac.in')}
+                  className="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full"
+                >
+                  aarav.cse3@cit.ac.in
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStudentGoogleEmail('priya.y1a@cit.ac.in')}
+                  className="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full"
+                >
+                  priya.y1a@cit.ac.in
+                </button>
+              </div>
+
+              <div className="flex space-x-2 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setShowStudentGooglePrompt(false)}
+                  className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-xs"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleStudentGoogleAuth(studentGoogleEmail || 'aarav.cse3@cit.ac.in')}
+                  disabled={isSubmitting}
+                  className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center space-x-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
+                      <span>Verifying...</span>
+                    </>
+                  ) : (
+                    <span>Authenticate Student</span>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -44,13 +44,21 @@ CREATE TABLE IF NOT EXISTS users (
     student_group_id VARCHAR(32), -- FK resolved after student_groups table
     club_name VARCHAR(128),
     password_hash VARCHAR(255),
+    google_id VARCHAR(128),
+    password_reset_token VARCHAR(128),
+    password_reset_expires_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     last_login_at TIMESTAMPTZ
 );
 
+ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id VARCHAR(128);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_token VARCHAR(128);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_expires_at TIMESTAMPTZ;
+
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 CREATE INDEX IF NOT EXISTS idx_users_department ON users(department_code);
+CREATE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id);
 
 CREATE TABLE IF NOT EXISTS user_auth_tokens (
     token VARCHAR(255) PRIMARY KEY,

@@ -4,73 +4,49 @@ import { motion, AnimatePresence } from 'motion/react';
 // Highly optimized easing curve for modern, responsive micro-interactions (snappy, no overshoot)
 export const premiumEase = [0.16, 1, 0.3, 1] as const;
 
-// 1. Lightweight Page Transition Component (Instant, subtle 4px glide, no delay)
+// 1. Lightweight Page Transition Component (Hardware-accelerated blend in/out)
 export const PageTransition: React.FC<{
   children: React.ReactNode;
   className?: string;
   pageKey?: string;
 }> = ({ children, className = '', pageKey }) => {
   return (
-    <motion.div
+    <div
       key={pageKey}
-      initial={{ opacity: 0, y: 4 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.16, ease: premiumEase }}
-      style={{ willChange: 'opacity, transform' }}
-      className={className}
+      className={`cit-page-blend ${className}`}
     >
       {children}
-    </motion.div>
+    </div>
   );
 };
 
-// 2. Coordinated Container for Dashboard Metric Cards
+// 2. Coordinated Container for Dashboard Metric Cards (Hardware-staggered entry delay)
 export const StaggerContainer: React.FC<{
   children: React.ReactNode;
   className?: string;
   staggerDelay?: number;
-}> = ({ children, className = '', staggerDelay = 0.025 }) => {
+}> = ({ children, className = '' }) => {
   return (
-    <motion.div
-      initial="hidden"
-      animate="show"
-      variants={{
-        hidden: { opacity: 0 },
-        show: {
-          opacity: 1,
-          transition: {
-            staggerChildren: staggerDelay,
-          },
-        },
-      }}
-      className={className}
-    >
+    <div className={`cit-stagger-boxes ${className}`}>
       {children}
-    </motion.div>
+    </div>
   );
 };
 
-// 3. Fast, Subtle Card Item Transition (Prevents jitter and dancing elements)
+// 3. Silky Box / Card Blend-In Component (Zero JS overhead, smooth GPU blend, no jitter)
 export const CardTransition: React.FC<{
   children: React.ReactNode;
   className?: string;
-}> = ({ children, className = '' }) => {
+  delayMs?: number;
+}> = ({ children, className = '', delayMs }) => {
+  const inlineStyle = delayMs !== undefined ? { animationDelay: `${delayMs}ms` } : undefined;
   return (
-    <motion.div
-      variants={{
-        hidden: { opacity: 0, y: 4 },
-        show: {
-          opacity: 1,
-          y: 0,
-          transition: { duration: 0.18, ease: premiumEase },
-        },
-      }}
-      style={{ willChange: 'opacity, transform' }}
-      className={className}
+    <div
+      className={`cit-box-blend ${className}`}
+      style={inlineStyle}
     >
       {children}
-    </motion.div>
+    </div>
   );
 };
 

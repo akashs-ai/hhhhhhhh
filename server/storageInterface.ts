@@ -206,6 +206,9 @@ export interface UserRecord {
   club_name?: string;
   auth_tokens: string[];
   password_hash?: string;
+  google_id?: string;
+  password_reset_token?: string;
+  password_reset_expires_at?: string;
   created_at: string;
   updated_at: string;
   last_login_at?: string;

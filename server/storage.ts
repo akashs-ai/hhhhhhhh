@@ -780,7 +780,10 @@ export class StorageManager implements IStorage {
 
   public async validateReferentialIntegrity(user: Partial<UserRecord>): Promise<void> {
     const dataset = await this.getDataset();
-    const validDepartments = ['CSE', 'ECE', 'EE', 'ME', 'CE', 'Mathematics', 'Physics', 'Humanities', 'Administration'];
+    const validDepartments = [
+      'CSE', 'ECE', 'EE', 'ME', 'CE', 'MA', 'PH', 'HSS', 'ADMIN', 'COMMON',
+      'Mathematics', 'Physics', 'Humanities', 'Administration'
+    ];
 
     if (user.department && !validDepartments.includes(user.department)) {
       throw new Error(`Referential integrity error: Department '${user.department}' is not recognized in the CIT institution.`);
