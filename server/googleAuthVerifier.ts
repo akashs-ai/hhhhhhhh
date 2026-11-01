@@ -43,9 +43,13 @@ export async function verifyGoogleAuth(payload: GoogleAuthPayload): Promise<Veri
     );
   }
 
-  // 1. Support secure development/test tokens in non-production or demo auth mode
-  const isDevOrTest = process.env.NODE_ENV !== 'production' || process.env.ENABLE_DEMO_AUTH === 'true';
-  if (isDevOrTest) {
+  // 1. Support secure development/test tokens in non-production, demo auth, or test environments
+  const allowTestTokens =
+    process.env.NODE_ENV !== 'production' ||
+    process.env.ENABLE_DEMO_AUTH === 'true' ||
+    process.env.ALLOW_TEST_TOKENS === 'true';
+
+  if (allowTestTokens) {
     if (
       rawToken.startsWith('test-google-token:') ||
       rawToken.startsWith('test-token:') ||

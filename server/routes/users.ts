@@ -196,11 +196,18 @@ router.post('/auth/google-student', async (req: AuthenticatedRequest, res: Respo
     }
 
     // 4. Student Authorization Check:
-    // Authorized if already an active student in DB, OR found in authorized_students registry / enrolled whitelist
+    // Authorized if enrolled in authorized_students registry or belongs to institutional student domain
     const authorizedStudent = await storage.getAuthorizedStudent(cleanEmail);
-    const isEnrolledStudent = Boolean(user || authorizedStudent);
+    const isEnrolledStudent = Boolean(
+      authorizedStudent ||
+      cleanEmail.endsWith('@cit.ac.in') ||
+      (user && user.email.endsWith('@cit.ac.in'))
+    );
 
-    if (!isEnrolledStudent) {
+    // Development/demo mode detection: enabled when not strictly production, or when ENABLE_DEMO_AUTH is true
+    const isDevOrDemo = process.env.NODE_ENV !== 'production' || process.env.ENABLE_DEMO_AUTH === 'true';
+
+    if (!isEnrolledStudent && !isDevOrDemo) {
       res.status(403).json({
         success: false,
         error: {
@@ -213,11 +220,13 @@ router.post('/auth/google-student', async (req: AuthenticatedRequest, res: Respo
 
     // 5. Account provisioning or Profile Update in Neon PostgreSQL
     if (!user) {
-      // Newly admitted / first-time login authorized student
+      // Newly admitted / first-time login student
       const studentId = `usr-student-${cleanEmail.split('@')[0].replace(/[^a-z0-9]/gi, '')}`;
-      const group = authorizedStudent?.student_group_id || 'CSE-2A';
+      const group = authorizedStudent?.student_group_id || 'CSE-2';
       const dept = authorizedStudent?.department_code || 'CSE';
-      const displayName = verifiedGoogle.name || authorizedStudent?.display_name || cleanEmail.split('@')[0];
+      const displayName = isEnrolledStudent
+        ? (verifiedGoogle.name || authorizedStudent?.display_name || cleanEmail.split('@')[0])
+        : `${verifiedGoogle.name || cleanEmail.split('@')[0]} (Demo)`;
       const initialToken = `token-${studentId}-${Date.now()}`;
 
       user = await storage.createUser({
@@ -230,7 +239,7 @@ router.post('/auth/google-student', async (req: AuthenticatedRequest, res: Respo
         department: dept,
         student_group_id: group,
         google_id: verifiedGoogle.googleId,
-        avatar_url: verifiedGoogle.avatarUrl,
+        avatar_url: verifiedGoogle.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(cleanEmail)}`,
         auth_tokens: [initialToken],
       });
     } else {
@@ -241,8 +250,10 @@ router.post('/auth/google-student', async (req: AuthenticatedRequest, res: Respo
       if (verifiedGoogle.googleId && user.google_id !== verifiedGoogle.googleId) {
         updates.google_id = verifiedGoogle.googleId;
       }
-      if (verifiedGoogle.avatarUrl && user.avatar_url !== verifiedGoogle.avatarUrl) {
-        updates.avatar_url = verifiedGoogle.avatarUrl;
+      if (verifiedGoogle.avatarUrl) {
+        if (!user.avatar_url || !verifiedGoogle.avatarUrl.includes('dicebear')) {
+          updates.avatar_url = verifiedGoogle.avatarUrl;
+        }
       }
       if (verifiedGoogle.name && (!user.display_name || user.display_name.includes('Student'))) {
         updates.display_name = verifiedGoogle.name;
@@ -274,12 +285,14 @@ router.post('/auth/google-student', async (req: AuthenticatedRequest, res: Respo
       user_id: user.id,
       user_name: user.display_name,
       role: 'student',
-      action: 'STUDENT_GOOGLE_LOGIN',
+      action: isEnrolledStudent ? 'STUDENT_GOOGLE_LOGIN' : 'STUDENT_GOOGLE_LOGIN_DEV_DEMO',
       resource_type: 'auth',
       resource_id: user.id,
       details: {
         google_id: verifiedGoogle.googleId,
         email: cleanEmail,
+        is_enrolled: isEnrolledStudent,
+        dev_demo_mode: !isEnrolledStudent && isDevOrDemo,
         has_avatar: Boolean(verifiedGoogle.avatarUrl),
       },
       status: 'success',
@@ -289,11 +302,14 @@ router.post('/auth/google-student', async (req: AuthenticatedRequest, res: Respo
     res.json({
       success: true,
       token,
+      isDemo: !isEnrolledStudent && isDevOrDemo,
       user: {
         id: user.id,
         name: user.display_name,
         role: 'student',
-        roleLabel: `Student (${user.student_group_id || 'CSE-2A'})`,
+        roleLabel: isEnrolledStudent
+          ? `Student (${user.student_group_id || 'CSE-2'})`
+          : `Student (Demo / ${user.student_group_id || 'CSE-2'})`,
         department: user.department,
         studentGroupId: user.student_group_id,
         email: user.email,
@@ -310,6 +326,112 @@ router.post('/auth/google-student', async (req: AuthenticatedRequest, res: Respo
       },
     });
   }
+});
+
+// POST /api/auth/demo-student - One-click Development/Demo Student Login (Dev/Demo Mode only)
+router.post('/auth/demo-student', async (req: AuthenticatedRequest, res: Response) => {
+  const isDevOrDemo = process.env.NODE_ENV !== 'production' || process.env.ENABLE_DEMO_AUTH === 'true';
+
+  if (!isDevOrDemo) {
+    res.status(403).json({
+      success: false,
+      error: {
+        code: 'DEMO_AUTH_DISABLED',
+        message: 'Demo student authentication is disabled in production environments. Institutional enrollment is strictly enforced.',
+      },
+    });
+    return;
+  }
+
+  const demoEmail = 'student.demo@gmail.com';
+  const demoId = 'usr-student-demo';
+  const demoName = 'Demo Student (Sandbox)';
+  const demoGroup = 'CSE-2';
+  const demoDept = 'CSE';
+  const demoAvatar = 'https://api.dicebear.com/7.x/avataaars/svg?seed=student.demo@gmail.com';
+
+  const allUsers = Object.values(await storage.getAllUsers());
+  let user = allUsers.find((u) => u.id === demoId || u.email.toLowerCase() === demoEmail);
+
+  if (!user) {
+    const sessionToken = `token-demo-${Date.now()}`;
+    user = await storage.createUser({
+      id: demoId,
+      username: 'student.demo',
+      display_name: demoName,
+      email: demoEmail,
+      role: 'student',
+      status: 'active',
+      department: demoDept,
+      student_group_id: demoGroup,
+      avatar_url: demoAvatar,
+      auth_tokens: [sessionToken],
+    });
+  } else {
+    // Ensure active status and update last login
+    const updates: Partial<UserRecord> = {
+      status: 'active',
+      role: 'student',
+      last_login_at: new Date().toISOString(),
+      display_name: demoName,
+      avatar_url: demoAvatar,
+    };
+    user = await storage.updateUser(user.id, updates);
+  }
+
+  let token = user.auth_tokens && user.auth_tokens.length > 0 ? user.auth_tokens[0] : null;
+  if (!token) {
+    token = `token-demo-${Date.now()}`;
+    await storage.updateUser(user.id, {
+      auth_tokens: [token],
+      last_login_at: new Date().toISOString(),
+    });
+  }
+
+  await storage.logAudit({
+    user_id: user.id,
+    user_name: user.display_name,
+    role: 'student',
+    action: 'STUDENT_DEMO_LOGIN',
+    resource_type: 'auth',
+    resource_id: user.id,
+    details: {
+      email: demoEmail,
+      is_demo_identity: true,
+      note: 'Demo student identity for display/testing only. Not a real Gmail account.',
+    },
+    status: 'success',
+  });
+
+  res.json({
+    success: true,
+    token,
+    isDemo: true,
+    notice: 'Demo student identity for display and testing purposes only. This is not a real or usable Gmail account.',
+    user: {
+      id: user.id,
+      name: user.display_name,
+      role: 'student',
+      roleLabel: 'Student (Demo / CSE-2)',
+      department: user.department,
+      studentGroupId: user.student_group_id,
+      email: user.email,
+      avatarUrl: user.avatar_url,
+    },
+  });
+});
+
+// GET /api/auth/config - Query public auth configuration and demo mode status
+router.get('/auth/config', (req: AuthenticatedRequest, res: Response) => {
+  const isDevOrDemo = process.env.NODE_ENV !== 'production' || process.env.ENABLE_DEMO_AUTH === 'true';
+  const clientId = (process.env.VITE_GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID || '').trim();
+  res.json({
+    success: true,
+    isDevelopment: isDevOrDemo,
+    demoAuthAllowed: isDevOrDemo,
+    googleOAuthConfigured: Boolean(clientId),
+    clientId: clientId || null,
+  });
 });
 
 // POST /api/auth/forgot-password - Request institutional password recovery

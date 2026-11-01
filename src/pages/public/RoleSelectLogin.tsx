@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   GraduationCap,
   Briefcase,
@@ -14,6 +14,8 @@ import {
   KeyRound,
   X,
   Calendar,
+  FlaskConical,
+  Sparkles,
 } from 'lucide-react';
 import { UserItem } from '../../types';
 import { googleSignIn } from '../../services/googleAuth';
@@ -57,6 +59,34 @@ export const RoleSelectLogin: React.FC<RoleSelectLoginProps> = ({
   // Student Google OAuth Dialog for local/test fallback
   const [showStudentGooglePrompt, setShowStudentGooglePrompt] = useState(false);
   const [studentGoogleEmail, setStudentGoogleEmail] = useState('');
+
+  // Development/Demo Mode detection
+  const [authConfig, setAuthConfig] = useState<{
+    isDevelopment: boolean;
+    demoAuthAllowed: boolean;
+    googleOAuthConfigured: boolean;
+  }>({
+    isDevelopment: Boolean(import.meta.env.DEV || import.meta.env.MODE !== 'production'),
+    demoAuthAllowed: true, // Optimistically enabled for local development
+    googleOAuthConfigured: Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID),
+  });
+
+  useEffect(() => {
+    fetch('/api/auth/config')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setAuthConfig({
+            isDevelopment: Boolean(data.isDevelopment),
+            demoAuthAllowed: Boolean(data.demoAuthAllowed),
+            googleOAuthConfigured: Boolean(data.googleOAuthConfigured),
+          });
+        }
+      })
+      .catch(() => {
+        // Quiet fallback
+      });
+  }, []);
 
   // Switch category and clear errors
   const handleCategoryChange = (category: LoginCategory) => {
@@ -199,6 +229,48 @@ export const RoleSelectLogin: React.FC<RoleSelectLoginProps> = ({
       onLoginSuccess(user);
     } catch (err: any) {
       setErrorMessage(err.message || 'Failed to authenticate via Google Workspace.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // 2b. Direct Development Demo Student Login (Sandbox Mode Only)
+  const handleDemoStudentLogin = async () => {
+    setIsSubmitting(true);
+    setErrorMessage(null);
+    setSuccessNotice(null);
+
+    try {
+      const res = await fetch('/api/auth/demo-student', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error?.message || 'Failed to authenticate demo student.');
+      }
+
+      if (rememberMe && data.token) {
+        localStorage.setItem('cit_auth_token', data.token);
+      }
+
+      const user: UserItem = {
+        id: data.user.id,
+        name: data.user.name,
+        role: data.user.role,
+        roleLabel: data.user.roleLabel,
+        department: data.user.department,
+        studentGroupId: data.user.studentGroupId,
+        email: data.user.email,
+        token: data.token,
+        avatar: data.user.avatarUrl,
+        avatarUrl: data.user.avatarUrl,
+      };
+
+      onLoginSuccess(user);
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Error signing in as demo student.');
     } finally {
       setIsSubmitting(false);
     }
@@ -385,26 +457,42 @@ export const RoleSelectLogin: React.FC<RoleSelectLoginProps> = ({
           )}
 
           {/* ===============================================================
-              CATEGORY FLOW 1: STUDENT (Google OAuth Only)
+              CATEGORY FLOW 1: STUDENT (Google OAuth & Demo Sandbox)
               =============================================================== */}
           {activeCategory === 'student' && (
             <div className="space-y-4 cit-box-blend">
-              <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-100 text-slate-700">
-                <div className="flex items-center space-x-2 text-blue-900 font-bold text-xs mb-1">
-                  <GraduationCap className="w-4 h-4 text-blue-600" />
-                  <span>Student Identity Verification</span>
+              {/* Development & Testing Mode Banner */}
+              {authConfig.demoAuthAllowed ? (
+                <div className="p-3.5 rounded-2xl bg-amber-50/90 border border-amber-200/90 text-amber-950 text-xs space-y-1.5 shadow-2xs">
+                  <div className="flex items-center space-x-2 text-amber-900 font-bold">
+                    <FlaskConical className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span className="text-xs">Development & Testing Mode Active</span>
+                    <span className="text-[10px] bg-amber-200 text-amber-900 font-extrabold px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+                      Sandbox
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-amber-800 leading-relaxed">
+                    Student enrollment restrictions are relaxed in development mode. You can sign in with personal Google accounts (e.g. @gmail.com) without pre-enrollment or launch a simulated demo session below.
+                  </p>
                 </div>
-                <p className="text-[11px] text-slate-600 leading-relaxed">
-                  Students must sign in using their authorized institutional Google Workspace account. Only active, enrolled CIT students are granted access.
-                </p>
-              </div>
+              ) : (
+                <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-100 text-slate-700">
+                  <div className="flex items-center space-x-2 text-blue-900 font-bold text-xs mb-1">
+                    <GraduationCap className="w-4 h-4 text-blue-600" />
+                    <span>Student Identity Verification</span>
+                  </div>
+                  <p className="text-[11px] text-slate-600 leading-relaxed">
+                    Students must sign in using their authorized institutional Google Workspace account. Only active, enrolled CIT students are granted access.
+                  </p>
+                </div>
+              )}
 
               {/* Google Sign-in Button */}
               <button
                 type="button"
                 onClick={() => handleStudentGoogleAuth()}
                 disabled={isSubmitting}
-                className="w-full py-3.5 px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs sm:text-sm shadow-xs hover:border-slate-400 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none transition-all flex items-center justify-center space-x-3"
+                className="w-full py-3.5 px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs sm:text-sm shadow-xs hover:border-slate-400 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none transition-all flex items-center justify-center space-x-3 cursor-pointer"
               >
                 {isSubmitting ? (
                   <>
@@ -437,15 +525,50 @@ export const RoleSelectLogin: React.FC<RoleSelectLoginProps> = ({
                 )}
               </button>
 
+              {/* Demo Student One-Click Login (Development / Demo Mode Only) */}
+              {authConfig.demoAuthAllowed && (
+                <div className="space-y-2 pt-1">
+                  <div className="relative flex items-center justify-center">
+                    <div className="border-t border-slate-200 w-full" />
+                    <span className="bg-white px-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 absolute">
+                      or simulated demo access
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleDemoStudentLogin}
+                    disabled={isSubmitting}
+                    className="w-full py-3 px-4 rounded-xl border-2 border-dashed border-amber-300 bg-amber-50/60 hover:bg-amber-100/70 text-amber-950 font-bold text-xs sm:text-sm shadow-2xs hover:border-amber-400 focus-visible:ring-2 focus-visible:ring-amber-500 transition-all flex items-center justify-center space-x-2.5 cursor-pointer"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin text-amber-600" />
+                        <span>Launching Demo Session...</span>
+                      </>
+                    ) : (
+                      <>
+                        <FlaskConical className="w-4 h-4 text-amber-600" />
+                        <span>Sign In as Demo Student (Sandbox)</span>
+                      </>
+                    )}
+                  </button>
+
+                  <p className="text-[10px] text-slate-500 text-center leading-normal px-2">
+                    * Uses demo identity <span className="font-mono text-slate-700 font-semibold">student.demo@gmail.com</span> for display and testing only. This is not a real or usable Gmail account.
+                  </p>
+                </div>
+              )}
+
               <div className="flex items-center justify-between pt-2 text-[11px] text-slate-500">
                 <span className="flex items-center space-x-1">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Authorized CIT Domain Required</span>
+                  <span>{authConfig.demoAuthAllowed ? 'Demo Sandbox Mode' : 'Authorized CIT Domain Required'}</span>
                 </span>
                 <button
                   type="button"
                   onClick={() => setShowStudentGooglePrompt(true)}
-                  className="text-blue-600 hover:text-blue-700 underline font-medium"
+                  className="text-blue-600 hover:text-blue-700 underline font-medium cursor-pointer"
                 >
                   Verify Specific Google Email
                 </button>
@@ -760,9 +883,16 @@ export const RoleSelectLogin: React.FC<RoleSelectLoginProps> = ({
                 <button
                   type="button"
                   onClick={() => setStudentGoogleEmail('priya.y1a@cit.ac.in')}
-                  className="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full"
+                  className="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full cursor-pointer"
                 >
                   priya.y1a@cit.ac.in
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStudentGoogleEmail('student.demo@gmail.com')}
+                  className="text-[10px] bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-full cursor-pointer"
+                >
+                  student.demo@gmail.com (Demo)
                 </button>
               </div>
 
