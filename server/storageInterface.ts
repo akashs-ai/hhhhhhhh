@@ -193,6 +193,14 @@ export interface DisruptionRecord {
   approved_at?: string;
 }
 
+export interface AuthorizedStudentRecord {
+  email: string;
+  student_group_id: string;
+  roll_number?: string;
+  display_name: string;
+  department_code: string;
+}
+
 export interface UserRecord {
   id: string; // e.g. "usr-admin", "usr-coord-cse", "usr-student-cse3"
   username: string;
@@ -209,6 +217,7 @@ export interface UserRecord {
   google_id?: string;
   password_reset_token?: string;
   password_reset_expires_at?: string;
+  avatar_url?: string;
   created_at: string;
   updated_at: string;
   last_login_at?: string;
@@ -280,6 +289,7 @@ export interface IStorage {
   getUserById(id: string): Promise<UserRecord | null>;
   getUserByUsername(username: string): Promise<UserRecord | null>;
   getUserByToken(token: string): Promise<UserRecord | null>;
+  getAuthorizedStudent(email: string): Promise<AuthorizedStudentRecord | null>;
   saveUser(user: UserRecord): Promise<void>;
   createUser(userData: Omit<UserRecord, 'created_at' | 'updated_at'>): Promise<UserRecord>;
   updateUser(id: string, updates: Partial<UserRecord>): Promise<UserRecord>;

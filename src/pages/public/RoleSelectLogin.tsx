@@ -16,6 +16,7 @@ import {
   Calendar,
 } from 'lucide-react';
 import { UserItem } from '../../types';
+import { googleSignIn } from '../../services/googleAuth';
 
 export type LoginCategory = 'student' | 'professor' | 'hod_admin';
 
@@ -128,38 +129,52 @@ export const RoleSelectLogin: React.FC<RoleSelectLoginProps> = ({
   };
 
   // 2. Google OAuth authentication for Students
-  const handleStudentGoogleAuth = async (googleEmailToUse?: string) => {
+  const handleStudentGoogleAuth = async (tokenOrEmail?: string) => {
     setIsSubmitting(true);
     setErrorMessage(null);
     setSuccessNotice(null);
 
-    const gClientId = (import.meta.env.VITE_GOOGLE_CLIENT_ID || '').trim();
-
-    if (!googleEmailToUse && !gClientId) {
-      // In development / demo environment without Google Client ID, open the verified Google Student prompt
-      setShowStudentGooglePrompt(true);
-      setIsSubmitting(false);
-      return;
-    }
-
-    const emailToAuth = googleEmailToUse || 'student.aarav@cit.ac.in';
-
     try {
+      let payloadToSend: { credential?: string; access_token?: string } = {};
+      const gClientId = (import.meta.env.VITE_GOOGLE_CLIENT_ID || '').trim();
+
+      if (tokenOrEmail) {
+        // Specific student email or test token from modal
+        const clean = tokenOrEmail.trim();
+        payloadToSend = clean.startsWith('test-') || clean.startsWith('mock-')
+          ? { credential: clean }
+          : { credential: `test-google-token:${clean}` };
+      } else if (gClientId) {
+        // Real Google Identity Services popup
+        try {
+          const authRes = await googleSignIn();
+          if (!authRes || !authRes.accessToken) {
+            // User closed popup
+            setIsSubmitting(false);
+            return;
+          }
+          payloadToSend = { access_token: authRes.accessToken };
+        } catch (oauthErr: any) {
+          throw new Error(oauthErr?.message || 'Google OAuth sign-in failed.');
+        }
+      } else {
+        // In development / demo environment without Google Client ID, open the verified Google Student prompt
+        setShowStudentGooglePrompt(true);
+        setIsSubmitting(false);
+        return;
+      }
+
       const res = await fetch('/api/auth/google-student', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: emailToAuth.trim(),
-          name: emailToAuth.split('@')[0],
-          google_id: `g-${Date.now()}`,
-        }),
+        body: JSON.stringify(payloadToSend),
       });
 
       const data = await res.json();
       if (!res.ok || !data.success) {
         throw new Error(
           data.error?.message ||
-            `Access Denied: Google account '${emailToAuth}' is not authorized as an enrolled CIT student.`
+            'Access Denied: Google account is not authorized as an enrolled CIT student.'
         );
       }
 
@@ -176,6 +191,8 @@ export const RoleSelectLogin: React.FC<RoleSelectLoginProps> = ({
         studentGroupId: data.user.studentGroupId,
         email: data.user.email,
         token: data.token,
+        avatar: data.user.avatarUrl,
+        avatarUrl: data.user.avatarUrl,
       };
 
       setShowStudentGooglePrompt(false);

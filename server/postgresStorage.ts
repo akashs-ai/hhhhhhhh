@@ -5,6 +5,7 @@ import {
   BookingRecord,
   DisruptionRecord,
   UserRecord,
+  AuthorizedStudentRecord,
   AuditLogEntry,
   MaintenanceBlock,
   WaitlistEntry,
@@ -885,6 +886,7 @@ export class PostgresStorage implements IStorage {
       auth_tokens: tokens,
       password_hash: row.password_hash || undefined,
       google_id: row.google_id || undefined,
+      avatar_url: row.avatar_url || undefined,
       password_reset_token: row.password_reset_token || undefined,
       password_reset_expires_at: row.password_reset_expires_at ? (row.password_reset_expires_at instanceof Date ? row.password_reset_expires_at.toISOString() : String(row.password_reset_expires_at)) : undefined,
       created_at: row.created_at instanceof Date ? row.created_at.toISOString() : String(row.created_at),
@@ -965,13 +967,34 @@ export class PostgresStorage implements IStorage {
     }
   }
 
+  public async getAuthorizedStudent(email: string): Promise<AuthorizedStudentRecord | null> {
+    const client = await this.pool.connect();
+    try {
+      const res = await client.query('SELECT * FROM authorized_students WHERE LOWER(email) = LOWER($1)', [email.trim()]);
+      if (res.rows.length === 0) return null;
+      const row = res.rows[0];
+      return {
+        email: row.email,
+        student_group_id: row.student_group_id,
+        roll_number: row.roll_number || undefined,
+        display_name: row.display_name,
+        department_code: row.department_code,
+      };
+    } catch (err: any) {
+      console.warn('[PostgresStorage] getAuthorizedStudent query notice:', err?.message);
+      return null;
+    } finally {
+      client.release();
+    }
+  }
+
   public async saveUser(user: UserRecord): Promise<void> {
     const client = await this.pool.connect();
     try {
       await client.query('BEGIN');
       await client.query(
-        `INSERT INTO users (id, username, display_name, email, role, status, department_code, faculty_id, student_group_id, club_name, password_hash, google_id, password_reset_token, password_reset_expires_at, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+        `INSERT INTO users (id, username, display_name, email, role, status, department_code, faculty_id, student_group_id, club_name, password_hash, google_id, avatar_url, password_reset_token, password_reset_expires_at, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
          ON CONFLICT (id) DO UPDATE SET
            display_name = EXCLUDED.display_name,
            email = EXCLUDED.email,
@@ -983,6 +1006,7 @@ export class PostgresStorage implements IStorage {
            club_name = EXCLUDED.club_name,
            password_hash = COALESCE(EXCLUDED.password_hash, users.password_hash),
            google_id = COALESCE(EXCLUDED.google_id, users.google_id),
+           avatar_url = COALESCE(EXCLUDED.avatar_url, users.avatar_url),
            password_reset_token = EXCLUDED.password_reset_token,
            password_reset_expires_at = EXCLUDED.password_reset_expires_at,
            updated_at = EXCLUDED.updated_at`,
@@ -999,6 +1023,7 @@ export class PostgresStorage implements IStorage {
           user.club_name || null,
           user.password_hash || null,
           user.google_id || null,
+          user.avatar_url || null,
           user.password_reset_token || null,
           user.password_reset_expires_at || null,
           user.created_at,
@@ -1036,7 +1061,8 @@ export class PostgresStorage implements IStorage {
         }
       }
       if (user.student_group_id) {
-        const grpRes = await client.query('SELECT id FROM student_groups WHERE id = $1', [user.student_group_id]);
+        const baseGroup = user.student_group_id.replace(/([0-9])[A-Z]$/, '$1');
+        const grpRes = await client.query('SELECT id FROM student_groups WHERE id = $1 OR id = $2', [user.student_group_id, baseGroup]);
         if (grpRes.rows.length === 0) {
           throw new Error(`Referential integrity error: Student group '${user.student_group_id}' does not exist in authoritative student_groups.`);
         }

@@ -116,26 +116,50 @@ async function runAuthSuite() {
     // -----------------------------------------------------------------
     console.log('\n--- SECTION 2: Student Google Authentication Flow ---');
     
-    // 2.1 Authorized Student Google Auth
+    // 2.1 Authorized Student Google Auth (Verified via Google Token)
     const studentAuth = await request('POST', '/api/auth/google-student', {
       body: {
-        email: 'aarav.cse3@cit.ac.in',
-        name: 'Aarav Patel',
-        google_id: 'google-sub-aarav-12345',
+        credential: 'test-google-token:aarav.cse3@cit.ac.in:Aarav Patel:https://cit.ac.in/avatars/aarav.jpg',
       },
     });
     assert(studentAuth.status === 200, 'Authorized student signs in successfully via Google (HTTP 200)');
     assert(studentAuth.body.success === true, 'Response indicates success');
     assert(studentAuth.body.user.role === 'student', 'Verified role is strictly student');
     assert(Boolean(studentAuth.body.token), 'Issues secure session token for student');
+    assert(
+      studentAuth.body.user.avatarUrl === 'https://cit.ac.in/avatars/aarav.jpg',
+      'Student profile avatar retrieved and persisted correctly'
+    );
     const studentToken = studentAuth.body.token;
 
-    // 2.2 Rejection of Unauthorized Google Account
+    // 2.2 Rejection of Missing Token / Credentials
+    const missingToken = await request('POST', '/api/auth/google-student', {
+      body: { email: 'aarav.cse3@cit.ac.in' },
+    });
+    assert(missingToken.status === 400, 'Missing Google token rejected with HTTP 400');
+    assert(missingToken.body.error?.code === 'GOOGLE_TOKEN_REQUIRED', 'Returns GOOGLE_TOKEN_REQUIRED code');
+
+    // 2.3 Rejection of Invalid / Tampered / Forged Token
+    const forgedToken = await request('POST', '/api/auth/google-student', {
+      body: { credential: 'invalid-garbage-token-99999' },
+    });
+    assert(forgedToken.status === 401, 'Tampered/invalid Google token rejected with HTTP 401');
+    assert(forgedToken.body.error?.code === 'INVALID_GOOGLE_TOKEN', 'Returns INVALID_GOOGLE_TOKEN code');
+
+    // 2.4 Server-Side Anti-Spoofing: Client cannot override token identity with request body fields
+    const spoofAttempt = await request('POST', '/api/auth/google-student', {
+      body: {
+        credential: 'test-google-token:random.outsider@gmail.com:Hacker Name',
+        email: 'aarav.cse3@cit.ac.in', // Client attempts to spoof legitimate student email
+      },
+    });
+    assert(spoofAttempt.status === 403, 'Spoofed email body ignored; token identity strictly enforced (HTTP 403)');
+    assert(spoofAttempt.body.error?.code === 'STUDENT_NOT_AUTHORIZED', 'Rejected because token identity is not authorized');
+
+    // 2.5 Rejection of Unauthorized Google Account
     const unauthorizedStudent = await request('POST', '/api/auth/google-student', {
       body: {
-        email: 'random.outsider@gmail.com',
-        name: 'John Doe',
-        google_id: 'google-sub-outsider-99999',
+        credential: 'test-google-token:random.outsider@gmail.com:John Doe',
       },
     });
     assert(unauthorizedStudent.status === 403, 'Unauthorized Google account is strictly rejected (HTTP 403)');
@@ -149,11 +173,10 @@ async function runAuthSuite() {
       'Returns clear explanatory message directing user to Academic Administration'
     );
 
-    // 2.3 Role Mismatch: Faculty or Admin trying to authenticate as Student via Google
+    // 2.6 Role Mismatch: Faculty or Admin trying to authenticate as Student via Google
     const facultyAsStudent = await request('POST', '/api/auth/google-student', {
       body: {
-        email: 'prof.turing@cit.ac.in',
-        name: 'Prof. Alan Turing',
+        credential: 'test-google-token:prof.turing@cit.ac.in:Prof. Alan Turing',
       },
     });
     assert(facultyAsStudent.status === 403, 'Faculty email rejected from Student Google endpoint (HTTP 403)');
@@ -161,6 +184,16 @@ async function runAuthSuite() {
       facultyAsStudent.body.error?.code === 'STUDENT_ROLE_MISMATCH',
       'Returns STUDENT_ROLE_MISMATCH error code'
     );
+
+    // 2.7 Provisioning of New Authorized Enrolled Student from Registry
+    const newEnrolledStudent = await request('POST', '/api/auth/google-student', {
+      body: {
+        credential: 'test-google-token:2025cse1042@cit.ac.in:Soumyajit Mohapatra:https://cit.ac.in/avatars/soumyajit.jpg',
+      },
+    });
+    assert(newEnrolledStudent.status === 200, 'Newly enrolled student in authorized registry authenticated (HTTP 200)');
+    assert(newEnrolledStudent.body.user.studentGroupId === 'CSE-2A', 'Assigned correct cohort group (CSE-2A)');
+    assert(newEnrolledStudent.body.user.role === 'student', 'Assigned student role');
 
     // -----------------------------------------------------------------
     // SECTION 3: PROFESSOR EMAIL/PASSWORD AUTHENTICATION FLOW
@@ -292,6 +325,10 @@ async function runAuthSuite() {
     });
     assert(studentMe.status === 200, 'Student retrieves own profile via Bearer token (HTTP 200)');
     assert(studentMe.body.data.role === 'student', 'Student profile role is student');
+    assert(
+      studentMe.body.data.avatarUrl === 'https://cit.ac.in/avatars/aarav.jpg',
+      'Student profile contains avatarUrl in session verification'
+    );
 
     // 6.2 Professor Profile
     const profMe = await request('GET', '/api/users/me', {

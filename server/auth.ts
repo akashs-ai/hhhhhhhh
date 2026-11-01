@@ -14,6 +14,7 @@ export interface UserProfile {
   username: string;
   email: string;
   status: 'active' | 'suspended' | 'pending';
+  avatarUrl?: string;
 }
 
 export interface AuthenticatedRequest extends Request {
@@ -32,6 +33,7 @@ function userRecordToProfile(record: UserRecord): UserProfile {
     username: record.username,
     email: record.email,
     status: record.status,
+    avatarUrl: record.avatar_url,
   };
 }
 

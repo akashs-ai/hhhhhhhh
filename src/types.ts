@@ -12,6 +12,7 @@ export interface UserItem {
   email?: string;
   token: string;
   avatar?: string;
+  avatarUrl?: string;
 }
 
 export interface TimetableSession {

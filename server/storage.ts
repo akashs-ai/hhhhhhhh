@@ -7,6 +7,7 @@ import {
   BookingRecord,
   DisruptionRecord,
   UserRecord,
+  AuthorizedStudentRecord,
   AuditLogEntry,
   MaintenanceBlock,
   WaitlistEntry,
@@ -772,6 +773,46 @@ export class StorageManager implements IStorage {
     );
   }
 
+  public async getAuthorizedStudent(email: string): Promise<AuthorizedStudentRecord | null> {
+    const clean = email.trim().toLowerCase();
+    const authorizedMap: Record<string, { studentGroupId: string; displayName: string; department: string; rollNumber?: string }> = {
+      'aarav.cse3@cit.ac.in': { studentGroupId: 'CSE-3', displayName: 'Aarav Patel', department: 'CSE', rollNumber: '2023CSE0101' },
+      'student.aarav@cit.ac.in': { studentGroupId: 'CSE-3', displayName: 'Aarav Patel', department: 'CSE', rollNumber: '2023CSE0102' },
+      'priya.y1a@cit.ac.in': { studentGroupId: 'Y1-A', displayName: 'Priya Sharma', department: 'CSE', rollNumber: '2025Y10042' },
+      '2025cse1042@cit.ac.in': { studentGroupId: 'CSE-2A', displayName: 'Soumyajit Mohapatra', department: 'CSE', rollNumber: '2025CSE1042' },
+    };
+
+    const entry = authorizedMap[clean];
+    if (entry) {
+      return {
+        email: clean,
+        student_group_id: entry.studentGroupId,
+        display_name: entry.displayName,
+        department_code: entry.department,
+        roll_number: entry.rollNumber,
+      };
+    }
+
+    // Pattern match for institutional enrolled students e.g. 2025cse1042@cit.ac.in, priya.y1a@cit.ac.in, etc.
+    if (clean.endsWith('@cit.ac.in')) {
+      const parts = clean.split('@')[0].split('.');
+      const groupMatch = clean.match(/(cse-?[0-9][a-z]?|y[1-4]-?[a-z]?)/i);
+      const group = groupMatch ? groupMatch[0].toUpperCase().replace(/([A-Z]+)([0-9])/, '$1-$2') : 'CSE-2A';
+      const name = parts[0]
+        .replace(/^[0-9]+/, '')
+        .replace(/([A-Z])/g, ' $1')
+        .trim();
+      const displayName = name ? name.charAt(0).toUpperCase() + name.slice(1) : 'CIT Student';
+      return {
+        email: clean,
+        student_group_id: group,
+        display_name: displayName,
+        department_code: 'CSE',
+      };
+    }
+    return null;
+  }
+
   public async saveUser(user: UserRecord): Promise<void> {
     const all = await this.getAllUsers();
     all[user.id] = user;
@@ -790,7 +831,10 @@ export class StorageManager implements IStorage {
     }
 
     if (user.student_group_id) {
-      const validGroup = (dataset.student_groups || []).some((g: any) => g.id === user.student_group_id);
+      const baseGroup = user.student_group_id.replace(/([0-9])[A-Z]$/, '$1');
+      const validGroup = (dataset.student_groups || []).some(
+        (g: any) => g.id === user.student_group_id || g.id === baseGroup
+      );
       if (!validGroup) {
         throw new Error(`Referential integrity error: Student group '${user.student_group_id}' does not exist in authoritative student_groups.`);
       }

@@ -101,6 +101,8 @@ export default function App() {
               clubName: u.clubName,
               email: u.email,
               token: savedToken,
+              avatar: u.avatarUrl,
+              avatarUrl: u.avatarUrl,
             });
             setCurrentView((prev) => (prev === 'landing' ? 'landing' : 'app'));
           } else {

@@ -235,9 +235,18 @@ export const Navbar: React.FC<NavbarProps> = ({
             aria-expanded={showUserDropdown}
             aria-label="User Account Menu"
           >
-            <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs shadow-xs">
-              {currentUser.name.charAt(0)}
-            </div>
+            {currentUser.avatar || currentUser.avatarUrl ? (
+              <img
+                src={currentUser.avatar || currentUser.avatarUrl}
+                alt={currentUser.name}
+                className="w-8 h-8 rounded-full object-cover border border-blue-200 shadow-xs shrink-0"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
+                {currentUser.name.charAt(0)}
+              </div>
+            )}
             <div className="hidden sm:block text-left leading-tight">
               <div className="text-xs font-semibold text-slate-800">{currentUser.name}</div>
               <div className="text-[11px] text-slate-500">{currentUser.roleLabel || currentUser.role}</div>
@@ -249,14 +258,30 @@ export const Navbar: React.FC<NavbarProps> = ({
           {showUserDropdown && (
             <div className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
               <div className="px-3.5 py-2.5 border-b border-slate-100">
-                <div className="flex items-center space-x-1.5 mb-1">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
-                    Verified CIT Identity
-                  </span>
+                <div className="flex items-center space-x-2.5 mb-2">
+                  {currentUser.avatar || currentUser.avatarUrl ? (
+                    <img
+                      src={currentUser.avatar || currentUser.avatarUrl}
+                      alt={currentUser.name}
+                      className="w-10 h-10 rounded-full object-cover border border-blue-200 shrink-0"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm shrink-0">
+                      {currentUser.name.charAt(0)}
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center space-x-1.5 mb-0.5">
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
+                        Verified CIT Identity
+                      </span>
+                    </div>
+                    <div className="text-xs font-bold text-slate-900 truncate">{currentUser.name}</div>
+                    <div className="text-[11px] text-slate-500 truncate">{currentUser.email || 'institutional@cit.ac.in'}</div>
+                  </div>
                 </div>
-                <div className="text-xs font-bold text-slate-900 truncate">{currentUser.name}</div>
-                <div className="text-[11px] text-slate-500 truncate">{currentUser.email || 'institutional@cit.ac.in'}</div>
 
                 {/* Role and Department Badges */}
                 <div className="flex flex-wrap gap-1.5 mt-2">

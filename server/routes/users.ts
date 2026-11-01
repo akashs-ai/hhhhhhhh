@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import crypto from 'crypto';
 import { AuthenticatedRequest, requireAuth, requireRole } from '../auth.js';
 import { storage, UserRecord } from '../storage.js';
+import { verifyGoogleAuth, GoogleAuthError } from '../googleAuthVerifier.js';
 
 const router = Router();
 
@@ -142,125 +143,173 @@ router.post('/auth/login', async (req: AuthenticatedRequest, res: Response) => {
       studentGroupId: user.student_group_id,
       clubName: user.club_name,
       email: user.email,
+      avatarUrl: user.avatar_url,
     },
   });
 });
 
 // POST /api/auth/google-student - Authorized Student Google OAuth authentication
 router.post('/auth/google-student', async (req: AuthenticatedRequest, res: Response) => {
-  const { email, name, google_id } = req.body;
-  if (!email || typeof email !== 'string') {
-    res.status(400).json({
-      success: false,
-      error: { code: 'EMAIL_REQUIRED', message: 'A verified Google email address is required.' },
-    });
-    return;
-  }
-
-  const cleanEmail = email.trim().toLowerCase();
-  const allUsers = Object.values(await storage.getAllUsers());
-  let user = allUsers.find((u) => u.email.toLowerCase() === cleanEmail);
-
-  // Reject if Google account exists but belongs to faculty or admin
-  if (user && user.role !== 'student') {
-    res.status(403).json({
-      success: false,
-      error: {
-        code: 'STUDENT_ROLE_MISMATCH',
-        message: `Access Denied: Google account '${cleanEmail}' is registered as a ${
-          user.role === 'faculty' ? 'Professor' : 'HOD/Admin'
-        }. Please use the designated portal.`,
-      },
-    });
-    return;
-  }
-
-  // Trusted student authorization check: must match existing student or approved CIT student pattern
-  const isEnrolledStudent = Boolean(
-    user ||
-    cleanEmail.endsWith('@cit.ac.in') ||
-    cleanEmail.includes('.cse') ||
-    cleanEmail.includes('.y1') ||
-    cleanEmail.startsWith('2025')
-  );
-
-  if (!isEnrolledStudent && !user) {
-    res.status(403).json({
-      success: false,
-      error: {
-        code: 'STUDENT_NOT_AUTHORIZED',
-        message: `Access Denied: Google account '${cleanEmail}' is not recognized as an enrolled CIT student. Contact Academic Administration to register.`,
-      },
-    });
-    return;
-  }
-
-  // If user does not exist yet but has verified student domain, provision student record securely
-  if (!user) {
-    const studentId = `usr-student-${cleanEmail.split('@')[0].replace(/[^a-z0-9]/gi, '')}`;
-    const group = cleanEmail.includes('y1') ? 'Y1-A' : 'CSE-2A';
-    user = await storage.createUser({
-      id: studentId,
-      username: cleanEmail.split('@')[0],
-      display_name: name || cleanEmail.split('@')[0],
-      email: cleanEmail,
-      role: 'student',
-      status: 'active',
-      department: 'CSE',
-      student_group_id: group,
-      google_id: google_id || undefined,
-      auth_tokens: [`token-${studentId}-${Date.now()}`],
-    });
-  } else {
-    const updates: Partial<UserRecord> = {
-      last_login_at: new Date().toISOString(),
+  try {
+    const rawPayload = {
+      credential: req.body?.credential,
+      id_token: req.body?.id_token,
+      access_token: req.body?.access_token,
+      token: req.body?.token,
     };
-    if (google_id && !user.google_id) updates.google_id = google_id;
-    if (name && (!user.display_name || user.display_name.includes('Student'))) updates.display_name = name;
-    user = await storage.updateUser(user.id, updates);
-  }
 
-  if (user.status === 'suspended') {
-    res.status(403).json({
-      success: false,
-      error: { code: 'ACCOUNT_SUSPENDED', message: `Student account '${user.username}' is suspended.` },
-    });
-    return;
-  }
+    if (!rawPayload.credential && !rawPayload.id_token && !rawPayload.access_token && !rawPayload.token) {
+      res.status(400).json({
+        success: false,
+        error: {
+          code: 'GOOGLE_TOKEN_REQUIRED',
+          message: 'A verified Google OAuth credential or access token is required.',
+        },
+      });
+      return;
+    }
 
-  let token = user.auth_tokens && user.auth_tokens.length > 0 ? user.auth_tokens[0] : null;
-  if (!token) {
-    token = `token-${user.id}-${Date.now()}`;
-    await storage.updateUser(user.id, {
-      auth_tokens: [token],
-      last_login_at: new Date().toISOString(),
-    });
-  }
+    // 1. Strictly verify the Google OAuth token server-side (ignoring untrusted client body parameters)
+    const verifiedGoogle = await verifyGoogleAuth(rawPayload);
+    const cleanEmail = verifiedGoogle.email.trim().toLowerCase();
 
-  await storage.logAudit({
-    user_id: user.id,
-    user_name: user.display_name,
-    role: 'student',
-    action: 'STUDENT_GOOGLE_LOGIN',
-    resource_type: 'auth',
-    resource_id: user.id,
-    details: { google_id: google_id || 'verified_email', email: cleanEmail },
-    status: 'success',
-  });
+    // 2. Fetch existing user accounts from database
+    const allUsers = Object.values(await storage.getAllUsers());
+    let user = allUsers.find(
+      (u) =>
+        u.email.toLowerCase() === cleanEmail ||
+        (u.google_id && u.google_id === verifiedGoogle.googleId)
+    );
 
-  res.json({
-    success: true,
-    token,
-    user: {
-      id: user.id,
-      name: user.display_name,
+    // 3. Role enforcement: Reject if Google account belongs to faculty or admin
+    if (user && user.role !== 'student') {
+      res.status(403).json({
+        success: false,
+        error: {
+          code: 'STUDENT_ROLE_MISMATCH',
+          message: `Access Denied: Google account '${cleanEmail}' is registered as a ${
+            user.role === 'faculty' ? 'Professor' : 'HOD/Admin'
+          }. Please use the designated portal.`,
+        },
+      });
+      return;
+    }
+
+    // 4. Student Authorization Check:
+    // Authorized if already an active student in DB, OR found in authorized_students registry / enrolled whitelist
+    const authorizedStudent = await storage.getAuthorizedStudent(cleanEmail);
+    const isEnrolledStudent = Boolean(user || authorizedStudent);
+
+    if (!isEnrolledStudent) {
+      res.status(403).json({
+        success: false,
+        error: {
+          code: 'STUDENT_NOT_AUTHORIZED',
+          message: `Access Denied: Google account '${cleanEmail}' is not recognized as an enrolled CIT student. Contact Academic Administration to register.`,
+        },
+      });
+      return;
+    }
+
+    // 5. Account provisioning or Profile Update in Neon PostgreSQL
+    if (!user) {
+      // Newly admitted / first-time login authorized student
+      const studentId = `usr-student-${cleanEmail.split('@')[0].replace(/[^a-z0-9]/gi, '')}`;
+      const group = authorizedStudent?.student_group_id || 'CSE-2A';
+      const dept = authorizedStudent?.department_code || 'CSE';
+      const displayName = verifiedGoogle.name || authorizedStudent?.display_name || cleanEmail.split('@')[0];
+      const initialToken = `token-${studentId}-${Date.now()}`;
+
+      user = await storage.createUser({
+        id: studentId,
+        username: cleanEmail.split('@')[0],
+        display_name: displayName,
+        email: cleanEmail,
+        role: 'student',
+        status: 'active',
+        department: dept,
+        student_group_id: group,
+        google_id: verifiedGoogle.googleId,
+        avatar_url: verifiedGoogle.avatarUrl,
+        auth_tokens: [initialToken],
+      });
+    } else {
+      // Existing student: link Google ID, update profile photo, preserve timetable & group enrollments
+      const updates: Partial<UserRecord> = {
+        last_login_at: new Date().toISOString(),
+      };
+      if (verifiedGoogle.googleId && user.google_id !== verifiedGoogle.googleId) {
+        updates.google_id = verifiedGoogle.googleId;
+      }
+      if (verifiedGoogle.avatarUrl && user.avatar_url !== verifiedGoogle.avatarUrl) {
+        updates.avatar_url = verifiedGoogle.avatarUrl;
+      }
+      if (verifiedGoogle.name && (!user.display_name || user.display_name.includes('Student'))) {
+        updates.display_name = verifiedGoogle.name;
+      }
+      user = await storage.updateUser(user.id, updates);
+    }
+
+    // 6. Check suspension status
+    if (user.status === 'suspended') {
+      res.status(403).json({
+        success: false,
+        error: { code: 'ACCOUNT_SUSPENDED', message: `Student account '${user.username}' is suspended.` },
+      });
+      return;
+    }
+
+    // 7. Secure session token issuance
+    let token = user.auth_tokens && user.auth_tokens.length > 0 ? user.auth_tokens[0] : null;
+    if (!token) {
+      token = `token-${user.id}-${Date.now()}`;
+      await storage.updateUser(user.id, {
+        auth_tokens: [token],
+        last_login_at: new Date().toISOString(),
+      });
+    }
+
+    // 8. Institutional audit log
+    await storage.logAudit({
+      user_id: user.id,
+      user_name: user.display_name,
       role: 'student',
-      roleLabel: `Student (${user.student_group_id || 'CSE-2A'})`,
-      department: user.department,
-      studentGroupId: user.student_group_id,
-      email: user.email,
-    },
-  });
+      action: 'STUDENT_GOOGLE_LOGIN',
+      resource_type: 'auth',
+      resource_id: user.id,
+      details: {
+        google_id: verifiedGoogle.googleId,
+        email: cleanEmail,
+        has_avatar: Boolean(verifiedGoogle.avatarUrl),
+      },
+      status: 'success',
+    });
+
+    // 9. Return authenticated session with verified student profile
+    res.json({
+      success: true,
+      token,
+      user: {
+        id: user.id,
+        name: user.display_name,
+        role: 'student',
+        roleLabel: `Student (${user.student_group_id || 'CSE-2A'})`,
+        department: user.department,
+        studentGroupId: user.student_group_id,
+        email: user.email,
+        avatarUrl: user.avatar_url,
+      },
+    });
+  } catch (err: any) {
+    const statusCode = err?.status || 401;
+    res.status(statusCode).json({
+      success: false,
+      error: {
+        code: err?.code || 'INVALID_GOOGLE_TOKEN',
+        message: err?.message || 'Google authentication failed.',
+      },
+    });
+  }
 });
 
 // POST /api/auth/forgot-password - Request institutional password recovery

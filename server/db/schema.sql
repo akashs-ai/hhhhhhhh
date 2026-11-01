@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS users (
     club_name VARCHAR(128),
     password_hash VARCHAR(255),
     google_id VARCHAR(128),
+    avatar_url TEXT,
     password_reset_token VARCHAR(128),
     password_reset_expires_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -53,12 +54,33 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id VARCHAR(128);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_token VARCHAR(128);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_expires_at TIMESTAMPTZ;
 
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 CREATE INDEX IF NOT EXISTS idx_users_department ON users(department_code);
 CREATE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id);
+
+-- ----------------------------------------------------------------------------
+-- 2b. AUTHORIZED STUDENTS ENROLLMENT REGISTRY
+-- Authoritative whitelist of enrolled students permitted to authenticate via Google
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS authorized_students (
+    email VARCHAR(128) PRIMARY KEY,
+    student_group_id VARCHAR(32) NOT NULL,
+    roll_number VARCHAR(32) UNIQUE,
+    display_name VARCHAR(128) NOT NULL,
+    department_code VARCHAR(16) REFERENCES departments(code) DEFAULT 'CSE',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+INSERT INTO authorized_students (email, student_group_id, roll_number, display_name, department_code) VALUES
+    ('aarav.cse3@cit.ac.in', 'CSE-3', '2023CSE0101', 'Aarav Patel', 'CSE'),
+    ('priya.y1a@cit.ac.in', 'Y1-A', '2025Y10042', 'Priya Sharma', 'CSE'),
+    ('2025cse1042@cit.ac.in', 'CSE-2A', '2025CSE1042', 'Soumyajit Mohapatra', 'CSE'),
+    ('student.aarav@cit.ac.in', 'CSE-3', '2023CSE0102', 'Aarav Patel', 'CSE')
+ON CONFLICT (email) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS user_auth_tokens (
     token VARCHAR(255) PRIMARY KEY,
