@@ -12,7 +12,7 @@
     "lint": "tsc --noEmit",
     "db:migrate": "tsx server/db/migrate.ts",
     "provision": "tsx server/scripts/provisionAccounts.ts",
-    "test": "npx tsx tests/test_api.ts && npx tsx tests/test_google_calendar_integration.ts && npx tsx tests/test_timetable_calendar_views.ts && npx tsx tests/test_requests_and_calendar_integration.ts && npx tsx tests/test_security.ts && npx tsx tests/test_postgres_storage_mock.ts && npx tsx tests/test_postgres_schema.ts && npx tsx tests/test_remote_solver.ts && npx tsx tests/test_exam_scheduler.ts && npx tsx tests/test_venue_management.ts && npx tsx tests/test_disruptions_management.ts && npx tsx tests/test_request_management.ts && npx tsx tests/test_reports.ts && npx tsx tests/test_ai_assistant.ts && npx tsx tests/test_venue_approval_popup.ts && npx tsx tests/test_dashboard_summary.ts && npx tsx tests/test_auth_and_provisioning.ts"
+    "test": "npx tsx tests/test_api.ts && npx tsx tests/test_google_calendar_integration.ts && npx tsx tests/test_timetable_calendar_views.ts && npx tsx tests/test_requests_and_calendar_integration.ts && npx tsx tests/test_security.ts && npx tsx tests/test_postgres_storage_mock.ts && npx tsx tests/test_postgres_schema.ts && npx tsx tests/test_remote_solver.ts && npx tsx tests/test_exam_scheduler.ts && npx tsx tests/test_venue_management.ts && npx tsx tests/test_disruptions_management.ts && npx tsx tests/test_request_management.ts && npx tsx tests/test_reports.ts && npx tsx tests/test_ai_assistant.ts && npx tsx tests/test_venue_approval_popup.ts && npx tsx tests/test_dashboard_summary.ts && npx tsx tests/test_auth_and_provisioning.ts && npx tsx tests/test_campus_experience.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
@@ -22,6 +22,7 @@
     "express": "^4.21.2",
     "firebase": "^13.1.0",
     "google-auth-library": "^10.9.1",
+    "gsap": "^3.15.0",
     "lucide-react": "^0.546.0",
     "motion": "^12.23.24",
     "pg": "^8.23.1",

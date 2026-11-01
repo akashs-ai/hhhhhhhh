@@ -15,6 +15,7 @@ import {
   ExternalLink,
   Bot,
 } from 'lucide-react';
+import { CampusExperience } from '../../components/CampusExperience/CampusExperience';
 
 interface LandingPageProps {
   onGetStarted: () => void;
@@ -23,7 +24,11 @@ interface LandingPageProps {
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn }) => {
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans flex flex-col">
+    <CampusExperience
+      onSkipToLogin={onSignIn}
+      onLoginSubmit={() => onSignIn()}
+    >
+      <div className="min-h-screen bg-slate-50 text-slate-800 font-sans flex flex-col">
       {/* Top Header */}
       <header className="bg-white/95 backdrop-blur-md border-b border-slate-200 sticky top-0 z-40 px-6 lg:px-16 py-3.5 flex items-center justify-between">
         <div className="flex items-center space-x-3">
@@ -484,5 +489,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn
         </div>
       </footer>
     </div>
+  </CampusExperience>
   );
 };

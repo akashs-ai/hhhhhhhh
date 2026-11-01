@@ -38,11 +38,11 @@ export default function App() {
   // Navigation & Authentication state
   const [currentView, setCurrentView] = useState<'app' | 'landing' | 'login'>(() => {
     if (typeof window !== 'undefined') {
-      if (window.location.hash === '#landing') return 'landing';
       if (window.location.hash === '#login') return 'login';
+      if (window.location.hash === '#landing') return 'landing';
       if (localStorage.getItem('cit_auth_token')) return 'app';
     }
-    return 'login';
+    return 'landing'; // New user arrives at cinematic campus landing experience
   });
   const [currentUser, setCurrentUser] = useState<UserItem | null>(null);
   const [currentTab, setCurrentTab] = useState<string>('dashboard');
@@ -108,14 +108,14 @@ export default function App() {
           } else {
             localStorage.removeItem('cit_auth_token');
             setCurrentUser(null);
-            setCurrentView((prev) => (prev === 'landing' ? 'landing' : 'login'));
+            setCurrentView((prev) => (window.location.hash === '#login' ? 'login' : 'landing'));
           }
         })
         .catch(() => {
           // In case of transient network error, stay on current safe view
         });
     } else {
-      setCurrentView((prev) => (prev === 'landing' ? 'landing' : 'login'));
+      setCurrentView((prev) => (window.location.hash === '#login' ? 'login' : 'landing'));
     }
 
     return () => window.removeEventListener('hashchange', handleHashChange);

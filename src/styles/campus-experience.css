@@ -1,0 +1,57 @@
+/**
+ * Cinematic Campus Experience Stylesheet
+ * Hand-painted 2.5D artistic aesthetics:
+ * - Muted botanical greens: #18241d, #27382f, #3a5847
+ * - Warm cream and beige: #f7f0e3, #ede4d3, #e5d9c2
+ * - Earthy brown & gold accents: #d8b568, #443224
+ */
+
+.campus-sequence-container {
+  position: relative;
+  width: 100%;
+  background-color: #121915;
+  color: #f7f0e3;
+  overflow: clip;
+}
+
+.campus-canvas-stage {
+  position: sticky;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #121915;
+}
+
+/* Subtle hand-painted vignette around edges */
+.campus-canvas-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at 50% 50%,
+    transparent 55%,
+    rgba(18, 25, 21, 0.45) 85%,
+    rgba(14, 20, 16, 0.75) 100%
+  );
+  z-index: 10;
+}
+
+/* Soft morning mist overlay */
+.campus-atmosphere-mist {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(216, 181, 104, 0.06) 0%,
+    transparent 35%,
+    transparent 70%,
+    rgba(24, 36, 29, 0.35) 100%
+  );
+  z-index: 11;
+}
