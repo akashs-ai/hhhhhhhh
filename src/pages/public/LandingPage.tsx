@@ -116,34 +116,46 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn
       </section>
 
       {/* Key Metric Highlights Bar */}
-      <section className="bg-white border-b border-slate-200 py-10 px-6 lg:px-16">
-        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-          <div>
-            <div className="text-4xl lg:text-5xl font-black text-blue-600">5</div>
-            <div className="text-xs font-bold text-slate-800 mt-1">User Roles</div>
-            <div className="text-[11px] text-slate-500">Admin, HOD, Faculty, Student, Club</div>
+      <section className="relative overflow-hidden bg-gradient-to-b from-slate-50/50 via-white to-slate-50/30 border-b border-slate-200/60 py-12 px-6 lg:px-16">
+        {/* Soft ambient light behind metrics */}
+        <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[260px] bg-[radial-gradient(ellipse_at_center,rgba(59,130,246,0.05),transparent_70%)]" />
+        </div>
+
+        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center relative z-10">
+          <div className="group relative rounded-2xl p-5 border border-slate-200/50 bg-white/60 backdrop-blur-xs shadow-[0_2px_10px_rgba(15,23,42,0.02)] hover:border-blue-200/80 hover:bg-white hover:shadow-[0_8px_20px_rgba(37,99,235,0.05)] hover:-translate-y-0.5 transition-all duration-300 ease-out">
+            <div className="text-4xl lg:text-5xl font-black text-blue-600 tracking-tight transition-transform duration-300 group-hover:scale-105">5</div>
+            <div className="text-xs font-bold text-slate-800 mt-1.5">User Roles</div>
+            <div className="text-[11px] text-slate-500 mt-0.5">Admin, HOD, Faculty, Student, Club</div>
           </div>
-          <div>
-            <div className="text-4xl lg:text-5xl font-black text-blue-600">4+</div>
-            <div className="text-xs font-bold text-slate-800 mt-1">Scheduling Modules</div>
-            <div className="text-[11px] text-slate-500">Academic, Exam, Venues, Reschedules</div>
+          <div className="group relative rounded-2xl p-5 border border-slate-200/50 bg-white/60 backdrop-blur-xs shadow-[0_2px_10px_rgba(15,23,42,0.02)] hover:border-blue-200/80 hover:bg-white hover:shadow-[0_8px_20px_rgba(37,99,235,0.05)] hover:-translate-y-0.5 transition-all duration-300 ease-out">
+            <div className="text-4xl lg:text-5xl font-black text-blue-600 tracking-tight transition-transform duration-300 group-hover:scale-105">4+</div>
+            <div className="text-xs font-bold text-slate-800 mt-1.5">Scheduling Modules</div>
+            <div className="text-[11px] text-slate-500 mt-0.5">Academic, Exam, Venues, Reschedules</div>
           </div>
-          <div>
-            <div className="text-4xl lg:text-5xl font-black text-blue-600">100%</div>
-            <div className="text-xs font-bold text-slate-800 mt-1">Clash-Free</div>
-            <div className="text-[11px] text-slate-500">Deterministic Constraint Solvers</div>
+          <div className="group relative rounded-2xl p-5 border border-slate-200/50 bg-white/60 backdrop-blur-xs shadow-[0_2px_10px_rgba(15,23,42,0.02)] hover:border-blue-200/80 hover:bg-white hover:shadow-[0_8px_20px_rgba(37,99,235,0.05)] hover:-translate-y-0.5 transition-all duration-300 ease-out">
+            <div className="text-4xl lg:text-5xl font-black text-blue-600 tracking-tight transition-transform duration-300 group-hover:scale-105">100%</div>
+            <div className="text-xs font-bold text-slate-800 mt-1.5">Clash-Free</div>
+            <div className="text-[11px] text-slate-500 mt-0.5">Deterministic Constraint Solvers</div>
           </div>
-          <div>
-            <div className="text-4xl lg:text-5xl font-black text-blue-600">All in 1</div>
-            <div className="text-xs font-bold text-slate-800 mt-1">Campus Scheduling</div>
-            <div className="text-[11px] text-slate-500">Continuous Real-Time Synchronization</div>
+          <div className="group relative rounded-2xl p-5 border border-slate-200/50 bg-white/60 backdrop-blur-xs shadow-[0_2px_10px_rgba(15,23,42,0.02)] hover:border-blue-200/80 hover:bg-white hover:shadow-[0_8px_20px_rgba(37,99,235,0.05)] hover:-translate-y-0.5 transition-all duration-300 ease-out">
+            <div className="text-4xl lg:text-5xl font-black text-blue-600 tracking-tight transition-transform duration-300 group-hover:scale-105">All in 1</div>
+            <div className="text-xs font-bold text-slate-800 mt-1.5">Campus Scheduling</div>
+            <div className="text-[11px] text-slate-500 mt-0.5">Continuous Real-Time Synchronization</div>
           </div>
         </div>
       </section>
 
       {/* Architectural Capabilities Section */}
-      <section id="features" className="bg-white py-16 px-6 lg:px-16 border-y border-slate-200">
-        <div className="max-w-7xl mx-auto">
+      <section id="features" className="relative overflow-hidden bg-gradient-to-b from-white via-slate-50/40 to-blue-50/20 py-20 px-6 lg:px-16 border-b border-slate-200/60">
+        {/* Subtle, low-opacity ambient light effects */}
+        <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+          <div className="absolute top-1/4 -left-48 w-96 h-96 bg-blue-400/[0.035] rounded-full blur-3xl" />
+          <div className="absolute bottom-1/3 -right-48 w-96 h-96 bg-indigo-400/[0.035] rounded-full blur-3xl" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_15%,rgba(59,130,246,0.03),transparent_70%)]" />
+        </div>
+
+        <div className="max-w-7xl mx-auto relative z-10">
           <div className="text-center max-w-2xl mx-auto mb-14">
             <p className="text-[11px] font-bold tracking-wider text-blue-600 uppercase">
               ARCHITECTURAL CAPABILITIES
@@ -159,8 +171,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Feature 1 */}
-            <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 hover:border-blue-300 transition-all space-y-4">
-              <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
+            <div className="group relative p-7 rounded-2xl bg-white/90 backdrop-blur-xs border border-slate-200/70 shadow-[0_2px_12px_rgba(15,23,42,0.03)] hover:border-blue-300/70 hover:shadow-[0_12px_28px_rgba(37,99,235,0.07)] hover:-translate-y-1 transition-all duration-300 ease-out space-y-4">
+              <div className="w-10 h-10 rounded-xl bg-blue-50/90 border border-blue-100/70 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white group-hover:shadow-md group-hover:shadow-blue-500/20 transition-all duration-300">
                 <CheckCircle2 className="w-5 h-5" />
               </div>
               <h3 className="text-base font-bold text-slate-900">Auto Clash Detection</h3>
@@ -168,7 +180,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn
                 Simultaneously monitors classroom allocations, instructor working hours, and student batch overlaps.
                 Instantly flags and auto-resolves scheduling collisions prior to semester publishing.
               </p>
-              <div className="pt-2 flex items-center justify-between text-[11px] text-slate-500 border-t border-slate-200">
+              <div className="pt-3 flex items-center justify-between text-[11px] text-slate-500 border-t border-slate-100">
                 <span className="flex items-center space-x-1.5 font-medium text-slate-700">
                   <span className="w-2 h-2 rounded-full bg-blue-600"></span>
                   <span>Zero Room Overlap Algorithm Active</span>
@@ -178,8 +190,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn
             </div>
 
             {/* Feature 2 */}
-            <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 hover:border-blue-300 transition-all space-y-4">
-              <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
+            <div className="group relative p-7 rounded-2xl bg-white/90 backdrop-blur-xs border border-slate-200/70 shadow-[0_2px_12px_rgba(15,23,42,0.03)] hover:border-blue-300/70 hover:shadow-[0_12px_28px_rgba(37,99,235,0.07)] hover:-translate-y-1 transition-all duration-300 ease-out space-y-4">
+              <div className="w-10 h-10 rounded-xl bg-blue-50/90 border border-blue-100/70 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white group-hover:shadow-md group-hover:shadow-blue-500/20 transition-all duration-300">
                 <Users className="w-5 h-5" />
               </div>
               <h3 className="text-base font-bold text-slate-900">5-Role Real-Time Sync</h3>
@@ -187,11 +199,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn
                 Unified permission matrix tailored for Administrators, HODs, Coordinators, Faculty, and Students.
                 Changes in rooms or lecture slots propagate across all personal timetables in under 200ms.
               </p>
-              <div className="pt-2 flex flex-wrap gap-1.5 border-t border-slate-200">
+              <div className="pt-3 flex flex-wrap gap-1.5 border-t border-slate-100">
                 {['Admin', 'Coordinator', 'Faculty', 'Student', 'Club Leads'].map((role) => (
                   <span
                     key={role}
-                    className="text-[10px] bg-white border border-slate-200 px-2 py-0.5 rounded-md font-medium text-slate-600"
+                    className="text-[10px] bg-slate-50/80 border border-slate-200/60 px-2 py-0.5 rounded-md font-medium text-slate-600 shadow-2xs"
                   >
                     {role}
                   </span>
@@ -200,8 +212,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn
             </div>
 
             {/* Feature 3 */}
-            <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 hover:border-blue-300 transition-all space-y-4">
-              <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
+            <div className="group relative p-7 rounded-2xl bg-white/90 backdrop-blur-xs border border-slate-200/70 shadow-[0_2px_12px_rgba(15,23,42,0.03)] hover:border-blue-300/70 hover:shadow-[0_12px_28px_rgba(37,99,235,0.07)] hover:-translate-y-1 transition-all duration-300 ease-out space-y-4">
+              <div className="w-10 h-10 rounded-xl bg-blue-50/90 border border-blue-100/70 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white group-hover:shadow-md group-hover:shadow-blue-500/20 transition-all duration-300">
                 <Building2 className="w-5 h-5" />
               </div>
               <h3 className="text-base font-bold text-slate-900">Venue Booking (Spectra)</h3>
@@ -209,22 +221,22 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn
                 Centralized oversight for auditoriums, smart seminar halls, and laboratory blocks. Club leads and faculty
                 reserve spaces with immediate Dean endorsement and calendar locks.
               </p>
-              <div className="pt-2 flex flex-wrap gap-2 text-[10px] font-medium border-t border-slate-200">
-                <span className="bg-white border border-slate-200 px-2 py-1 rounded-md text-slate-700">
+              <div className="pt-3 flex flex-wrap gap-2 text-[10px] font-medium border-t border-slate-100">
+                <span className="bg-slate-50/80 border border-slate-200/60 px-2 py-1 rounded-md text-slate-700 shadow-2xs">
                   Seminar Hall (Cap: 200)
                 </span>
-                <span className="bg-white border border-slate-200 px-2 py-1 rounded-md text-slate-700">
+                <span className="bg-slate-50/80 border border-slate-200/60 px-2 py-1 rounded-md text-slate-700 shadow-2xs">
                   Conf. Room (Cap: 50)
                 </span>
-                <span className="bg-white border border-slate-200 px-2 py-1 rounded-md text-slate-700">
+                <span className="bg-slate-50/80 border border-slate-200/60 px-2 py-1 rounded-md text-slate-700 shadow-2xs">
                   Auditorium (Cap: 500)
                 </span>
               </div>
             </div>
 
             {/* Feature 4 */}
-            <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 hover:border-blue-300 transition-all space-y-4">
-              <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
+            <div className="group relative p-7 rounded-2xl bg-white/90 backdrop-blur-xs border border-slate-200/70 shadow-[0_2px_12px_rgba(15,23,42,0.03)] hover:border-blue-300/70 hover:shadow-[0_12px_28px_rgba(37,99,235,0.07)] hover:-translate-y-1 transition-all duration-300 ease-out space-y-4">
+              <div className="w-10 h-10 rounded-xl bg-blue-50/90 border border-blue-100/70 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white group-hover:shadow-md group-hover:shadow-blue-500/20 transition-all duration-300">
                 <AlertTriangle className="w-5 h-5" />
               </div>
               <h3 className="text-base font-bold text-slate-900">Academic Rescheduling & Disruptions</h3>
@@ -232,7 +244,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn
                 When sudden faculty leave or institutional holidays occur, the disruption engine proposes compensatory
                 slot recommendations with lowest impact on syllabus progress.
               </p>
-              <div className="pt-2 flex items-center justify-between text-[11px] text-slate-500 border-t border-slate-200">
+              <div className="pt-3 flex items-center justify-between text-[11px] text-slate-500 border-t border-slate-100">
                 <span className="flex items-center space-x-1.5 font-medium text-slate-700">
                   <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                   <span>Automated Student SMS & App Broadcast</span>
@@ -245,71 +257,89 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn
       </section>
 
       {/* Stakeholders Section */}
-      <section id="personas" className="py-16 px-6 lg:px-16 max-w-7xl mx-auto w-full">
-        <div className="mb-10">
-          <p className="text-[11px] font-bold tracking-wider text-blue-600 uppercase">TAILORED PERSONAS</p>
-          <div className="flex flex-col md:flex-row md:items-end justify-between">
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mt-1">
-              Built For Every Academic Stakeholder
-            </h2>
-            <p className="text-xs text-slate-500 max-w-md mt-2 md:mt-0">
-              CITSchedule adapts its visual workspace based on institutional authentication, giving administrators deep
-              control and students pure clarity.
-            </p>
-          </div>
+      <section id="personas" className="relative overflow-hidden bg-gradient-to-b from-slate-50/40 via-white to-slate-50/60 py-20 px-6 lg:px-16 border-b border-slate-200/60 w-full">
+        {/* Ambient subtle light backdrop */}
+        <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[850px] h-[350px] bg-[radial-gradient(ellipse_at_center,rgba(59,130,246,0.04),transparent_75%)]" />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-2xs space-y-3">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
-              Control Plane
-            </span>
-            <h3 className="text-base font-bold text-slate-900">Department Chairs & HODs</h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              High-level workload balancing, faculty teaching allotment constraints, lab venue audits, and accreditation
-              compliance matrices.
-            </p>
-            <div className="pt-4 flex items-center justify-between text-xs font-semibold text-blue-600">
-              <span>Workload Analytics</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+        <div className="max-w-7xl mx-auto relative z-10">
+          <div className="mb-12">
+            <p className="text-[11px] font-bold tracking-wider text-blue-600 uppercase">TAILORED PERSONAS</p>
+            <div className="flex flex-col md:flex-row md:items-end justify-between">
+              <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mt-1">
+                Built For Every Academic Stakeholder
+              </h2>
+              <p className="text-xs text-slate-500 max-w-md mt-2 md:mt-0">
+                CITSchedule adapts its visual workspace based on institutional authentication, giving administrators deep
+                control and students pure clarity.
+              </p>
             </div>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-2xs space-y-3">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
-              Instructors
-            </span>
-            <h3 className="text-base font-bold text-slate-900">Faculty & Schedule Coordinators</h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Mark availability preferences, submit immediate substitute teacher requests, initiate room changes, and
-              track exam invigilation duties.
-            </p>
-            <div className="pt-4 flex items-center justify-between text-xs font-semibold text-blue-600">
-              <span>1-Click Proposal</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="group relative bg-white/95 backdrop-blur-xs border border-slate-200/70 rounded-2xl p-7 shadow-[0_2px_12px_rgba(15,23,42,0.03)] hover:border-blue-300/70 hover:shadow-[0_12px_28px_rgba(37,99,235,0.07)] hover:-translate-y-1 transition-all duration-300 ease-out space-y-3.5 flex flex-col justify-between">
+              <div className="space-y-3">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50/80 border border-blue-100/60 px-2.5 py-1 rounded-full w-fit inline-block shadow-2xs">
+                  Control Plane
+                </span>
+                <h3 className="text-base font-bold text-slate-900">Department Chairs & HODs</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  High-level workload balancing, faculty teaching allotment constraints, lab venue audits, and accreditation
+                  compliance matrices.
+                </p>
+              </div>
+              <div className="pt-4 flex items-center justify-between text-xs font-semibold text-blue-600 border-t border-slate-100 group-hover:text-blue-700 transition-colors">
+                <span>Workload Analytics</span>
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform duration-200" />
+              </div>
             </div>
-          </div>
 
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-2xs space-y-3">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
-              Learners
-            </span>
-            <h3 className="text-base font-bold text-slate-900">Students & Student Bodies</h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Daily agenda timelines, mid-term seating rosters, venue requisition for hackathons or symposiums, and live
-              disruption alerts.
-            </p>
-            <div className="pt-4 flex items-center justify-between text-xs font-semibold text-blue-600">
-              <span>Personalized View</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+            <div className="group relative bg-white/95 backdrop-blur-xs border border-slate-200/70 rounded-2xl p-7 shadow-[0_2px_12px_rgba(15,23,42,0.03)] hover:border-blue-300/70 hover:shadow-[0_12px_28px_rgba(37,99,235,0.07)] hover:-translate-y-1 transition-all duration-300 ease-out space-y-3.5 flex flex-col justify-between">
+              <div className="space-y-3">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50/80 border border-blue-100/60 px-2.5 py-1 rounded-full w-fit inline-block shadow-2xs">
+                  Instructors
+                </span>
+                <h3 className="text-base font-bold text-slate-900">Faculty & Schedule Coordinators</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Mark availability preferences, submit immediate substitute teacher requests, initiate room changes, and
+                  track exam invigilation duties.
+                </p>
+              </div>
+              <div className="pt-4 flex items-center justify-between text-xs font-semibold text-blue-600 border-t border-slate-100 group-hover:text-blue-700 transition-colors">
+                <span>1-Click Proposal</span>
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform duration-200" />
+              </div>
+            </div>
+
+            <div className="group relative bg-white/95 backdrop-blur-xs border border-slate-200/70 rounded-2xl p-7 shadow-[0_2px_12px_rgba(15,23,42,0.03)] hover:border-blue-300/70 hover:shadow-[0_12px_28px_rgba(37,99,235,0.07)] hover:-translate-y-1 transition-all duration-300 ease-out space-y-3.5 flex flex-col justify-between">
+              <div className="space-y-3">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50/80 border border-blue-100/60 px-2.5 py-1 rounded-full w-fit inline-block shadow-2xs">
+                  Learners
+                </span>
+                <h3 className="text-base font-bold text-slate-900">Students & Student Bodies</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Daily agenda timelines, mid-term seating rosters, venue requisition for hackathons or symposiums, and live
+                  disruption alerts.
+                </p>
+              </div>
+              <div className="pt-4 flex items-center justify-between text-xs font-semibold text-blue-600 border-t border-slate-100 group-hover:text-blue-700 transition-colors">
+                <span>Personalized View</span>
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform duration-200" />
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       {/* Autonomous Engine Preview Section */}
-      <section id="solver" className="bg-slate-900 text-white py-14 px-6 lg:px-16 border-t border-slate-800">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+      <section id="solver" className="relative overflow-hidden bg-slate-900 text-white py-18 px-6 lg:px-16 border-t border-slate-800/80">
+        <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+          <div className="absolute top-1/2 right-1/4 w-[500px] h-[500px] bg-blue-500/[0.08] rounded-full blur-3xl" />
+          <div className="absolute -top-32 left-1/4 w-[400px] h-[400px] bg-indigo-500/[0.06] rounded-full blur-3xl" />
+        </div>
+
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 items-center relative z-10">
           <div className="lg:col-span-6 space-y-4">
             <span className="text-[11px] font-bold tracking-wider text-blue-400 uppercase">AUTONOMOUS ENGINE</span>
             <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
@@ -338,7 +368,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn
             <div className="pt-4">
               <button
                 onClick={onGetStarted}
-                className="bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-all shadow-md inline-flex items-center space-x-2"
+                className="bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-all shadow-md hover:shadow-blue-500/20 active:scale-95 inline-flex items-center space-x-2 cursor-pointer"
               >
                 <span>Try Timetable Generator</span>
                 <ChevronRight className="w-4 h-4" />
@@ -346,8 +376,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn
             </div>
           </div>
 
-          <div className="lg:col-span-6 bg-slate-950 border border-slate-800 rounded-xl p-4 font-mono text-xs shadow-xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800 text-[11px] text-slate-400">
+          <div className="lg:col-span-6 bg-slate-950/90 backdrop-blur-xs border border-slate-800/90 rounded-2xl p-5 font-mono text-xs shadow-2xl hover:border-slate-700/80 transition-colors duration-300">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800/80 text-[11px] text-slate-400">
               <div className="flex items-center space-x-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-red-500/80"></span>
                 <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/80"></span>
@@ -366,7 +396,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn
               <div className="text-slate-400">
                 [COMPUTE] 0 Room Clashes, 0 Faculty Collisions detected. (Latency: 0.42s)
               </div>
-              <div className="mt-2 p-2 bg-slate-900 border border-slate-800 rounded flex items-center justify-between text-[10px]">
+              <div className="mt-2 p-2 bg-slate-900/90 border border-slate-800/80 rounded-lg flex items-center justify-between text-[10px]">
                 <span className="text-slate-300">Final Fitness Score: 99.4%</span>
                 <span className="text-blue-400 font-bold">Verified Clash-Free</span>
               </div>
@@ -376,9 +406,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn
       </section>
 
       {/* Blue CTA Banner */}
-      <section className="bg-linear-to-r from-blue-600 via-blue-700 to-indigo-700 text-white py-14 px-6 text-center">
-        <div className="max-w-3xl mx-auto space-y-4">
-          <span className="text-[10px] font-bold tracking-widest uppercase bg-white/20 px-3 py-1 rounded-full">
+      <section className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white py-16 px-6 text-center border-t border-blue-500/30">
+        <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_60%_80%_at_50%_0%,rgba(255,255,255,0.12),transparent_70%)]" />
+
+        <div className="max-w-3xl mx-auto space-y-4 relative z-10">
+          <span className="text-[10px] font-bold tracking-widest uppercase bg-white/20 border border-white/20 px-3 py-1 rounded-full shadow-2xs">
             Autonomous Campus Governance
           </span>
           <h2 className="text-2xl sm:text-4xl font-black tracking-tight">
@@ -391,13 +423,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn
           <div className="pt-4 flex flex-wrap justify-center gap-3">
             <button
               onClick={onSignIn}
-              className="bg-white text-blue-700 font-bold text-xs px-6 py-3 rounded-xl shadow-lg hover:bg-blue-50 active:scale-95 transition-all"
+              className="bg-white text-blue-700 font-bold text-xs px-6 py-3 rounded-xl shadow-lg hover:bg-blue-50 active:scale-95 transition-all cursor-pointer"
             >
               Sign In to Portal
             </button>
             <button
               onClick={onGetStarted}
-              className="bg-blue-800/60 border border-blue-400/40 text-white font-bold text-xs px-6 py-3 rounded-xl hover:bg-blue-800 transition-all"
+              className="bg-blue-800/60 border border-blue-400/40 text-white font-bold text-xs px-6 py-3 rounded-xl hover:bg-blue-800 transition-all cursor-pointer"
             >
               Read CIT Governance Docs
             </button>
