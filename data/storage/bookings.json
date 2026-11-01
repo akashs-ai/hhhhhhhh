@@ -7174,5 +7174,178 @@
     "raw_text": "",
     "status": "pending",
     "created_by": "usr-admin"
+  },
+  "REQ-AI-TEST-1793493602309": {
+    "id": "REQ-AI-TEST-1793493602309",
+    "submitted_at": "2026-11-01T00:40:02.309Z",
+    "requester": "Prof. Alan Turing",
+    "role": "faculty",
+    "requested_category": "academic",
+    "effective_category": "academic",
+    "title": "AI Robotics Workshop Makeup Session",
+    "attendance": 45,
+    "duration_periods": 2,
+    "windows": [
+      {
+        "day": "THU",
+        "from_period": 3,
+        "to_period": 4
+      }
+    ],
+    "room_types": [
+      "lecture_hall"
+    ],
+    "needs": [
+      "projector"
+    ],
+    "mandatory_for_groups": [
+      "CSE-3"
+    ],
+    "status": "pending",
+    "created_by": "usr-faculty-f19"
+  },
+  "BR-0533": {
+    "id": "BR-0533",
+    "submitted_at": "2026-11-01T00:40:40.533Z",
+    "requester": "Kabir Varma (Dramatics Society)",
+    "role": "club",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Shakespeare Night Practice",
+    "attendance": 35,
+    "duration_periods": 2,
+    "windows": [
+      {
+        "day": "THU",
+        "from_period": 10,
+        "to_period": 12
+      }
+    ],
+    "room_types": [
+      "seminar_hall",
+      "classroom"
+    ],
+    "needs": [
+      "stage"
+    ],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-club-drama"
+  },
+  "BR-1309": {
+    "id": "BR-1309",
+    "submitted_at": "2026-11-01T00:40:41.309Z",
+    "requester": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Dean Academics Special Assembly",
+    "attendance": 250,
+    "duration_periods": 2,
+    "windows": [
+      {
+        "day": "FRI",
+        "from_period": 10,
+        "to_period": 12
+      }
+    ],
+    "room_types": [
+      "auditorium"
+    ],
+    "needs": [
+      "mic"
+    ],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-admin"
+  },
+  "BR-1748": {
+    "id": "BR-1748",
+    "submitted_at": "2026-11-01T00:40:51.748Z",
+    "requester": "Aarav Patel (Student)",
+    "role": "club",
+    "requested_category": "institute_event",
+    "effective_category": "club_event",
+    "title": "Privilege Escalation Test",
+    "attendance": 50,
+    "duration_periods": 2,
+    "windows": [
+      {
+        "day": "MON",
+        "from_period": 10,
+        "to_period": 12
+      }
+    ],
+    "room_types": [
+      "seminar_hall",
+      "lecture_hall",
+      "classroom"
+    ],
+    "needs": [],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-student-cse3"
+  },
+  "BR-1825": {
+    "id": "BR-1825",
+    "submitted_at": "2026-11-01T00:40:51.825Z",
+    "requester": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Dean Review Meeting",
+    "attendance": 20,
+    "duration_periods": 1,
+    "windows": [
+      {
+        "day": "MON",
+        "from_period": 10,
+        "to_period": 11
+      }
+    ],
+    "room_types": [
+      "classroom"
+    ],
+    "needs": [],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-admin"
+  },
+  "REQ-AI-TEST-1793493666424": {
+    "id": "REQ-AI-TEST-1793493666424",
+    "submitted_at": "2026-11-01T00:41:06.424Z",
+    "requester": "Prof. Alan Turing",
+    "role": "faculty",
+    "requested_category": "academic",
+    "effective_category": "academic",
+    "title": "AI Robotics Workshop Makeup Session",
+    "attendance": 45,
+    "duration_periods": 2,
+    "windows": [
+      {
+        "day": "THU",
+        "from_period": 3,
+        "to_period": 4
+      }
+    ],
+    "room_types": [
+      "lecture_hall"
+    ],
+    "needs": [
+      "projector"
+    ],
+    "mandatory_for_groups": [
+      "CSE-3"
+    ],
+    "status": "pending",
+    "created_by": "usr-faculty-f19"
   }
 }

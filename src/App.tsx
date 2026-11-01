@@ -287,6 +287,9 @@ export default function App() {
           />
         );
       case 'ai-assistant':
+        if (role === 'department_coordinator') {
+          return <AdminAIAssistant currentUser={currentUser} />;
+        }
         return <StudentAIAssistant currentUser={currentUser} />;
       default:
         return (

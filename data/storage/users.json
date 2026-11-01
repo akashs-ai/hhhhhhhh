@@ -772,5 +772,20 @@
     ],
     "created_at": "2026-11-01T00:31:41.074Z",
     "updated_at": "2026-11-01T00:31:41.074Z"
+  },
+  "usr-test-persistent-1793493651837": {
+    "id": "usr-test-persistent-1793493651837",
+    "username": "testuser.1793493651837",
+    "display_name": "Test Persistent Engineer",
+    "email": "test.1793493651837@cit.ac.in",
+    "role": "faculty",
+    "status": "active",
+    "department": "CSE",
+    "faculty_id": "F01",
+    "auth_tokens": [
+      "token-usr-test-persistent-1793493651837-1793493651838"
+    ],
+    "created_at": "2026-11-01T00:40:51.840Z",
+    "updated_at": "2026-11-01T00:40:51.840Z"
   }
 }
