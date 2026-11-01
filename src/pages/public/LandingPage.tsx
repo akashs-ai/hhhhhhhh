@@ -54,19 +54,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn
           viewState === 'tour' ? 'hidden' : isEnteringHero ? 'opacity-0' : 'opacity-100'
         }`}
       >
-        {/* Top Header */}
-        <header className="bg-white/95 backdrop-blur-md border-b border-slate-200 sticky top-0 z-40 px-6 lg:px-16 py-3.5 flex items-center justify-between">
+        {/* Top Header - Glassmorphic with backdrop blur */}
+        <header className="bg-white/70 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 border-b border-white/50 shadow-[0_4px_24px_0_rgba(0,0,0,0.04)] sticky top-0 z-40 px-6 lg:px-16 py-3 flex items-center justify-between transition-all">
           <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black text-lg shadow-sm">
+            <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black text-lg shadow-md shadow-blue-500/20">
               C
             </div>
-            <div>
-              <div className="flex items-center space-x-2">
-                <span className="font-bold text-slate-900 tracking-tight">CITSchedule</span>
-                <span className="text-[11px] font-semibold text-blue-700 bg-blue-50 border border-blue-200/60 px-2 py-0.5 rounded-full">
-                  Chilika Institute of Technology
-                </span>
-              </div>
+            <div className="flex flex-col">
+              <span className="font-extrabold text-slate-900 text-base tracking-tight leading-none">
+                CITSchedule
+              </span>
+              <span className="text-[11px] font-medium text-slate-500 tracking-tight mt-1 leading-none">
+                Chilika Institute of Technology
+              </span>
             </div>
           </div>
 

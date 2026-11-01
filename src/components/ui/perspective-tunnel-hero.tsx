@@ -9,7 +9,7 @@ import {
     MotionValue,
 } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Sparkles, ShieldCheck, Calendar, ChevronDown } from "lucide-react";
+import { ArrowRight, ShieldCheck, ChevronDown } from "lucide-react";
 
 const CAMPUS_IMAGES = [
     {
@@ -260,13 +260,6 @@ export default function PerspectiveTunnelHero({
                 style={{ scale: titleScale, opacity: titleOpacity }}
                 className="pointer-events-none z-10 flex flex-col items-center text-center px-6 max-w-3xl"
             >
-                <div className="inline-flex items-center space-x-2 bg-blue-500/10 border border-blue-400/20 px-3.5 py-1.5 rounded-full mb-5 backdrop-blur-md">
-                    <Sparkles className="w-3.5 h-3.5 text-blue-400" />
-                    <span className="text-[11px] font-sans font-semibold uppercase tracking-[0.2em] text-blue-300">
-                        Autonomous Campus Intelligence
-                    </span>
-                </div>
-
                 <h1 className="text-4xl sm:text-6xl md:text-7xl font-sans font-extrabold tracking-tight leading-[1.05] bg-gradient-to-b from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">
                     CHILIKA INSTITUTE OF TECHNOLOGY
                 </h1>
