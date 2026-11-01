@@ -106,8 +106,9 @@ async function runCampusExperienceSuite() {
 
   // Test progress mapping
   assert(progressToFrameIndex(0.0) === 0, 'Progress 0.0 maps to Frame 0 (first frame)');
-  assert(progressToFrameIndex(0.5) === 121, 'Progress 0.5 maps to Frame 121 (midpoint)');
-  assert(progressToFrameIndex(1.0) === 241, 'Progress 1.0 maps to Frame 241 (final frame)');
+  assert(progressToFrameIndex(0.41) === 121, 'Progress 0.41 maps to Frame 121 (midpoint of animation)');
+  assert(progressToFrameIndex(0.82) === 241, 'Progress 0.82 maps to Frame 241 (final frame at gate)');
+  assert(progressToFrameIndex(1.0) === 241, 'Progress 1.0 retains Frame 241 during crossfade transition');
 
   // -----------------------------------------------------------------
   // SECTION 3: BIDIRECTIONAL SCRUBBING INTEGRITY
@@ -174,21 +175,26 @@ async function runCampusExperienceSuite() {
   assert(mobilePortrait.drawW >= 390 && mobilePortrait.drawH >= 844, 'Mobile portrait fully covers canvas without stretching');
 
   // -----------------------------------------------------------------
-  // SECTION 5: END-OF-SEQUENCE BLEND OPACITY CURVE
+  // SECTION 5: IN-PLACE CROSSFADE TRANSITION CURVE
   // -----------------------------------------------------------------
-  console.log('\n--- SECTION 5: End-of-Sequence Blend Opacity Curve ---');
+  console.log('\n--- SECTION 5: In-Place Crossfade Transition Curve ---');
 
-  function computeBlendOpacity(progress: number): number {
-    if (progress < 0.88) return 1.0;
-    const fadeLocal = (progress - 0.88) / 0.12;
-    return Math.max(0, Math.min(1, 1 - fadeLocal));
+  function computeCrossfade(progress: number) {
+    if (progress < 0.82) return { canvas: 1.0, hero: 0.0 };
+    const fadeRatio = Math.max(0, Math.min(1, (progress - 0.82) / 0.16));
+    return {
+      canvas: Math.max(0, 1 - fadeRatio),
+      hero: fadeRatio,
+    };
   }
 
-  assert(computeBlendOpacity(0.0) === 1.0, 'Opacity is 1.0 at start (aerial view)');
-  assert(computeBlendOpacity(0.5) === 1.0, 'Opacity is 1.0 at midpoint (campus walk)');
-  assert(computeBlendOpacity(0.88) === 1.0, 'Opacity remains 1.0 up to main gate approach (frame ~213)');
-  assert(Math.abs(computeBlendOpacity(0.94) - 0.5) < 0.001, 'Opacity blends smoothly to 0.5 at progress 0.94');
-  assert(computeBlendOpacity(1.0) === 0.0, 'Opacity smoothly blends to 0.0 at the end to reveal hero section');
+  assert(computeCrossfade(0.0).canvas === 1.0 && computeCrossfade(0.0).hero === 0.0, 'At start: canvas is 100%, next page is 0%');
+  assert(computeCrossfade(0.5).canvas === 1.0 && computeCrossfade(0.5).hero === 0.0, 'During animation: canvas remains 100%');
+  assert(computeCrossfade(0.82).canvas === 1.0 && computeCrossfade(0.82).hero === 0.0, 'At animation completion (0.82): canvas is 100%');
+  assert(Math.abs(computeCrossfade(0.90).canvas - 0.5) < 0.01, 'At midpoint of transition (0.90): canvas fades out to ~50%');
+  assert(Math.abs(computeCrossfade(0.90).hero - 0.5) < 0.01, 'At midpoint of transition (0.90): next page fades in to ~50%');
+  assert(computeCrossfade(0.98).canvas === 0.0 && computeCrossfade(0.98).hero === 1.0, 'At 0.98: canvas is 0%, next page is 100% in place');
+  assert(computeCrossfade(1.0).canvas === 0.0 && computeCrossfade(1.0).hero === 1.0, 'At 1.0: next page is 100% visible and interactive');
 
   // -----------------------------------------------------------------
   // SECTION 6: NARRATIVE MILESTONES SYNCHRONIZATION

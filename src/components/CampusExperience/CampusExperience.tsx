@@ -4,10 +4,10 @@
  * 
  * Features:
  * - Full-screen pinned canvas powered by GSAP ScrollTrigger
- * - 242-frame sequential chronological rendering
+ * - 242-frame sequential chronological rendering (0.0 -> 0.82)
  * - Bi-directional forward & reverse scrubbing
- * - Scroll-synchronized typography (aerial -> descent -> follow -> greeting -> gate)
- * - Seamless blend transition at the end (opacity -> 0) into the hero / login page
+ * - Perfectly centered typography that glides to top-center as scrolling begins
+ * - In-place crossfade transition: animated frames fade out, next page fades in
  */
 
 import React, { useRef, useState, useCallback, useMemo } from 'react';
@@ -18,13 +18,14 @@ import { ScrollController } from './ScrollController';
 import { LoginPanel } from './LoginPanel';
 import { useImageSequence } from '../../hooks/useImageSequence';
 import { useScrollProgress } from '../../hooks/useScrollProgress';
+import { ANIMATION_END_PROGRESS } from '../../utils/frameManifest';
 import '../../styles/campus-experience.css';
 
 export interface CampusExperienceProps {
   onReachHero?: () => void;
   onSkipToLogin?: () => void;
   onLoginSubmit?: (credentials: { identifier: string; pass: string }) => void;
-  children?: React.ReactNode; // Content rendered immediately after the pinned scroll experience (e.g. Hero section)
+  children?: React.ReactNode; // Content rendered when transitioning to the next page (e.g. Hero section)
 }
 
 export const CampusExperience: React.FC<CampusExperienceProps> = ({
@@ -35,6 +36,7 @@ export const CampusExperience: React.FC<CampusExperienceProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const pinTargetRef = useRef<HTMLDivElement | null>(null);
+  const heroScrollContainerRef = useRef<HTMLDivElement | null>(null);
   const [currentProgress, setCurrentProgress] = useState(0);
   const [scrollDirection, setScrollDirection] = useState(1);
   const [showGateLogin, setShowGateLogin] = useState(false);
@@ -47,10 +49,10 @@ export const CampusExperience: React.FC<CampusExperienceProps> = ({
     setCurrentProgress(progress);
     setScrollDirection(direction);
 
-    // Toggle gate login panel when arriving near the campus gate (progress > 0.88)
-    if (progress >= 0.88 && !showGateLogin) {
+    // Toggle gate login panel when arriving near the campus gate (progress 0.74 to 0.82)
+    if (progress >= 0.74 && progress <= 0.84 && !showGateLogin) {
       setShowGateLogin(true);
-    } else if (progress < 0.80 && showGateLogin) {
+    } else if ((progress < 0.70 || progress > 0.85) && showGateLogin) {
       setShowGateLogin(false);
     }
   }, [showGateLogin]);
@@ -59,19 +61,24 @@ export const CampusExperience: React.FC<CampusExperienceProps> = ({
   const { scrollToProgress } = useScrollProgress({
     triggerRef: containerRef,
     pinRef: pinTargetRef,
-    scrollDistance: '+=380%', // Deliberate, smooth scroll length (~4 viewports)
+    scrollDistance: '+=350%', // Smooth, deliberate scroll length
     onProgress: handleScrollProgress,
     onComplete: onReachHero,
   });
 
-  // Calculate canvas blend opacity:
-  // Starts at 1.0 throughout the journey; as progress advances from 0.88 to 1.0,
-  // it smoothly blends down to 0 so the user transitions effortlessly into the hero section!
-  const canvasBlendOpacity = useMemo(() => {
-    if (currentProgress < 0.88) return 1.0;
-    // Map 0.88 -> 1.0 to 1.0 -> 0.0
-    const fadeLocal = (currentProgress - 0.88) / 0.12;
-    return Math.max(0, Math.min(1, 1 - fadeLocal));
+  // Calculate in-place crossfade opacity:
+  // 1. From 0.0 to ANIMATION_END_PROGRESS (0.82): canvas sequence is 100% visible, hero is 0% visible.
+  // 2. From 0.82 to 1.0: animated frames FADE OUT (1 -> 0), next page FADES IN (0 -> 1) right in place!
+  const { canvasBlendOpacity, heroFadeOpacity } = useMemo(() => {
+    if (currentProgress < ANIMATION_END_PROGRESS) {
+      return { canvasBlendOpacity: 1.0, heroFadeOpacity: 0.0 };
+    }
+    // Fade range: 0.82 -> 0.98
+    const fadeRatio = Math.max(0, Math.min(1, (currentProgress - ANIMATION_END_PROGRESS) / (0.98 - ANIMATION_END_PROGRESS)));
+    return {
+      canvasBlendOpacity: Math.max(0, 1 - fadeRatio),
+      heroFadeOpacity: fadeRatio,
+    };
   }, [currentProgress]);
 
   const handleSkip = useCallback(() => {
@@ -83,8 +90,19 @@ export const CampusExperience: React.FC<CampusExperienceProps> = ({
   }, [onSkipToLogin, scrollToProgress]);
 
   const handleScrollDown = useCallback(() => {
-    scrollToProgress(0.25);
+    scrollToProgress(0.20);
   }, [scrollToProgress]);
+
+  // Handle scrolling up when user is inside the hero page at the top
+  const handleHeroWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    const el = heroScrollContainerRef.current;
+    if (!el) return;
+
+    // If at top of the hero page and user scrolls UP, rewind into the campus experience
+    if (el.scrollTop <= 0 && e.deltaY < 0) {
+      scrollToProgress(0.80);
+    }
+  };
 
   return (
     <div className="relative w-full">
@@ -98,7 +116,8 @@ export const CampusExperience: React.FC<CampusExperienceProps> = ({
           ref={pinTargetRef}
           className="campus-canvas-stage relative w-full h-screen overflow-hidden"
           style={{
-            pointerEvents: currentProgress >= 0.98 ? 'none' : 'auto',
+            backgroundColor: currentProgress >= 0.95 ? '#f8fafc' : '#121915',
+            transition: 'background-color 0.2s ease-out',
           }}
         >
           {/* Main Full-screen Canvas */}
@@ -126,15 +145,18 @@ export const CampusExperience: React.FC<CampusExperienceProps> = ({
           />
 
           {/* Scroll-Synchronized Narrative Typography (Starts center, shifts top-center) */}
-          <TextOverlay progress={currentProgress} />
+          <TextOverlay
+            progress={currentProgress}
+            className={canvasBlendOpacity <= 0.05 ? 'opacity-0' : ''}
+          />
 
           {/* Gate-Arrival Floating Login Panel (Appears near the Main Gate) */}
-          {showGateLogin && currentProgress < 0.96 && (
+          {showGateLogin && currentProgress < 0.84 && (
             <div
               className="absolute right-6 sm:right-12 top-1/2 -translate-y-1/2 z-30 transition-all duration-500 ease-out pointer-events-auto"
               style={{
-                opacity: Math.min(1, (currentProgress - 0.85) / 0.08) * canvasBlendOpacity,
-                transform: `translateY(-50%) translateX(${(1 - Math.min(1, (currentProgress - 0.85) / 0.08)) * 30}px)`,
+                opacity: Math.min(1, (currentProgress - 0.74) / 0.06) * canvasBlendOpacity,
+                transform: `translateY(-50%) translateX(${(1 - Math.min(1, (currentProgress - 0.74) / 0.06)) * 30}px)`,
               }}
             >
               <LoginPanel
@@ -144,25 +166,34 @@ export const CampusExperience: React.FC<CampusExperienceProps> = ({
             </div>
           )}
 
-          {/* Telemetry & Scroll Controls */}
-          <ScrollController
-            progress={currentProgress}
-            direction={scrollDirection}
-            onSkipToLogin={handleSkip}
-            onScrollDown={handleScrollDown}
-          />
+          {/* Bottom Telemetry & Scroll Controls */}
+          {canvasBlendOpacity > 0.05 && (
+            <ScrollController
+              progress={currentProgress}
+              direction={scrollDirection}
+              onSkipToLogin={handleSkip}
+              onScrollDown={handleScrollDown}
+            />
+          )}
+
+          {/* 2. Destination Next Page (Hero / Role Portal) — Cross-Fades In-Place */}
+          {children && (
+            <div
+              ref={heroScrollContainerRef}
+              onWheel={handleHeroWheel}
+              className="absolute inset-0 w-full h-full z-40 bg-slate-50 overflow-y-auto"
+              style={{
+                opacity: heroFadeOpacity,
+                pointerEvents: currentProgress >= 0.92 ? 'auto' : 'none',
+                transition: 'opacity 0.15s ease-out',
+                visibility: heroFadeOpacity > 0.01 ? 'visible' : 'hidden',
+              }}
+            >
+              {children}
+            </div>
+          )}
         </div>
       </div>
-
-      {/* 2. Seamless Destination Page Section (Hero / Role Portal) */}
-      {children && (
-        <div
-          id="hero-section"
-          className="relative w-full z-40 bg-slate-50 transition-opacity duration-500"
-        >
-          {children}
-        </div>
-      )}
     </div>
   );
 };

@@ -13,6 +13,12 @@ export const FRAME_HEIGHT = 1080;
 export const FRAME_ASPECT_RATIO = FRAME_WIDTH / FRAME_HEIGHT; // 16:9 (~1.7778)
 
 /**
+ * The animated sequence plays through all 242 frames across 0.0 -> 0.82.
+ * After reaching the final frame (at 0.82), the sequence fades out and the next page fades in!
+ */
+export const ANIMATION_END_PROGRESS = 0.82;
+
+/**
  * Generates an array of all frame URLs relative to public directory.
  */
 export const CAMPUS_FRAME_PATHS: string[] = Array.from({ length: FRAME_COUNT }, (_, i) => {
@@ -29,11 +35,12 @@ export function getFramePath(index: number): string {
 }
 
 /**
- * Maps a normalized scroll progress (0.0 to 1.0) to a 0-indexed frame number.
+ * Maps a normalized scroll progress (0.0 to 1.0) to a 0-indexed frame number [0 to 241].
+ * All 242 frames are played through 0.0 -> ANIMATION_END_PROGRESS (0.82).
  */
-export function progressToFrameIndex(progress: number): number {
-  const clamped = Math.max(0, Math.min(1, progress));
-  return Math.round(clamped * (FRAME_COUNT - 1));
+export function progressToFrameIndex(progress: number, maxProgress = ANIMATION_END_PROGRESS): number {
+  const normalized = Math.max(0, Math.min(1, progress / maxProgress));
+  return Math.round(normalized * (FRAME_COUNT - 1));
 }
 
 /**
@@ -56,29 +63,29 @@ export const NARRATIVE_MILESTONES: NarrativeMilestone[] = [
     phase: 'aerial',
   },
   {
-    startProgress: 0.22,
-    endProgress: 0.45,
+    startProgress: 0.20,
+    endProgress: 0.38,
     title: 'A Campus in Motion',
     subtitle: 'Dynamic timetables and conflict-free schedules powered by AI',
     phase: 'descent',
   },
   {
-    startProgress: 0.48,
-    endProgress: 0.70,
+    startProgress: 0.40,
+    endProgress: 0.58,
     title: 'Every Journey Synchronized',
     subtitle: 'Connecting faculty, departments, and students in real time',
     phase: 'follow',
   },
   {
-    startProgress: 0.72,
-    endProgress: 0.88,
+    startProgress: 0.60,
+    endProgress: 0.74,
     title: 'Welcome to CIT',
     subtitle: 'Your day, seamlessly scheduled',
     phase: 'greeting',
   },
   {
-    startProgress: 0.90,
-    endProgress: 1.0,
+    startProgress: 0.75,
+    endProgress: 0.82,
     title: 'Step Into the Portal',
     subtitle: 'Sign in to access your personalized campus dashboard',
     phase: 'gate',
