@@ -301,7 +301,7 @@ CREATE TABLE IF NOT EXISTS venue_bookings (
     duration_periods INT NOT NULL CHECK (duration_periods BETWEEN 1 AND 13),
     requested_room VARCHAR(32) REFERENCES rooms(id) ON DELETE SET NULL,
     raw_text TEXT,
-    status VARCHAR(32) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'alternative_offered')),
+    status VARCHAR(32) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'alternative_offered', 'withdrawn')),
     allocated_room VARCHAR(32) REFERENCES rooms(id) ON DELETE SET NULL,
     allocated_day VARCHAR(3) CHECK (allocated_day IN ('MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN')),
     allocated_start_period INT CHECK (allocated_start_period BETWEEN 1 AND 13),
@@ -470,6 +470,23 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 CREATE INDEX IF NOT EXISTS idx_audit_logs_timestamp ON audit_logs(timestamp DESC);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_user ON audit_logs(user_id);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_resource ON audit_logs(resource_type, resource_id);
+
+CREATE TABLE IF NOT EXISTS in_app_notifications (
+    id VARCHAR(64) PRIMARY KEY,
+    user_id VARCHAR(64) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    type VARCHAR(64) NOT NULL,
+    reference_id VARCHAR(64),
+    reference_type VARCHAR(64),
+    decision VARCHAR(32),
+    decision_reason TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    read BOOLEAN NOT NULL DEFAULT FALSE,
+    delivery_status VARCHAR(32) NOT NULL DEFAULT 'delivered'
+);
+
+CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON in_app_notifications(user_id);
 
 -- ----------------------------------------------------------------------------
 -- 10. CALENDAR INTEGRATION METADATA

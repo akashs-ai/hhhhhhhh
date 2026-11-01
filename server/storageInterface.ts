@@ -71,7 +71,7 @@ export interface BookingRecord {
   requested_room?: string | null;
   mandatory_for_groups: string[];
   raw_text?: string;
-  status: 'pending' | 'approved' | 'rejected' | 'alternative_offered';
+  status: 'pending' | 'approved' | 'rejected' | 'alternative_offered' | 'withdrawn';
   allocated_room?: string | null;
   allocated_day?: string | null;
   allocated_start_period?: number | null;
@@ -107,6 +107,21 @@ export interface WaitlistEntry {
   purpose?: string;
   status: 'active' | 'fulfilled' | 'cancelled';
   created_at: string;
+}
+
+export interface NotificationRecord {
+  id: string;
+  user_id: string;
+  title: string;
+  message: string;
+  type: 'booking_approved' | 'booking_rejected' | 'booking_alternative' | 'booking_withdrawn' | 'system';
+  reference_id?: string;
+  reference_type?: 'booking' | 'disruption' | 'exam';
+  decision?: string;
+  decision_reason?: string;
+  created_at: string;
+  read: boolean;
+  delivery_status: 'delivered' | 'read' | 'pending';
 }
 
 export interface DisruptionRecord {
@@ -246,6 +261,12 @@ export interface IStorage {
   // Audit
   logAudit(entry: Omit<AuditLogEntry, 'id' | 'timestamp'>): Promise<void>;
   getAuditLogs(limit?: number): Promise<AuditLogEntry[]>;
+
+  // Notifications
+  getNotificationsByUser(userId: string): Promise<NotificationRecord[]>;
+  saveNotification(notification: NotificationRecord): Promise<void>;
+  markNotificationAsRead(id: string, userId: string): Promise<boolean>;
+  markAllNotificationsAsRead(userId: string): Promise<number>;
 
   // Calendar Sync Metadata
   getCalendarSyncData(): Promise<any>;

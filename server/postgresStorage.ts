@@ -8,6 +8,7 @@ import {
   AuditLogEntry,
   MaintenanceBlock,
   WaitlistEntry,
+  NotificationRecord,
 } from './storageInterface.js';
 
 export class PostgresStorage implements IStorage {
@@ -766,6 +767,70 @@ export class PostgresStorage implements IStorage {
       details: typeof r.details === 'string' ? JSON.parse(r.details) : r.details || undefined,
       status: r.status,
     }));
+  }
+
+  // --- IN-APP NOTIFICATIONS ---
+  public async getNotificationsByUser(userId: string): Promise<NotificationRecord[]> {
+    const res = await this.pool.query(
+      'SELECT * FROM in_app_notifications WHERE user_id = $1 ORDER BY created_at DESC',
+      [userId]
+    );
+    return res.rows.map((r) => ({
+      id: r.id,
+      user_id: r.user_id,
+      title: r.title,
+      message: r.message,
+      type: r.type,
+      reference_id: r.reference_id || undefined,
+      reference_type: r.reference_type || undefined,
+      decision: r.decision || undefined,
+      decision_reason: r.decision_reason || undefined,
+      created_at: r.created_at instanceof Date ? r.created_at.toISOString() : String(r.created_at),
+      read: Boolean(r.read),
+      delivery_status: r.delivery_status || 'delivered',
+    }));
+  }
+
+  public async saveNotification(n: NotificationRecord): Promise<void> {
+    await this.pool.query(
+      `INSERT INTO in_app_notifications (
+         id, user_id, title, message, type, reference_id, reference_type,
+         decision, decision_reason, created_at, read, delivery_status
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+       ON CONFLICT (id) DO UPDATE SET
+         read = EXCLUDED.read,
+         delivery_status = EXCLUDED.delivery_status`,
+      [
+        n.id,
+        n.user_id,
+        n.title,
+        n.message,
+        n.type,
+        n.reference_id || null,
+        n.reference_type || null,
+        n.decision || null,
+        n.decision_reason || null,
+        n.created_at,
+        n.read,
+        n.delivery_status,
+      ]
+    );
+  }
+
+  public async markNotificationAsRead(id: string, userId: string): Promise<boolean> {
+    const res = await this.pool.query(
+      "UPDATE in_app_notifications SET read = TRUE, delivery_status = 'read' WHERE id = $1 AND user_id = $2",
+      [id, userId]
+    );
+    return (res.rowCount || 0) > 0;
+  }
+
+  public async markAllNotificationsAsRead(userId: string): Promise<number> {
+    const res = await this.pool.query(
+      "UPDATE in_app_notifications SET read = TRUE, delivery_status = 'read' WHERE user_id = $1 AND read = FALSE",
+      [userId]
+    );
+    return res.rowCount || 0;
   }
 
   // --- CALENDAR SYNC METADATA ---

@@ -38,6 +38,11 @@ router.get('/bookings', async (req: AuthenticatedRequest, res: Response) => {
     list = list.filter((b) => b.status === 'approved');
   }
 
+  // Faculty role: strictly show only their own requests
+  if (req.user?.role === 'faculty') {
+    list = list.filter((b) => b.created_by === req.user!.id);
+  }
+
   // Faculty filter: if mine=true, filter by created_by
   if (req.query.mine === 'true' && req.user) {
     list = list.filter((b) => b.created_by === req.user!.id);
@@ -96,6 +101,25 @@ router.get('/bookings/:id', async (req: AuthenticatedRequest, res: Response) => 
     res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: `Booking request ${req.params.id} not found` } });
     return;
   }
+
+  // Ownership enforcement: faculty cannot view another faculty member's private booking
+  if (req.user?.role === 'faculty' && booking.created_by !== req.user.id) {
+    res.status(403).json({
+      success: false,
+      error: { code: 'FORBIDDEN', message: 'You do not have permission to view another faculty member\'s request.' },
+    });
+    return;
+  }
+
+  // Student cannot view non-approved bookings
+  if (req.user?.role === 'student' && booking.status !== 'approved') {
+    res.status(403).json({
+      success: false,
+      error: { code: 'FORBIDDEN', message: 'You do not have permission to view this request.' },
+    });
+    return;
+  }
+
   res.json({ success: true, data: booking });
 });
 
@@ -378,6 +402,19 @@ router.post('/bookings/:id/decision', requireRole('admin', 'department_coordinat
     return;
   }
 
+  // Backend enforcement: Only currently pending requests can be decided
+  if (booking.status !== 'pending') {
+    res.status(409).json({
+      success: false,
+      error: {
+        code: 'ALREADY_PROCESSED',
+        message: `Request '${booking.id}' has already been processed with status '${booking.status}' and cannot be decided again.`,
+      },
+      data: booking,
+    });
+    return;
+  }
+
   const { status, reason, room_id, day, start_period, end_period } = req.body;
   if (!['approved', 'rejected', 'alternative_offered'].includes(status)) {
     res.status(400).json({ success: false, error: { code: 'INVALID_STATUS', message: 'Status must be approved, rejected, or alternative_offered' } });
@@ -419,6 +456,29 @@ router.post('/bookings/:id/decision', requireRole('admin', 'department_coordinat
     status: 'success',
   });
 
+  // Notify original requester via in-app notification
+  if (booking.created_by) {
+    try {
+      const notifId = `notif-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+      await storage.saveNotification({
+        id: notifId,
+        user_id: booking.created_by,
+        title: `Requisition ${booking.id} ${status.toUpperCase()}`,
+        message: `Your requisition "${booking.title}" has been ${status} by ${req.user!.name}.${reason ? ` Reason: ${reason}` : ''}`,
+        type: status === 'approved' ? 'booking_approved' : status === 'rejected' ? 'booking_rejected' : 'booking_alternative',
+        reference_id: booking.id,
+        reference_type: 'booking',
+        decision: status,
+        decision_reason: reason || undefined,
+        created_at: new Date().toISOString(),
+        read: false,
+        delivery_status: 'delivered',
+      });
+    } catch (notifErr) {
+      console.error('Failed to dispatch notification:', notifErr);
+    }
+  }
+
   res.json({
     success: true,
     message: `Booking ${booking.id} marked as ${status}`,
@@ -440,6 +500,19 @@ router.post('/bookings/:id/approve', requireRole('admin', 'department_coordinato
     res.status(err.status || 403).json({
       success: false,
       error: { code: err.code || 'SELF_APPROVAL_FORBIDDEN', message: err.message },
+    });
+    return;
+  }
+
+  // Backend enforcement: Only currently pending requests can be approved
+  if (booking.status !== 'pending') {
+    res.status(409).json({
+      success: false,
+      error: {
+        code: 'ALREADY_PROCESSED',
+        message: `Request '${booking.id}' has already been processed with status '${booking.status}' and cannot be approved again.`,
+      },
+      data: booking,
     });
     return;
   }
@@ -482,6 +555,28 @@ router.post('/bookings/:id/approve', requireRole('admin', 'department_coordinato
     status: 'success',
   });
 
+  // Notify original requester
+  if (booking.created_by) {
+    try {
+      const notifId = `notif-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+      await storage.saveNotification({
+        id: notifId,
+        user_id: booking.created_by,
+        title: `Requisition ${booking.id} APPROVED`,
+        message: `Your requisition "${booking.title}" has been approved by ${req.user!.name}. Venue: ${booking.allocated_room || 'Allocated'} on ${booking.allocated_day || 'Scheduled day'}.`,
+        type: 'booking_approved',
+        reference_id: booking.id,
+        reference_type: 'booking',
+        decision: 'approved',
+        created_at: new Date().toISOString(),
+        read: false,
+        delivery_status: 'delivered',
+      });
+    } catch (notifErr) {
+      console.error('Failed to dispatch notification:', notifErr);
+    }
+  }
+
   res.json({ success: true, message: `Booking ${booking.id} approved.`, data: booking });
 });
 
@@ -501,8 +596,22 @@ router.post('/bookings/:id/reject', requireRole('admin', 'department_coordinator
     return;
   }
 
+  // Backend enforcement: Only currently pending requests can be rejected
+  if (booking.status !== 'pending') {
+    res.status(409).json({
+      success: false,
+      error: {
+        code: 'ALREADY_PROCESSED',
+        message: `Request '${booking.id}' has already been processed with status '${booking.status}' and cannot be rejected again.`,
+      },
+      data: booking,
+    });
+    return;
+  }
+
+  const reason = req.body.reason || `Rejected by ${req.user!.name}`;
   booking.status = 'rejected';
-  booking.decision_reason = req.body.reason || `Rejected by ${req.user!.name}`;
+  booking.decision_reason = reason;
   booking.decided_by = req.user!.id;
   booking.decided_at = new Date().toISOString();
 
@@ -517,7 +626,85 @@ router.post('/bookings/:id/reject', requireRole('admin', 'department_coordinator
     status: 'success',
   });
 
+  // Notify original requester
+  if (booking.created_by) {
+    try {
+      const notifId = `notif-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+      await storage.saveNotification({
+        id: notifId,
+        user_id: booking.created_by,
+        title: `Requisition ${booking.id} REJECTED`,
+        message: `Your requisition "${booking.title}" was rejected by ${req.user!.name}.${reason ? ` Grounds: ${reason}` : ''}`,
+        type: 'booking_rejected',
+        reference_id: booking.id,
+        reference_type: 'booking',
+        decision: 'rejected',
+        decision_reason: reason,
+        created_at: new Date().toISOString(),
+        read: false,
+        delivery_status: 'delivered',
+      });
+    } catch (notifErr) {
+      console.error('Failed to dispatch notification:', notifErr);
+    }
+  }
+
   res.json({ success: true, message: `Booking ${booking.id} rejected.`, data: booking });
+});
+
+// POST /api/bookings/:id/withdraw - Allow original requester to withdraw pending request (persisting status 'withdrawn')
+router.post('/bookings/:id/withdraw', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  const booking = await storage.getBookingById(req.params.id);
+  if (!booking) {
+    res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: `Booking ${req.params.id} not found` } });
+    return;
+  }
+
+  // Only creator or admin can withdraw
+  if (booking.created_by !== req.user!.id && req.user!.role !== 'admin') {
+    res.status(403).json({
+      success: false,
+      error: { code: 'UNAUTHORIZED_WITHDRAWAL', message: 'You can only withdraw requests that you created.' },
+    });
+    return;
+  }
+
+  // Allow withdrawal only while pending
+  if (booking.status !== 'pending') {
+    res.status(409).json({
+      success: false,
+      error: {
+        code: 'ALREADY_PROCESSED',
+        message: `Cannot withdraw request '${booking.id}' because it has already been ${booking.status}.`,
+      },
+      data: booking,
+    });
+    return;
+  }
+
+  booking.status = 'withdrawn';
+  booking.decision_reason = req.body.reason || `Withdrawn by requester ${req.user!.name}`;
+  booking.decided_by = req.user!.id;
+  booking.decided_at = new Date().toISOString();
+
+  await storage.saveBooking(booking);
+
+  await storage.logAudit({
+    user_id: req.user!.id,
+    user_name: req.user!.name,
+    role: req.user!.role,
+    action: 'BOOKING_WITHDRAWN',
+    resource_type: 'booking',
+    resource_id: booking.id,
+    details: { title: booking.title, status: 'withdrawn' },
+    status: 'success',
+  });
+
+  res.json({
+    success: true,
+    message: `Booking request ${booking.id} has been withdrawn successfully.`,
+    data: booking,
+  });
 });
 
 // DELETE /api/bookings/:id - Withdraw or cancel a booking request
@@ -533,6 +720,19 @@ router.delete('/bookings/:id', requireAuth, async (req: AuthenticatedRequest, re
     res.status(403).json({
       success: false,
       error: { code: 'UNAUTHORIZED_WITHDRAWAL', message: 'You can only withdraw booking requests that you created.' },
+    });
+    return;
+  }
+
+  // Prevent withdrawing already finalized / non-pending requests
+  if (booking.status !== 'pending') {
+    res.status(409).json({
+      success: false,
+      error: {
+        code: 'ALREADY_PROCESSED',
+        message: `Cannot withdraw booking '${booking.id}' because it has already been ${booking.status}.`,
+      },
+      data: booking,
     });
     return;
   }

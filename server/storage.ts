@@ -10,6 +10,7 @@ import {
   AuditLogEntry,
   MaintenanceBlock,
   WaitlistEntry,
+  NotificationRecord,
 } from './storageInterface.js';
 import { PostgresStorage } from './postgresStorage.js';
 
@@ -25,6 +26,7 @@ export class StorageManager implements IStorage {
   private calendarFile: string;
   private usersFile: string;
   private waitlistFile: string;
+  private notificationsFile: string;
 
   constructor() {
     this.baseDir = STORAGE_DIR;
@@ -36,6 +38,7 @@ export class StorageManager implements IStorage {
     this.calendarFile = path.join(this.baseDir, 'calendar_sync.json');
     this.usersFile = path.join(this.baseDir, 'users.json');
     this.waitlistFile = path.join(this.baseDir, 'waitlist.json');
+    this.notificationsFile = path.join(this.baseDir, 'notifications.json');
 
     this.ensureInitialized();
   }
@@ -362,6 +365,11 @@ export class StorageManager implements IStorage {
       this.writeJsonAtomic(this.auditFile, []);
     }
 
+    // 5b. Notifications
+    if (!fs.existsSync(this.notificationsFile)) {
+      this.writeJsonAtomic(this.notificationsFile, []);
+    }
+
     // 6. Calendar Sync
     if (!fs.existsSync(this.calendarFile)) {
       this.writeJsonAtomic(this.calendarFile, {
@@ -686,6 +694,51 @@ export class StorageManager implements IStorage {
   public async getAuditLogs(limit: number = 100): Promise<AuditLogEntry[]> {
     const logs = this.readJson<AuditLogEntry[]>(this.auditFile, []);
     return logs.slice(-limit).reverse();
+  }
+
+  // --- IN-APP NOTIFICATIONS ---
+  public async getNotificationsByUser(userId: string): Promise<NotificationRecord[]> {
+    const list = this.readJson<NotificationRecord[]>(this.notificationsFile, []);
+    return list
+      .filter((n) => n.user_id === userId)
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  }
+
+  public async saveNotification(notification: NotificationRecord): Promise<void> {
+    const list = this.readJson<NotificationRecord[]>(this.notificationsFile, []);
+    const idx = list.findIndex((n) => n.id === notification.id);
+    if (idx >= 0) {
+      list[idx] = notification;
+    } else {
+      list.unshift(notification);
+    }
+    this.writeJsonAtomic(this.notificationsFile, list);
+  }
+
+  public async markNotificationAsRead(id: string, userId: string): Promise<boolean> {
+    const list = this.readJson<NotificationRecord[]>(this.notificationsFile, []);
+    const notif = list.find((n) => n.id === id && n.user_id === userId);
+    if (!notif) return false;
+    notif.read = true;
+    notif.delivery_status = 'read';
+    this.writeJsonAtomic(this.notificationsFile, list);
+    return true;
+  }
+
+  public async markAllNotificationsAsRead(userId: string): Promise<number> {
+    const list = this.readJson<NotificationRecord[]>(this.notificationsFile, []);
+    let count = 0;
+    for (const n of list) {
+      if (n.user_id === userId && !n.read) {
+        n.read = true;
+        n.delivery_status = 'read';
+        count++;
+      }
+    }
+    if (count > 0) {
+      this.writeJsonAtomic(this.notificationsFile, list);
+    }
+    return count;
   }
 
   // --- CALENDAR SYNC METADATA ---

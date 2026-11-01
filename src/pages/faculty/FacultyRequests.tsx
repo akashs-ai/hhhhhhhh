@@ -36,7 +36,7 @@ interface BookingRecord {
   requested_room?: string | null;
   mandatory_for_groups?: string[];
   raw_text?: string;
-  status: 'pending' | 'approved' | 'rejected' | 'alternative_offered';
+  status: 'pending' | 'approved' | 'rejected' | 'alternative_offered' | 'withdrawn';
   created_by: string;
   allocated_room?: string | null;
   allocated_day?: string | null;
@@ -55,6 +55,7 @@ export const FacultyRequests: React.FC<FacultyRequestsProps> = ({ currentUser })
   const [bookings, setBookings] = useState<BookingRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'approved' | 'rejected_or_withdrawn'>('all');
   const [nudged, setNudged] = useState(false);
   const [showNewModal, setShowNewModal] = useState(false);
 
@@ -144,7 +145,6 @@ export const FacultyRequests: React.FC<FacultyRequestsProps> = ({ currentUser })
       setShowNewModal(false);
       setSelectedTicketId(resJson.data?.id);
       window.dispatchEvent(new CustomEvent('cit_schedule_changed'));
-      window.dispatchEvent(new CustomEvent('cit_schedule_changed'));
       await fetchBookings();
     } catch (err: any) {
       setSubmitError(err.message);
@@ -157,9 +157,10 @@ export const FacultyRequests: React.FC<FacultyRequestsProps> = ({ currentUser })
     if (!window.confirm(`Withdraw requisition '${id}'? This will permanently cancel the ticket.`)) return;
 
     try {
-      const res = await fetch(`/api/bookings/${encodeURIComponent(id)}`, {
-        method: 'DELETE',
+      const res = await fetch(`/api/bookings/${encodeURIComponent(id)}/withdraw`, {
+        method: 'POST',
         headers: {
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${currentUser.token || currentUser.id}`,
         },
       });
@@ -191,10 +192,21 @@ export const FacultyRequests: React.FC<FacultyRequestsProps> = ({ currentUser })
     }
   };
 
-  const selectedTicket = bookings.find((b) => b.id === selectedTicketId) || bookings[0] || null;
+  const filteredBookings = bookings.filter((b) => {
+    if (activeTab === 'all') return true;
+    if (activeTab === 'pending') return b.status === 'pending';
+    if (activeTab === 'approved') return b.status === 'approved';
+    if (activeTab === 'rejected_or_withdrawn') {
+      return b.status === 'rejected' || b.status === 'withdrawn' || b.status === 'alternative_offered';
+    }
+    return true;
+  });
+
+  const selectedTicket = bookings.find((b) => b.id === selectedTicketId) || filteredBookings[0] || bookings[0] || null;
 
   const totalActive = bookings.filter((b) => b.status === 'pending').length;
   const totalApproved = bookings.filter((b) => b.status === 'approved').length;
+  const totalResolved = bookings.filter((b) => b.status === 'rejected' || b.status === 'withdrawn' || b.status === 'alternative_offered').length;
 
   return (
     <div className="p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
@@ -231,18 +243,24 @@ export const FacultyRequests: React.FC<FacultyRequestsProps> = ({ currentUser })
         </div>
       </div>
 
-      {/* 4 Stat Metric Cards */}
+      {/* Stat Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">ACTIVE REQUESTS</div>
-          <div className="text-3xl font-black text-slate-900 mt-1">{totalActive}</div>
-          <div className="text-[11px] text-slate-500 mt-2">In review queue • Under Coordinator / Chair</div>
+          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">PENDING REQUESTS</div>
+          <div className="text-3xl font-black text-amber-600 mt-1">{totalActive}</div>
+          <div className="text-[11px] text-amber-700 font-semibold mt-2">In review queue • Under Coordinator / Chair</div>
         </div>
 
         <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">APPROVED THIS TERM</div>
+          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">APPROVED SESSIONS</div>
           <div className="text-3xl font-black text-emerald-600 mt-1">{totalApproved}</div>
-          <div className="text-[11px] text-emerald-600 font-semibold mt-2">Resolved tickets • 100% adherence</div>
+          <div className="text-[11px] text-emerald-600 font-semibold mt-2">Allocated & synced to master timetable</div>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">WITHDRAWN / REJECTED</div>
+          <div className="text-3xl font-black text-slate-700 mt-1">{totalResolved}</div>
+          <div className="text-[11px] text-slate-500 font-semibold mt-2">Closed or cancelled requests</div>
         </div>
 
         <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs">
@@ -251,32 +269,74 @@ export const FacultyRequests: React.FC<FacultyRequestsProps> = ({ currentUser })
             <span className="text-3xl font-black text-slate-900">{bookings.length}</span>
             <span className="text-xs font-bold text-slate-500">tickets</span>
           </div>
-          <div className="text-[11px] text-blue-600 font-semibold mt-2">All submitted dockets</div>
+          <div className="text-[11px] text-blue-600 font-semibold mt-2">All submitted personal dockets</div>
         </div>
+      </div>
 
-        <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">DISRUPTION SLA</div>
-          <div className="text-xl font-bold text-emerald-700 mt-1">Guaranteed</div>
-          <div className="text-[11px] text-slate-500 mt-2">Clash-Free Certified • Zero student collision</div>
-        </div>
+      {/* Filter Tabs */}
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        <button
+          onClick={() => setActiveTab('all')}
+          className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
+            activeTab === 'all'
+              ? 'bg-blue-600 text-white shadow-2xs'
+              : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+          }`}
+        >
+          All My Requests ({bookings.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('pending')}
+          className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
+            activeTab === 'pending'
+              ? 'bg-blue-600 text-white shadow-2xs'
+              : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+          }`}
+        >
+          Pending ({totalActive})
+        </button>
+        <button
+          onClick={() => setActiveTab('approved')}
+          className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
+            activeTab === 'approved'
+              ? 'bg-blue-600 text-white shadow-2xs'
+              : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+          }`}
+        >
+          Approved ({totalApproved})
+        </button>
+        <button
+          onClick={() => setActiveTab('rejected_or_withdrawn')}
+          className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
+            activeTab === 'rejected_or_withdrawn'
+              ? 'bg-blue-600 text-white shadow-2xs'
+              : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+          }`}
+        >
+          Withdrawn / Rejected ({totalResolved})
+        </button>
       </div>
 
       {/* Main Grid: Ticket List (5 Cols) + Detail View (7 Cols) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Tickets */}
         <div className="lg:col-span-5 space-y-3">
-          {bookings.length === 0 ? (
+          {filteredBookings.length === 0 ? (
             <div className="p-8 text-center bg-white border border-slate-200 rounded-2xl text-xs text-slate-500">
-              No tickets submitted yet. Click '+ Submit New Request' to create one.
+              No tickets matching current filter. Click '+ Submit New Request' to create one.
             </div>
           ) : (
-            bookings.map((b) => {
+            filteredBookings.map((b) => {
               const isSelected = selectedTicketId === b.id;
               const statusColor =
                 b.status === 'approved'
                   ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
                   : b.status === 'rejected'
                   ? 'text-red-700 bg-red-50 border-red-200'
+                  : b.status === 'withdrawn'
+                  ? 'text-slate-600 bg-slate-100 border-slate-200'
+                  : b.status === 'alternative_offered'
+                  ? 'text-blue-700 bg-blue-50 border-blue-200'
                   : 'text-amber-700 bg-amber-50 border-amber-200';
 
               return (
@@ -319,8 +379,8 @@ export const FacultyRequests: React.FC<FacultyRequestsProps> = ({ currentUser })
           )}
         </div>
 
-        {/* Right Column: Detail View */}
-        <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-5">
+        {/* Right Column: Detail View (Sticky alongside list) */}
+        <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-5 sticky top-6 self-start max-h-[calc(100vh-3rem)] overflow-y-auto">
           {selectedTicket ? (
             <>
               <div className="flex items-start justify-between pb-3 border-b border-slate-100">
@@ -333,6 +393,10 @@ export const FacultyRequests: React.FC<FacultyRequestsProps> = ({ currentUser })
                           ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
                           : selectedTicket.status === 'rejected'
                           ? 'bg-red-50 border-red-200 text-red-700'
+                          : selectedTicket.status === 'withdrawn'
+                          ? 'bg-slate-100 border-slate-200 text-slate-600'
+                          : selectedTicket.status === 'alternative_offered'
+                          ? 'bg-blue-50 border-blue-200 text-blue-700'
                           : 'bg-amber-50 border-amber-200 text-amber-700'
                       }`}
                     >
@@ -371,6 +435,8 @@ export const FacultyRequests: React.FC<FacultyRequestsProps> = ({ currentUser })
                   <div className="text-[11px] text-blue-700 font-semibold">
                     {selectedTicket.allocated_start_period
                       ? `Periods ${selectedTicket.allocated_start_period} – ${selectedTicket.allocated_end_period}`
+                      : selectedTicket.status === 'withdrawn'
+                      ? 'Ticket Withdrawn'
                       : 'Under review by Chair'}
                   </div>
                   {selectedTicket.decision_reason && (
@@ -389,28 +455,60 @@ export const FacultyRequests: React.FC<FacultyRequestsProps> = ({ currentUser })
                 </div>
               )}
 
-              {/* Action Footer */}
-              <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100">
-                <div className="flex items-center space-x-2">
+              {/* Action Footer: Pending requests get Withdraw and Nudge buttons; Decided requests get status banner */}
+              {selectedTicket.status === 'pending' ? (
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100">
+                  <div className="flex items-center space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => handleWithdraw(selectedTicket.id)}
+                      className="px-3.5 py-1.5 bg-white border border-red-200 text-red-600 rounded-xl text-xs font-semibold hover:bg-red-50 cursor-pointer flex items-center space-x-1.5 transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Withdraw Request</span>
+                    </button>
+                  </div>
+
                   <button
                     type="button"
-                    onClick={() => handleWithdraw(selectedTicket.id)}
-                    className="px-3 py-1.5 bg-white border border-red-200 text-red-600 rounded-lg text-xs font-semibold hover:bg-red-50 cursor-pointer flex items-center space-x-1"
+                    onClick={() => handleNudge(selectedTicket.id)}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center space-x-1.5 cursor-pointer"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    <span>Withdraw Request</span>
+                    <Bell className="w-3.5 h-3.5" />
+                    <span>{nudged ? 'Chair Nudged ✓' : 'Nudge Coordinator'}</span>
                   </button>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={() => handleNudge(selectedTicket.id)}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center space-x-1.5 cursor-pointer"
-                >
-                  <Bell className="w-3.5 h-3.5" />
-                  <span>{nudged ? 'Chair Nudged ✓' : 'Nudge Coordinator'}</span>
-                </button>
-              </div>
+              ) : (
+                <div className="pt-3 border-t border-slate-100">
+                  <div
+                    className={`p-3 rounded-xl border text-xs flex items-center justify-between ${
+                      selectedTicket.status === 'approved'
+                        ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                        : selectedTicket.status === 'rejected'
+                        ? 'bg-red-50 border-red-200 text-red-800'
+                        : selectedTicket.status === 'withdrawn'
+                        ? 'bg-slate-50 border-slate-200 text-slate-700'
+                        : 'bg-blue-50 border-blue-200 text-blue-800'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-2">
+                      {selectedTicket.status === 'approved' && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
+                      {selectedTicket.status === 'rejected' && <XCircle className="w-4 h-4 text-red-600 shrink-0" />}
+                      {selectedTicket.status === 'withdrawn' && <Clock className="w-4 h-4 text-slate-500 shrink-0" />}
+                      {selectedTicket.status === 'alternative_offered' && <ShieldCheck className="w-4 h-4 text-blue-600 shrink-0" />}
+                      <span className="font-medium">
+                        {selectedTicket.status === 'approved' && 'This request has been approved and applied to the master timetable.'}
+                        {selectedTicket.status === 'rejected' && 'This request was rejected by administrative authority.'}
+                        {selectedTicket.status === 'withdrawn' && 'This request was withdrawn by you and is archived.'}
+                        {selectedTicket.status === 'alternative_offered' && 'An alternative room or slot has been proposed by administration.'}
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-white border border-slate-200 text-slate-600">
+                      Closed
+                    </span>
+                  </div>
+                </div>
+              )}
             </>
           ) : (
             <div className="text-center py-12 text-slate-400 text-xs">
