@@ -1,10 +1,10 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 
-// Transition easing curve for modern, responsive micro-interactions
+// Highly optimized easing curve for modern, responsive micro-interactions (snappy, no overshoot)
 export const premiumEase = [0.16, 1, 0.3, 1] as const;
 
-// 1. Page Transition Component
+// 1. Lightweight Page Transition Component (Instant, subtle 4px glide, no delay)
 export const PageTransition: React.FC<{
   children: React.ReactNode;
   className?: string;
@@ -13,10 +13,11 @@ export const PageTransition: React.FC<{
   return (
     <motion.div
       key={pageKey}
-      initial={{ opacity: 0, y: 8 }}
+      initial={{ opacity: 0, y: 4 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -6 }}
-      transition={{ duration: 0.22, ease: premiumEase }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.16, ease: premiumEase }}
+      style={{ willChange: 'opacity, transform' }}
       className={className}
     >
       {children}
@@ -24,12 +25,12 @@ export const PageTransition: React.FC<{
   );
 };
 
-// 2. Staggered Container for Dashboard Metric Cards
+// 2. Coordinated Container for Dashboard Metric Cards
 export const StaggerContainer: React.FC<{
   children: React.ReactNode;
   className?: string;
   staggerDelay?: number;
-}> = ({ children, className = '', staggerDelay = 0.04 }) => {
+}> = ({ children, className = '', staggerDelay = 0.025 }) => {
   return (
     <motion.div
       initial="hidden"
@@ -50,7 +51,7 @@ export const StaggerContainer: React.FC<{
   );
 };
 
-// 3. Staggered Card Item
+// 3. Fast, Subtle Card Item Transition (Prevents jitter and dancing elements)
 export const CardTransition: React.FC<{
   children: React.ReactNode;
   className?: string;
@@ -58,13 +59,14 @@ export const CardTransition: React.FC<{
   return (
     <motion.div
       variants={{
-        hidden: { opacity: 0, y: 8 },
+        hidden: { opacity: 0, y: 4 },
         show: {
           opacity: 1,
           y: 0,
-          transition: { duration: 0.22, ease: premiumEase },
+          transition: { duration: 0.18, ease: premiumEase },
         },
       }}
+      style={{ willChange: 'opacity, transform' }}
       className={className}
     >
       {children}
@@ -72,7 +74,7 @@ export const CardTransition: React.FC<{
   );
 };
 
-// 4. Modal Dialog Entrance and Exit Wrapper
+// 4. Modal Dialog Entrance and Exit Wrapper (Snappy 150ms entrance)
 export const ModalWrapper: React.FC<{
   isOpen: boolean;
   onClose: () => void;
@@ -99,18 +101,19 @@ export const ModalWrapper: React.FC<{
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.18, ease: premiumEase }}
+            transition={{ duration: 0.14, ease: premiumEase }}
             onClick={onClose}
             className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs"
           />
 
           {/* Modal Card */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.97, y: 6 }}
+            initial={{ opacity: 0, scale: 0.98, y: 4 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.97, y: 6 }}
-            transition={{ duration: 0.2, ease: premiumEase }}
+            exit={{ opacity: 0, scale: 0.98, y: 4 }}
+            transition={{ duration: 0.16, ease: premiumEase }}
             onClick={(e) => e.stopPropagation()}
+            style={{ willChange: 'opacity, transform' }}
             className={`relative bg-white rounded-2xl shadow-xl border border-slate-200 w-full ${maxWidth} z-10 overflow-hidden`}
           >
             {children}
@@ -121,7 +124,7 @@ export const ModalWrapper: React.FC<{
   );
 };
 
-// 5. Skeleton Loader for Loading States
+// 5. Skeleton Loader with Stable Dimensions
 export const Skeleton: React.FC<{
   className?: string;
 }> = ({ className = 'h-4 w-full rounded-md' }) => {

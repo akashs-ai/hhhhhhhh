@@ -77,9 +77,8 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
   const [refreshing, setRefreshing] = useState(false);
 
   // Fetch real database-backed student summary
-  const fetchSummary = useCallback(async (isSilent = false) => {
-    if (!isSilent) setLoading(true);
-    else setRefreshing(true);
+  const fetchSummary = useCallback(async (isManual = false) => {
+    if (isManual) setRefreshing(true);
 
     try {
       const token = currentUser.token || (typeof window !== 'undefined' ? localStorage.getItem('cit_auth_token') : '') || '';
@@ -95,14 +94,14 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
       console.warn('Student dashboard summary fetch notice:', err);
     } finally {
       setLoading(false);
-      setRefreshing(false);
+      if (isManual) setRefreshing(false);
     }
   }, [currentUser]);
 
   useEffect(() => {
     fetchSummary();
 
-    const handleMutation = () => fetchSummary(true);
+    const handleMutation = () => fetchSummary(false);
     window.addEventListener('cit:data-mutated', handleMutation);
 
     return () => {
@@ -153,8 +152,14 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
         <CardTransition className="bg-blue-600 p-5 rounded-2xl text-white shadow-sm flex items-center justify-between">
           <div>
             <div className="text-[11px] font-bold uppercase tracking-wider text-blue-200">CLASSES TODAY</div>
-            <div className="text-3xl font-black mt-1">
-              {loading ? <Skeleton className="h-8 w-16 bg-blue-500/50 rounded-md" /> : summaryData?.stats.classes_today ?? 0}
+            <div className="h-9 flex items-baseline mt-1">
+              {loading ? (
+                <Skeleton className="h-7 w-16 bg-blue-500/50 rounded-md" />
+              ) : (
+                <span className="text-3xl font-black leading-none">
+                  {summaryData?.stats.classes_today ?? 0}
+                </span>
+              )}
             </div>
             <div className="text-[11px] text-blue-100 mt-1 flex items-center space-x-1">
               <Clock className="w-3 h-3" />
@@ -174,8 +179,14 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
         <CardTransition className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between">
           <div>
             <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">UPCOMING EXAMS</div>
-            <div className="text-3xl font-black text-slate-900 mt-1">
-              {loading ? <Skeleton className="h-8 w-16 rounded-md" /> : summaryData?.stats.upcoming_exams ?? 0}
+            <div className="h-9 flex items-baseline mt-1">
+              {loading ? (
+                <Skeleton className="h-7 w-16 rounded-md" />
+              ) : (
+                <span className="text-3xl font-black text-slate-900 leading-none">
+                  {summaryData?.stats.upcoming_exams ?? 0}
+                </span>
+              )}
             </div>
             <div className="text-[11px] text-slate-500 mt-1 truncate max-w-[140px]">
               {summaryData?.upcoming_exams?.[0]
@@ -192,8 +203,14 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
         <CardTransition className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between">
           <div>
             <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">MY VENUE BOOKINGS</div>
-            <div className="text-3xl font-black text-slate-900 mt-1">
-              {loading ? <Skeleton className="h-8 w-16 rounded-md" /> : summaryData?.stats.my_venue_bookings ?? 0}
+            <div className="h-9 flex items-baseline mt-1">
+              {loading ? (
+                <Skeleton className="h-7 w-16 rounded-md" />
+              ) : (
+                <span className="text-3xl font-black text-slate-900 leading-none">
+                  {summaryData?.stats.my_venue_bookings ?? 0}
+                </span>
+              )}
             </div>
             <div className="text-[11px] text-slate-500 mt-1">
               {summaryData?.stats.my_venue_bookings ? 'Active Reservations' : 'Spectra Venue Service'}
@@ -208,8 +225,14 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
         <CardTransition className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between">
           <div>
             <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">PENDING REQUESTS</div>
-            <div className="text-3xl font-black text-slate-900 mt-1">
-              {loading ? <Skeleton className="h-8 w-16 rounded-md" /> : summaryData?.stats.pending_requests ?? 0}
+            <div className="h-9 flex items-baseline mt-1">
+              {loading ? (
+                <Skeleton className="h-7 w-16 rounded-md" />
+              ) : (
+                <span className="text-3xl font-black text-slate-900 leading-none">
+                  {summaryData?.stats.pending_requests ?? 0}
+                </span>
+              )}
             </div>
             <div className="text-[11px] text-emerald-600 font-semibold mt-1">
               {summaryData?.stats.pending_requests ? 'Under Review' : '✓ All cleared'}

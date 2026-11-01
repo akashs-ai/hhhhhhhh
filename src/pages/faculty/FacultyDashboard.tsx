@@ -98,9 +98,8 @@ export const FacultyDashboard: React.FC<FacultyDashboardProps> = ({
   }>({ connected: false, email: null, last_synced_at: null, events_synced: 0 });
 
   // Fetch real database-backed faculty summary
-  const fetchSummary = useCallback(async (isSilent = false) => {
-    if (!isSilent) setLoading(true);
-    else setRefreshing(true);
+  const fetchSummary = useCallback(async (isManual = false) => {
+    if (isManual) setRefreshing(true);
 
     try {
       const token = currentUser.token || (typeof window !== 'undefined' ? localStorage.getItem('cit_auth_token') : '') || '';
@@ -116,14 +115,14 @@ export const FacultyDashboard: React.FC<FacultyDashboardProps> = ({
       console.warn('Faculty dashboard summary fetch notice:', err);
     } finally {
       setLoading(false);
-      setRefreshing(false);
+      if (isManual) setRefreshing(false);
     }
   }, [currentUser]);
 
   useEffect(() => {
     fetchSummary();
 
-    const handleMutation = () => fetchSummary(true);
+    const handleMutation = () => fetchSummary(false);
     window.addEventListener('cit:data-mutated', handleMutation);
 
     return () => {
@@ -263,11 +262,13 @@ export const FacultyDashboard: React.FC<FacultyDashboardProps> = ({
         {/* Card 1: Today's Load */}
         <CardTransition className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs">
           <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Today's Load</div>
-          <div className="text-3xl font-black text-slate-900 mt-1">
+          <div className="h-9 flex items-baseline mt-1">
             {loading ? (
-              <Skeleton className="h-8 w-24 rounded-md" />
+              <Skeleton className="h-7 w-24 rounded-md" />
             ) : (
-              `${summaryData?.stats.today_load_classes ?? 0} Classes`
+              <span className="text-3xl font-black text-slate-900 leading-none">
+                {summaryData?.stats.today_load_classes ?? 0} Classes
+              </span>
             )}
           </div>
           <div className="text-[11px] text-slate-500 mt-2">
@@ -282,11 +283,13 @@ export const FacultyDashboard: React.FC<FacultyDashboardProps> = ({
         {/* Card 2: Weekly Target */}
         <CardTransition className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs">
           <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Weekly Target</div>
-          <div className="text-3xl font-black text-slate-900 mt-1">
+          <div className="h-9 flex items-baseline mt-1">
             {loading ? (
-              <Skeleton className="h-8 w-28 rounded-md" />
+              <Skeleton className="h-7 w-28 rounded-md" />
             ) : (
-              `${summaryData?.stats.weekly_hours ?? 18} / ${summaryData?.stats.weekly_target_hours ?? 20} Hours`
+              <span className="text-3xl font-black text-slate-900 leading-none">
+                {summaryData?.stats.weekly_hours ?? 18} / {summaryData?.stats.weekly_target_hours ?? 20} Hours
+              </span>
             )}
           </div>
           <div className="text-[11px] text-emerald-600 font-semibold mt-2">
@@ -297,11 +300,13 @@ export const FacultyDashboard: React.FC<FacultyDashboardProps> = ({
         {/* Card 3: Mid-term Exams */}
         <CardTransition className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs">
           <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Mid-term Exams</div>
-          <div className="text-3xl font-black text-slate-900 mt-1">
+          <div className="h-9 flex items-baseline mt-1">
             {loading ? (
-              <Skeleton className="h-8 w-24 rounded-md" />
+              <Skeleton className="h-7 w-24 rounded-md" />
             ) : (
-              `${summaryData?.stats.upcoming_exams_count ?? 0} Upcoming`
+              <span className="text-3xl font-black text-slate-900 leading-none">
+                {summaryData?.stats.upcoming_exams_count ?? 0} Upcoming
+              </span>
             )}
           </div>
           <div className="text-[11px] text-slate-500 mt-2 truncate">
@@ -314,11 +319,13 @@ export const FacultyDashboard: React.FC<FacultyDashboardProps> = ({
         {/* Card 4: Pending Requests */}
         <CardTransition className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs">
           <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Pending Requests</div>
-          <div className="text-3xl font-black text-amber-700 mt-1">
+          <div className="h-9 flex items-baseline mt-1">
             {loading ? (
-              <Skeleton className="h-8 w-24 rounded-md" />
+              <Skeleton className="h-7 w-24 rounded-md" />
             ) : (
-              `${summaryData?.stats.pending_requests_count ?? 0} Active`
+              <span className="text-3xl font-black text-amber-700 leading-none">
+                {summaryData?.stats.pending_requests_count ?? 0} Active
+              </span>
             )}
           </div>
           <div className="text-[11px] text-amber-600 font-semibold mt-2 truncate">

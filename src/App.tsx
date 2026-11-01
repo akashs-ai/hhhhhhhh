@@ -353,18 +353,16 @@ export default function App() {
           />
 
           <main className="flex-1 overflow-y-auto">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={`${currentUser.id}-${currentUser.role}-${currentTab}`}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.22, ease: premiumEase }}
-                className="min-h-full"
-              >
-                {renderRolePage()}
-              </motion.div>
-            </AnimatePresence>
+            <motion.div
+              key={currentTab}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.16, ease: premiumEase }}
+              style={{ willChange: 'opacity, transform' }}
+              className="min-h-full"
+            >
+              {renderRolePage()}
+            </motion.div>
           </main>
         </div>
       </div>

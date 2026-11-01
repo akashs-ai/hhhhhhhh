@@ -118,7 +118,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <button
                 key={item.id}
                 onClick={() => onSelectTab(item.id)}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all group ${
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium transition-colors duration-150 group cursor-pointer ${
                   isActive
                     ? 'bg-blue-50 text-blue-700 shadow-2xs font-semibold'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'

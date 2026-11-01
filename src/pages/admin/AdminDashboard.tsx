@@ -102,9 +102,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const effectiveDept = currentUser.department || (isCoordinator ? 'Computer Science & Engineering' : '');
 
   // Fetch real database-backed summary
-  const fetchSummary = useCallback(async (isSilent = false) => {
-    if (!isSilent) setLoading(true);
-    else setRefreshing(true);
+  const fetchSummary = useCallback(async (isManual = false) => {
+    if (isManual) setRefreshing(true);
 
     try {
       const token = currentUser.token || (typeof window !== 'undefined' ? localStorage.getItem('cit_auth_token') : '') || '';
@@ -120,7 +119,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       console.warn('Dashboard summary fetch notice:', err);
     } finally {
       setLoading(false);
-      setRefreshing(false);
+      if (isManual) setRefreshing(false);
     }
   }, [currentUser]);
 
@@ -128,7 +127,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     fetchSummary();
 
     // Listen for mutations across the application
-    const handleMutation = () => fetchSummary(true);
+    const handleMutation = () => fetchSummary(false);
     window.addEventListener('cit:data-mutated', handleMutation);
 
     return () => {
@@ -245,12 +244,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <Calendar className="w-4 h-4" />
             </div>
           </div>
-          <div className="flex items-baseline space-x-2 mt-2">
+          <div className="h-9 flex items-baseline space-x-2 mt-2">
             {loading ? (
-              <Skeleton className="h-8 w-20 rounded-md" />
+              <Skeleton className="h-7 w-20 rounded-md" />
             ) : (
               <>
-                <span className="text-3xl font-black text-slate-900">
+                <span className="text-3xl font-black text-slate-900 leading-none">
                   {summaryData?.stats.total_classes ?? 0}
                 </span>
                 <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded flex items-center">
@@ -277,12 +276,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <FileCheck className="w-4 h-4" />
             </div>
           </div>
-          <div className="flex items-baseline space-x-2 mt-2">
+          <div className="h-9 flex items-baseline space-x-2 mt-2">
             {loading ? (
-              <Skeleton className="h-8 w-20 rounded-md" />
+              <Skeleton className="h-7 w-20 rounded-md" />
             ) : (
               <>
-                <span className="text-3xl font-black text-slate-900">
+                <span className="text-3xl font-black text-slate-900 leading-none">
                   {summaryData?.stats.exams_scheduled ?? 0}
                 </span>
                 <span className="text-[11px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">
@@ -308,12 +307,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <Building2 className="w-4 h-4" />
             </div>
           </div>
-          <div className="flex items-baseline space-x-2 mt-2">
+          <div className="h-9 flex items-baseline space-x-2 mt-2">
             {loading ? (
-              <Skeleton className="h-8 w-20 rounded-md" />
+              <Skeleton className="h-7 w-20 rounded-md" />
             ) : (
               <>
-                <span className="text-3xl font-black text-slate-900">
+                <span className="text-3xl font-black text-slate-900 leading-none">
                   {summaryData?.stats.venue_bookings ?? 0}
                 </span>
                 <span className="text-[11px] text-slate-500">active reservations</span>
@@ -341,12 +340,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <Users className="w-4 h-4" />
             </div>
           </div>
-          <div className="flex items-baseline space-x-2 mt-2">
+          <div className="h-9 flex items-baseline space-x-2 mt-2">
             {loading ? (
-              <Skeleton className="h-8 w-20 rounded-md" />
+              <Skeleton className="h-7 w-20 rounded-md" />
             ) : (
               <>
-                <span className="text-3xl font-black text-slate-900">
+                <span className="text-3xl font-black text-slate-900 leading-none">
                   {summaryData?.stats.active_users?.toLocaleString() ?? 0}
                 </span>
                 <span className="text-[11px] text-slate-500">registered</span>
@@ -484,7 +483,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 return (
                   <div key={bar.day} className="flex flex-col items-center h-full justify-end group">
                     <div
-                      className="w-full max-w-[28px] rounded-t-md overflow-hidden flex flex-col justify-end bg-slate-100 transition-all"
+                      className="w-full max-w-[28px] rounded-t-md overflow-hidden flex flex-col justify-end bg-slate-100 transition-[height] duration-200 ease-out"
                       style={{ height: `${barHeight}%` }}
                       title={`${bar.day}: ${bar.theory} Theory, ${bar.lab} Lab, ${bar.tutorial} Tut (${bar.total} total)`}
                     >
