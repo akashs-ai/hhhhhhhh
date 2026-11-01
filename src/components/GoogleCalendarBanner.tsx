@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, RefreshCw, CheckCircle2, AlertCircle, Unlink, ExternalLink } from 'lucide-react';
 import { UserItem } from '../types';
 import {
-  googleSignIn,
+  googleCalendarAuthorize,
   googleSignOut,
   getGoogleAccessToken,
   initGoogleAuth,
@@ -77,7 +77,7 @@ export const GoogleCalendarBanner: React.FC<GoogleCalendarBannerProps> = ({
         );
       }
 
-      const authResult = await googleSignIn();
+      const authResult = await googleCalendarAuthorize();
       if (!authResult) {
         // User closed the popup window or cancelled
         setFeedback({
@@ -181,7 +181,7 @@ export const GoogleCalendarBanner: React.FC<GoogleCalendarBannerProps> = ({
     // If no token in memory, try re-prompting authorization
     if (!token) {
       try {
-        const authResult = await googleSignIn();
+        const authResult = await googleCalendarAuthorize();
         if (authResult) {
           token = authResult.accessToken;
         } else {

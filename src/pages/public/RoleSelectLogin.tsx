@@ -16,7 +16,7 @@ import {
   Calendar,
 } from 'lucide-react';
 import { UserItem } from '../../types';
-import { googleSignIn } from '../../services/googleAuth';
+import { googleStudentSignIn } from '../../services/googleAuth';
 
 export type LoginCategory = 'student' | 'professor' | 'hod_admin';
 
@@ -80,19 +80,13 @@ export const RoleSelectLogin: React.FC<RoleSelectLoginProps> = ({
       });
   }, []);
 
-  // Switch category and clear errors
+  // Switch category and clear errors & input fields (no automated pre-fills)
   const handleCategoryChange = (category: LoginCategory) => {
     setActiveCategory(category);
     setErrorMessage(null);
     setSuccessNotice(null);
     setPassword('');
-    if (category === 'student') {
-      setEmail('');
-    } else if (category === 'professor' && !email) {
-      setEmail('prof.turing@cit.ac.in');
-    } else if (category === 'hod_admin' && !email) {
-      setEmail('dean.academics@cit.ac.in');
-    }
+    setEmail('');
   };
 
   // 1. Password-based authentication for Professor and HOD/Admin
@@ -167,9 +161,9 @@ export const RoleSelectLogin: React.FC<RoleSelectLoginProps> = ({
           ? { credential: clean }
           : { credential: `test-google-token:${clean}` };
       } else if (gClientId) {
-        // Real Google Identity Services popup
+        // Real Google Identity Services popup (Strictly Non-Sensitive openid/email/profile scopes)
         try {
-          const authRes = await googleSignIn();
+          const authRes = await googleStudentSignIn();
           if (!authRes || !authRes.accessToken) {
             // User closed popup
             setIsSubmitting(false);
@@ -518,9 +512,7 @@ export const RoleSelectLogin: React.FC<RoleSelectLoginProps> = ({
                     autoComplete="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder={
-                      activeCategory === 'professor' ? 'prof.turing@cit.ac.in' : 'dean.academics@cit.ac.in'
-                    }
+                    placeholder="Enter your email address (e.g. name@gmail.com)"
                     className="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 bg-white text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-colors"
                   />
                 </div>
@@ -687,7 +679,7 @@ export const RoleSelectLogin: React.FC<RoleSelectLoginProps> = ({
                     required
                     value={recoveryEmail}
                     onChange={(e) => setRecoveryEmail(e.target.value)}
-                    placeholder="your.name@cit.ac.in"
+                    placeholder="Enter your email address (e.g. name@gmail.com)"
                     className="w-full px-3.5 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 bg-white text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
                   />
                 </div>
@@ -768,34 +760,9 @@ export const RoleSelectLogin: React.FC<RoleSelectLoginProps> = ({
                   type="email"
                   value={studentGoogleEmail}
                   onChange={(e) => setStudentGoogleEmail(e.target.value)}
-                  placeholder="e.g. alex.student@gmail.com or aarav.cse3@cit.ac.in"
+                  placeholder="Enter your Gmail address (e.g. name@gmail.com)"
                   className="w-full px-3.5 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 bg-white text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
                 />
-              </div>
-
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                <span className="text-[10px] text-slate-400 self-center">Sample accounts:</span>
-                <button
-                  type="button"
-                  onClick={() => setStudentGoogleEmail('alex.student@gmail.com')}
-                  className="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full cursor-pointer"
-                >
-                  alex.student@gmail.com
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStudentGoogleEmail('aarav.cse3@cit.ac.in')}
-                  className="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full cursor-pointer"
-                >
-                  aarav.cse3@cit.ac.in
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStudentGoogleEmail('priya.y1a@cit.ac.in')}
-                  className="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full cursor-pointer"
-                >
-                  priya.y1a@cit.ac.in
-                </button>
               </div>
 
               <div className="flex space-x-2 pt-3">
@@ -808,9 +775,9 @@ export const RoleSelectLogin: React.FC<RoleSelectLoginProps> = ({
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleStudentGoogleAuth(studentGoogleEmail || 'alex.student@gmail.com')}
-                  disabled={isSubmitting}
-                  className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center space-x-2 cursor-pointer"
+                  onClick={() => handleStudentGoogleAuth(studentGoogleEmail.trim())}
+                  disabled={isSubmitting || !studentGoogleEmail.trim()}
+                  className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-xs flex items-center justify-center space-x-2 cursor-pointer"
                 >
                   {isSubmitting ? (
                     <>

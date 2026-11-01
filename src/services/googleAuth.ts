@@ -1,7 +1,17 @@
 /**
- * Google Identity Services (GIS) OAuth 2.0 Integration for Google Calendar.
- * Uses user-configured Google Cloud Project client ID (VITE_GOOGLE_CLIENT_ID).
- * No client secrets are stored or exposed in browser code.
+ * Google Identity Services (GIS) OAuth 2.0 Integration.
+ * 
+ * ARCHITECTURAL SEPARATION OF SCOPES:
+ * 1. STUDENT SIGN-IN:
+ *    - Strictly requests NON-SENSITIVE OpenID Connect scopes: 'openid', 'email', 'profile'.
+ *    - Does NOT request any Google Calendar scopes or sensitive permissions.
+ *    - Does NOT use incremental authorization (include_granted_scopes is false/omitted).
+ *    - DOES NOT trigger Google's "Google hasn't verified this app" warning screen!
+ * 
+ * 2. GOOGLE CALENDAR SYNC (OPTIONAL):
+ *    - Completely separated authorization flow ('googleCalendarAuthorize').
+ *    - Strictly requested ONLY when an authenticated user explicitly clicks "Connect Google Calendar".
+ *    - Requests 'https://www.googleapis.com/auth/calendar.events'.
  */
 
 declare global {
@@ -15,10 +25,17 @@ declare global {
             callback: (response: any) => void;
             error_callback?: (error: any) => void;
             prompt?: string;
+            include_granted_scopes?: boolean;
           }) => {
             requestAccessToken: (overrideConfig?: { prompt?: string }) => void;
           };
           revoke?: (token: string, done?: () => void) => void;
+        };
+        id?: {
+          initialize: (config: any) => void;
+          prompt: (notification?: any) => void;
+          renderButton: (parent: HTMLElement, options: any) => void;
+          revoke: (hint: string, callback?: () => void) => void;
         };
       };
     };
@@ -32,21 +49,29 @@ export interface GoogleAuthUser {
   uid?: string;
 }
 
+/**
+ * Standard OpenID Connect scopes for Student Authentication (Non-Sensitive).
+ * These are non-sensitive scopes under Google OAuth policies and DO NOT require
+ * Google verification or trigger the unverified-app warning screen.
+ */
+export const STUDENT_SIGNIN_SCOPES = ['openid', 'email', 'profile'];
+
+/**
+ * Google Calendar Scope for Optional Timetable Synchronization.
+ * This sensitive scope is ONLY requested during explicit Google Calendar connection.
+ */
 export const CALENDAR_SCOPES = [
   'https://www.googleapis.com/auth/calendar.events',
-  'https://www.googleapis.com/auth/calendar.readonly',
-  'email',
-  'profile',
-  'openid',
 ];
 
-// Fallback auth object to preserve backward compatibility for any legacy callers
+// Fallback auth object to preserve backward compatibility for legacy callers
 export const auth: any = {
   currentUser: null,
 };
 
 // In-memory token cache (never stored in localStorage or persistent storage)
 let cachedAccessToken: string | null = null;
+let cachedCalendarToken: string | null = null;
 let cachedGoogleUser: GoogleAuthUser | null = null;
 let runtimeClientId: string | null = null;
 let isSigningIn = false;
@@ -133,7 +158,6 @@ export const initGoogleAuth = (
   onAuthSuccess?: (user: GoogleAuthUser, token: string) => void,
   onAuthFailure?: () => void
 ): (() => void) => {
-  // Asynchronously query server for client ID if not provided at build-time
   if (!getGoogleClientId() && typeof window !== 'undefined') {
     fetch('/api/calendar/config')
       .then((r) => r.json())
@@ -155,42 +179,49 @@ export const initGoogleAuth = (
     // idle state
   }
 
-  return () => {
-    // Cleanup handler
-  };
+  return () => {};
 };
 
 /**
- * Authenticates the user with Google Identity Services using initTokenClient.
- * Opens the Google OAuth popup and requests calendar.events scope.
- * Returns { user, accessToken } or null if cancelled/closed.
+ * Student Google Sign-In Flow (OpenID Connect / Non-Sensitive Scopes ONLY).
+ * 
+ * CRITICAL FIX:
+ * - Scopes are strictly limited to: 'openid email profile'.
+ * - NEVER requests calendar.events or calendar.readonly.
+ * - Does NOT set include_granted_scopes: true (ensures no inherited calendar scopes).
+ * - Bypasses Google's "Google hasn't verified this app" warning completely.
  */
-export const googleSignIn = async (): Promise<{ user: GoogleAuthUser; accessToken: string } | null> => {
-  let clientId = getGoogleClientId();
-  if (!clientId && typeof window !== 'undefined') {
-    try {
-      const cfgRes = await fetch('/api/calendar/config');
-      const cfgData = await cfgRes.json();
-      if (cfgData.success && cfgData.client_id) {
-        setRuntimeClientId(cfgData.client_id);
-        clientId = cfgData.client_id;
-      }
-    } catch (_) {}
-  }
+export const googleStudentSignIn = async (): Promise<{ user: GoogleAuthUser; accessToken: string } | null> => {
+  if (typeof window === 'undefined') return null;
 
-  if (!clientId) {
-    throw new Error(
-      'Google OAuth Client ID is not configured. Please set VITE_GOOGLE_CLIENT_ID in your .env file with your OAuth Web Client ID.'
-    );
-  }
-
-  if (pendingSignInPromise) {
+  if (isSigningIn && pendingSignInPromise) {
     return pendingSignInPromise;
   }
 
   pendingSignInPromise = (async () => {
     try {
       isSigningIn = true;
+      let clientId = getGoogleClientId();
+
+      if (!clientId) {
+        try {
+          const cfgRes = await fetch('/api/calendar/config');
+          if (cfgRes.ok) {
+            const cfg = await cfgRes.json();
+            if (cfg.client_id) {
+              setRuntimeClientId(cfg.client_id);
+              clientId = cfg.client_id;
+            }
+          }
+        } catch (_) {}
+      }
+
+      if (!clientId) {
+        throw new Error(
+          'Google OAuth Client ID is not configured. Please set VITE_GOOGLE_CLIENT_ID in your environment variables.'
+        );
+      }
+
       await ensureGsiLoaded();
 
       if (!window.google?.accounts?.oauth2?.initTokenClient) {
@@ -203,7 +234,10 @@ export const googleSignIn = async (): Promise<{ user: GoogleAuthUser; accessToke
         try {
           const client = window.google!.accounts.oauth2.initTokenClient({
             client_id: clientId,
-            scope: CALENDAR_SCOPES.join(' '),
+            // Strictly basic identity scopes only — zero sensitive calendar permissions
+            scope: STUDENT_SIGNIN_SCOPES.join(' '),
+            prompt: 'select_account',
+            include_granted_scopes: false,
             callback: (response: any) => {
               if (settled) return;
               settled = true;
@@ -211,13 +245,7 @@ export const googleSignIn = async (): Promise<{ user: GoogleAuthUser; accessToke
               if (response.error) {
                 const errType = response.error;
                 const errDesc = response.error_description || errType;
-                if (errType === 'access_denied') {
-                  reject(
-                    new Error(
-                      'Access denied: Google Cloud requires adding this account to the OAuth test users list in the Google Cloud Console for project "CIT Scheduling Platform".'
-                    )
-                  );
-                } else if (errType === 'popup_closed' || errType === 'user_cancel') {
+                if (errType === 'popup_closed' || errType === 'user_cancel') {
                   console.warn('[GoogleAuth] Popup closed or cancelled by user.');
                   resolve(null);
                 } else {
@@ -243,7 +271,7 @@ export const googleSignIn = async (): Promise<{ user: GoogleAuthUser; accessToke
                 resolve(null);
               } else if (errType === 'popup_failed_to_open') {
                 reject(
-                  new Error('Popup blocked: Please allow popups for localhost:3000 in your browser to sign in with Google.')
+                  new Error('Popup blocked: Please allow popups for this site in your browser to sign in with Google.')
                 );
               } else {
                 reject(new Error(error?.message || `OAuth popup failure: ${errType || 'Unknown error'}`));
@@ -251,8 +279,7 @@ export const googleSignIn = async (): Promise<{ user: GoogleAuthUser; accessToke
             },
           });
 
-          // Trigger popup token request
-          client.requestAccessToken({ prompt: '' });
+          client.requestAccessToken({ prompt: 'select_account' });
         } catch (initErr: any) {
           settled = true;
           reject(initErr);
@@ -265,37 +292,41 @@ export const googleSignIn = async (): Promise<{ user: GoogleAuthUser; accessToke
 
       cachedAccessToken = tokenResult.accessToken;
 
-      // Retrieve user email from Google's tokeninfo endpoint or primary calendar
+      // Retrieve user profile from Google's standard userinfo endpoint
       let userEmail = '';
+      let userName = '';
+      let userPhoto = '';
+
       try {
-        const infoRes = await fetch(
-          `https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=${encodeURIComponent(tokenResult.accessToken)}`
-        );
+        const infoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: `Bearer ${tokenResult.accessToken}` },
+        });
         if (infoRes.ok) {
           const info = await infoRes.json();
           userEmail = info.email || '';
+          userName = info.name || info.given_name || '';
+          userPhoto = info.picture || '';
         }
       } catch (err: any) {
-        console.warn('[GoogleAuth] Could not fetch user email from tokeninfo:', err?.message);
+        console.warn('[GoogleAuth] Could not fetch user profile from userinfo:', err?.message);
       }
 
       if (!userEmail) {
         try {
-          const calRes = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary', {
-            headers: { Authorization: `Bearer ${tokenResult.accessToken}` },
-          });
-          if (calRes.ok) {
-            const calData = await calRes.json();
-            userEmail = calData.id || '';
+          const tRes = await fetch(
+            `https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=${encodeURIComponent(tokenResult.accessToken)}`
+          );
+          if (tRes.ok) {
+            const tData = await tRes.json();
+            userEmail = tData.email || '';
           }
-        } catch (calErr: any) {
-          console.warn('[GoogleAuth] Could not fetch primary calendar email:', calErr?.message);
-        }
+        } catch (_) {}
       }
 
       const user: GoogleAuthUser = {
         email: userEmail || null,
-        displayName: userEmail ? userEmail.split('@')[0] : 'Google User',
+        displayName: userName || (userEmail ? userEmail.split('@')[0] : 'Google User'),
+        photoURL: userPhoto || null,
         uid: userEmail || 'google-user',
       };
 
@@ -310,8 +341,149 @@ export const googleSignIn = async (): Promise<{ user: GoogleAuthUser; accessToke
   return pendingSignInPromise;
 };
 
+/**
+ * Optional Google Calendar Authorization Flow.
+ * 
+ * Exclusively called when an authenticated user explicitly clicks
+ * "Connect Google Calendar" in their timetable / dashboard view.
+ * Requests 'https://www.googleapis.com/auth/calendar.events'.
+ */
+export const googleCalendarAuthorize = async (): Promise<{ user: GoogleAuthUser; accessToken: string } | null> => {
+  if (typeof window === 'undefined') return null;
+
+  let clientId = getGoogleClientId();
+  if (!clientId) {
+    try {
+      const cfgRes = await fetch('/api/calendar/config');
+      if (cfgRes.ok) {
+        const cfg = await cfgRes.json();
+        if (cfg.client_id) {
+          setRuntimeClientId(cfg.client_id);
+          clientId = cfg.client_id;
+        }
+      }
+    } catch (_) {}
+  }
+
+  if (!clientId) {
+    throw new Error(
+      'Google OAuth Client ID is not configured. Please set VITE_GOOGLE_CLIENT_ID in your environment variables.'
+    );
+  }
+
+  await ensureGsiLoaded();
+
+  if (!window.google?.accounts?.oauth2?.initTokenClient) {
+    throw new Error('Google Identity Services SDK is not available in the current browser window.');
+  }
+
+  const tokenResult = await new Promise<{ accessToken: string } | null>((resolve, reject) => {
+    let settled = false;
+
+    try {
+      const client = window.google!.accounts.oauth2.initTokenClient({
+        client_id: clientId,
+        scope: CALENDAR_SCOPES.join(' '),
+        prompt: 'consent',
+        callback: (response: any) => {
+          if (settled) return;
+          settled = true;
+
+          if (response.error) {
+            const errType = response.error;
+            const errDesc = response.error_description || errType;
+            if (errType === 'access_denied') {
+              reject(
+                new Error(
+                  'Access denied: Google Cloud authorization was rejected or cancelled.'
+                )
+              );
+            } else if (errType === 'popup_closed' || errType === 'user_cancel') {
+              console.warn('[GoogleAuth] Calendar popup closed or cancelled by user.');
+              resolve(null);
+            } else {
+              reject(new Error(errDesc || `Google Calendar OAuth error: ${errType}`));
+            }
+            return;
+          }
+
+          if (!response.access_token) {
+            console.warn('[GoogleAuth] No access token received in Calendar OAuth response.');
+            resolve(null);
+            return;
+          }
+
+          resolve({ accessToken: response.access_token });
+        },
+        error_callback: (error: any) => {
+          if (settled) return;
+          settled = true;
+          const errType = error?.type || '';
+          if (errType === 'popup_closed' || errType === 'user_cancel') {
+            resolve(null);
+          } else if (errType === 'popup_failed_to_open') {
+            reject(
+              new Error('Popup blocked: Please allow popups for this site in your browser to link Google Calendar.')
+            );
+          } else {
+            reject(new Error(error?.message || `Calendar OAuth failure: ${errType || 'Unknown error'}`));
+          }
+        },
+      });
+
+      client.requestAccessToken({ prompt: 'consent' });
+    } catch (initErr: any) {
+      settled = true;
+      reject(initErr);
+    }
+  });
+
+  if (!tokenResult) {
+    return null;
+  }
+
+  cachedCalendarToken = tokenResult.accessToken;
+
+  // Retrieve user email
+  let userEmail = '';
+  try {
+    const infoRes = await fetch(
+      `https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=${encodeURIComponent(tokenResult.accessToken)}`
+    );
+    if (infoRes.ok) {
+      const info = await infoRes.json();
+      userEmail = info.email || '';
+    }
+  } catch (_) {}
+
+  if (!userEmail) {
+    try {
+      const calRes = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary', {
+        headers: { Authorization: `Bearer ${tokenResult.accessToken}` },
+      });
+      if (calRes.ok) {
+        const calData = await calRes.json();
+        userEmail = calData.id || '';
+      }
+    } catch (_) {}
+  }
+
+  const user: GoogleAuthUser = {
+    email: userEmail || null,
+    displayName: userEmail ? userEmail.split('@')[0] : 'Google User',
+    uid: userEmail || 'google-calendar-user',
+  };
+
+  return { user, accessToken: tokenResult.accessToken };
+};
+
+/**
+ * Backward compatibility alias: defaults to the secure, non-sensitive Student Sign-In.
+ */
+export const googleSignIn = googleStudentSignIn;
+
 export const getGoogleAccessToken = (): string | null => {
-  return cachedAccessToken;
+  return cachedCalendarToken || cachedAccessToken;
 };
 
 export const getCachedGoogleUser = (): GoogleAuthUser | null => {
@@ -319,11 +491,13 @@ export const getCachedGoogleUser = (): GoogleAuthUser | null => {
 };
 
 export const googleSignOut = async (): Promise<void> => {
-  if (cachedAccessToken && typeof window !== 'undefined' && window.google?.accounts?.oauth2?.revoke) {
+  const tokenToRevoke = cachedCalendarToken || cachedAccessToken;
+  if (tokenToRevoke && typeof window !== 'undefined' && window.google?.accounts?.oauth2?.revoke) {
     try {
-      window.google.accounts.oauth2.revoke(cachedAccessToken, () => {});
+      window.google.accounts.oauth2.revoke(tokenToRevoke, () => {});
     } catch (_) {}
   }
   cachedAccessToken = null;
+  cachedCalendarToken = null;
   cachedGoogleUser = null;
 };

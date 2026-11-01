@@ -16,7 +16,7 @@ import {
   Check,
 } from 'lucide-react';
 import { UserItem } from '../../types';
-import { googleSignIn, getGoogleAccessToken, googleSignOut } from '../../services/googleAuth';
+import { googleCalendarAuthorize, getGoogleAccessToken, googleSignOut } from '../../services/googleAuth';
 import { StaggerContainer, CardTransition, Skeleton } from '../../components/ui/motion';
 
 interface FacultyDashboardProps {
@@ -150,7 +150,7 @@ export const FacultyDashboard: React.FC<FacultyDashboardProps> = ({
     try {
       let gToken = getGoogleAccessToken();
       if (!calendarConn.connected || !gToken) {
-        const authRes = await googleSignIn();
+        const authRes = await googleCalendarAuthorize();
         if (authRes) {
           gToken = authRes.accessToken;
           await fetch('/api/calendar/connect', {
