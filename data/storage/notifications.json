@@ -1,1 +1,58 @@
-[]
+[
+  {
+    "id": "notif-1793493112447-o6u07j",
+    "user_id": "usr-faculty-f19",
+    "title": "Requisition BR-2425 REJECTED",
+    "message": "Your requisition \"Ramanujan Weekend Workshop\" has been rejected by Dr. S. K. Nayak (Dean Academics). Reason: Power grid maintenance scheduled on Saturday morning in campus block.",
+    "type": "booking_rejected",
+    "reference_id": "BR-2425",
+    "reference_type": "booking",
+    "decision": "rejected",
+    "decision_reason": "Power grid maintenance scheduled on Saturday morning in campus block.",
+    "created_at": "2026-11-01T00:31:52.447Z",
+    "read": true,
+    "delivery_status": "read"
+  },
+  {
+    "id": "notif-1793493112373-3qq9ld",
+    "user_id": "usr-faculty-f19",
+    "title": "Requisition BR-2292 APPROVED",
+    "message": "Your requisition \"Ramanujan Advanced Combinatorics Tutorial\" has been approved by Dr. S. K. Nayak (Dean Academics). Reason: Approved for auditorium review with projector access.",
+    "type": "booking_approved",
+    "reference_id": "BR-2292",
+    "reference_type": "booking",
+    "decision": "approved",
+    "decision_reason": "Approved for auditorium review with projector access.",
+    "created_at": "2026-11-01T00:31:52.373Z",
+    "read": true,
+    "delivery_status": "read"
+  },
+  {
+    "id": "notif-1793493109359-b2gw95",
+    "user_id": "usr-faculty-f19",
+    "title": "Requisition BR-9288 APPROVED",
+    "message": "Your requisition \"Distributed Systems Guest Colloquium\" has been approved by Prof. Ananya Sen (CSE Coordinator). Reason: Approved by Timetable Chair",
+    "type": "booking_approved",
+    "reference_id": "BR-9288",
+    "reference_type": "booking",
+    "decision": "approved",
+    "decision_reason": "Approved by Timetable Chair",
+    "created_at": "2026-11-01T00:31:49.359Z",
+    "read": true,
+    "delivery_status": "read"
+  },
+  {
+    "id": "notif-1793493099030-lqtlv",
+    "user_id": "usr-faculty-f19",
+    "title": "Requisition BR-8960 APPROVED",
+    "message": "Your requisition \"Advanced AI Seminar 2026\" has been approved by Dr. S. K. Nayak (Dean Academics). Reason: Approved by Deanery. Venue allocated.",
+    "type": "booking_approved",
+    "reference_id": "BR-8960",
+    "reference_type": "booking",
+    "decision": "approved",
+    "decision_reason": "Approved by Deanery. Venue allocated.",
+    "created_at": "2026-11-01T00:31:39.030Z",
+    "read": true,
+    "delivery_status": "read"
+  }
+]

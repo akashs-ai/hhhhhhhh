@@ -277,6 +277,9 @@ export default function App() {
       case 'bookings':
         return <StudentVenueBooking currentUser={currentUser} bookings={bookings} />;
       case 'reports':
+        if (role === 'department_coordinator') {
+          return <AdminReports currentUser={currentUser} />;
+        }
         return (
           <StudentReports
             currentUser={currentUser}
