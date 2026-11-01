@@ -17,6 +17,9 @@ import {
   Compass,
 } from 'lucide-react';
 import { CampusExperience } from '../../components/CampusExperience/CampusExperience';
+import PerspectiveTunnelHero from '../../components/ui/perspective-tunnel-hero';
+import HalftoneWordmarkFooter from '../../components/ui/halftone-wordmark-footer';
+
 
 interface LandingPageProps {
   onGetStarted: () => void;
@@ -107,111 +110,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn
           </div>
         </header>
 
-      {/* Hero Section */}
-      <section id="home" className="px-6 lg:px-16 pt-12 pb-16 max-w-7xl mx-auto w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          <div className="lg:col-span-7 space-y-6">
-            <div className="inline-flex items-center space-x-2 bg-blue-50 border border-blue-200/60 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold">
-              <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-              <span>Autonomous Algorithmic Solver • Sub-Second Conflict Detection</span>
-            </div>
+      {/* Perspective 3D Tunnel Hero Section */}
+      <section id="home" className="w-full">
+        <PerspectiveTunnelHero onGetStarted={onGetStarted} onSignIn={onSignIn} />
+      </section>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-tight">
-              Smarter <span className="text-blue-600">Scheduling</span>
-              <br />
-              for a Better Campus
-            </h1>
-
-            <p className="text-sm sm:text-base text-slate-600 leading-relaxed max-w-xl">
-              A unified autonomous platform for class timetables, conflict-free examination matrices, venue
-              choreography, and dynamic rescheduling — precision engineered for CIT.
-            </p>
-
-            <div className="flex flex-wrap items-center gap-3 pt-2">
-              <button
-                onClick={onGetStarted}
-                className="bg-blue-600 text-white px-5 py-3 rounded-xl font-bold text-xs shadow-md hover:bg-blue-700 active:scale-95 transition-all flex items-center space-x-2"
-              >
-                <span>Get Started</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-              <a
-                href="#features"
-                className="bg-white border border-slate-200 text-slate-700 px-5 py-3 rounded-xl font-bold text-xs shadow-2xs hover:bg-slate-50 transition-colors flex items-center space-x-2"
-              >
-                <span>Explore Features</span>
-              </a>
-            </div>
-          </div>
-
-          {/* Hero Visual Card with Mock Preview */}
-          <div className="lg:col-span-5 relative">
-            <div className="rounded-2xl border border-slate-200 bg-linear-to-br from-slate-900 via-slate-800 to-blue-950 p-5 shadow-2xl overflow-hidden relative group">
-              <div className="absolute inset-0 bg-radial from-blue-600/10 to-transparent opacity-60"></div>
-              
-              {/* Floating feature pills matching screenshot */}
-              <div className="space-y-3 relative z-10">
-                <div className="flex items-center justify-between border-b border-slate-700 pb-3">
-                  <div className="text-xs font-bold text-white flex items-center space-x-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
-                    <span>CIT Campus Operations Center</span>
-                  </div>
-                  <span className="text-[10px] text-blue-400 bg-blue-900/60 px-2 py-0.5 rounded border border-blue-700 font-mono">
-                    SAT v4.8 Active
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2.5 pt-2">
-                  <div className="bg-slate-800/80 backdrop-blur-xs border border-slate-700/80 rounded-xl p-3 shadow-md">
-                    <div className="text-blue-400 flex items-center space-x-1.5 text-xs font-bold">
-                      <Calendar className="w-4 h-4" />
-                      <span>Timetable</span>
-                    </div>
-                    <div className="text-[11px] text-slate-300 mt-1">★ Auto Generate</div>
-                    <div className="text-[10px] text-slate-400 mt-0.5">320 weekly slots verified</div>
-                  </div>
-
-                  <div className="bg-slate-800/80 backdrop-blur-xs border border-slate-700/80 rounded-xl p-3 shadow-md">
-                    <div className="text-blue-400 flex items-center space-x-1.5 text-xs font-bold">
-                      <ShieldCheck className="w-4 h-4" />
-                      <span>Exam Suite</span>
-                    </div>
-                    <div className="text-[11px] text-slate-300 mt-1">Zero Clash Seatings</div>
-                    <div className="text-[10px] text-slate-400 mt-0.5">18 blocks allocated</div>
-                  </div>
-
-                  <div className="bg-slate-800/80 backdrop-blur-xs border border-slate-700/80 rounded-xl p-3 shadow-md">
-                    <div className="text-blue-400 flex items-center space-x-1.5 text-xs font-bold">
-                      <Building2 className="w-4 h-4" />
-                      <span>Venue Booking</span>
-                    </div>
-                    <div className="text-[11px] text-slate-300 mt-1">Spectra Infrastructure</div>
-                    <div className="text-[10px] text-slate-400 mt-0.5">Sound boundary checks</div>
-                  </div>
-
-                  <div className="bg-slate-800/80 backdrop-blur-xs border border-slate-700/80 rounded-xl p-3 shadow-md">
-                    <div className="text-blue-400 flex items-center space-x-1.5 text-xs font-bold">
-                      <Bot className="w-4 h-4" />
-                      <span>AI Assistant</span>
-                    </div>
-                    <div className="text-[11px] text-slate-300 mt-1">Smart Suggestions</div>
-                    <div className="text-[10px] text-slate-400 mt-0.5">Sub-second recovery</div>
-                  </div>
-                </div>
-
-                <div className="mt-3 p-3 bg-blue-900/40 border border-blue-700/50 rounded-xl text-left">
-                  <div className="text-[11px] font-semibold text-blue-200">Autonomous Schedule Integrity</div>
-                  <div className="text-[10px] text-slate-300 mt-0.5">
-                    100% hard constraints satisfied with minimal perturbation guarantee.
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Big Metrics Ribbon */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-16 pt-10 border-t border-slate-200">
+      {/* Key Metric Highlights Bar */}
+      <section className="bg-white border-b border-slate-200 py-10 px-6 lg:px-16">
+        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           <div>
             <div className="text-4xl lg:text-5xl font-black text-blue-600">5</div>
             <div className="text-xs font-bold text-slate-800 mt-1">User Roles</div>
@@ -499,25 +405,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-white border-t border-slate-200 py-6 px-6 lg:px-16 text-xs text-slate-500">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div>
-            <div className="font-semibold text-slate-800">Chilika Institute of Technology • Academic Operations Suite</div>
-            <div className="text-[11px] text-slate-400 mt-0.5">
-              © 2026 CIT Scheduling Platform. Autonomous Scheduling Architecture.
-            </div>
-          </div>
-          <div className="flex items-center space-x-4 text-[11px] text-slate-500">
-            <span className="flex items-center space-x-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-              <span>Systems Operational</span>
-            </span>
-            <span>• Governance</span>
-            <span>• SLA & Audit</span>
-          </div>
-        </div>
-      </footer>
+      {/* Interactive Halftone Wordmark Canvas Footer */}
+      <HalftoneWordmarkFooter
+        wordmark="EXPO"
+        label="Chilika Institute of Technology"
+        meta="© 2026 · Autonomous Academic Scheduling Architecture"
+        preset="night"
+      />
     </div>
   </>
   );
