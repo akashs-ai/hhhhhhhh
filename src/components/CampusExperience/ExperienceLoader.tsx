@@ -32,17 +32,17 @@ export const ExperienceLoader: React.FC<ExperienceLoaderProps> = ({
         </div>
 
         {/* Title */}
-        <div className="space-y-1.5">
-          <h2 className="text-xl sm:text-2xl font-serif font-bold tracking-wide text-[#f7f0e3]">
+        <div className="space-y-1">
+          <h2 className="text-3xl sm:text-4xl font-teko font-bold uppercase tracking-wide text-[#f7f0e3] leading-none">
             Chilika Institute of Technology
           </h2>
-          <p className="text-xs text-[#a9b8ad] font-sans tracking-wider uppercase">
+          <p className="text-xs text-[#a9b8ad] font-poppins tracking-wider uppercase">
             Preparing Cinematic Campus Experience
           </p>
         </div>
 
         {/* Progress Bar */}
-        <div className="w-full space-y-2">
+        <div className="w-full space-y-2 font-poppins">
           <div className="w-full h-1.5 rounded-full bg-[#27382f] overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-[#8ba389] via-[#d8b568] to-[#e4c275] transition-all duration-300 ease-out rounded-full"
@@ -58,7 +58,7 @@ export const ExperienceLoader: React.FC<ExperienceLoaderProps> = ({
         {isReady && onEnterNow && (
           <button
             onClick={onEnterNow}
-            className="mt-4 px-5 py-2.5 rounded-xl bg-[#2d4237] hover:bg-[#385345] text-[#f4ecd8] border border-[#496b59] text-xs font-semibold tracking-wide transition-all shadow-md cursor-pointer"
+            className="mt-4 px-5 py-2.5 rounded-xl bg-[#2d4237] hover:bg-[#385345] text-[#f4ecd8] border border-[#496b59] text-xs font-poppins font-semibold tracking-wide transition-all shadow-md cursor-pointer"
           >
             Enter Campus
           </button>

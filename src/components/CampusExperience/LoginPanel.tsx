@@ -46,24 +46,24 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
       {/* Header */}
       <div className="flex items-center space-x-3 mb-5">
         {instituteLogo || (
-          <div className="w-10 h-10 rounded-2xl bg-[#2a3e33] border border-[#486b58] text-[#d8b568] flex items-center justify-center font-serif font-black text-lg shadow-sm">
+          <div className="w-10 h-10 rounded-2xl bg-[#2a3e33] border border-[#486b58] text-[#d8b568] flex items-center justify-center font-teko font-black text-2xl shadow-sm">
             C
           </div>
         )}
         <div>
-          <h3 className="text-xs font-serif tracking-wider uppercase text-[#a7bba9]">
+          <h3 className="text-xs font-poppins tracking-wider uppercase text-[#a7bba9]">
             {instituteName}
           </h3>
-          <h2 className="text-base font-serif font-bold text-[#faf3e7]">
+          <h2 className="text-2xl font-teko font-bold uppercase tracking-wide text-[#faf3e7] leading-none">
             {welcomeHeading}
           </h2>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-3.5">
+      <form onSubmit={handleSubmit} className="space-y-3.5 font-poppins">
         {/* Email or Username */}
         <div>
-          <label className="block text-[11px] font-sans font-semibold text-[#c8d4cc] mb-1">
+          <label className="block text-[11px] font-poppins font-semibold text-[#c8d4cc] mb-1">
             Email or Student ID
           </label>
           <div className="relative">
@@ -73,7 +73,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
               placeholder="name@cit.ac.in or Google account"
-              className="w-full pl-9 pr-3.5 py-2.5 text-xs rounded-xl bg-[#213127]/80 border border-[#374e40] text-[#faf3e7] placeholder-[#6f8777] focus:outline-none focus:border-[#d8b568] focus:ring-1 focus:ring-[#d8b568]/40 transition-all"
+              className="w-full pl-9 pr-3.5 py-2.5 text-xs rounded-xl bg-[#213127]/80 border border-[#374e40] text-[#faf3e7] placeholder-[#6f8777] focus:outline-none focus:border-[#d8b568] focus:ring-1 focus:ring-[#d8b568]/40 transition-all font-poppins"
             />
             <Mail className="w-3.5 h-3.5 text-[#738e7c] absolute left-3 top-3 pointer-events-none" />
           </div>
@@ -82,14 +82,14 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
         {/* Password */}
         <div>
           <div className="flex items-center justify-between mb-1">
-            <label className="text-[11px] font-sans font-semibold text-[#c8d4cc]">
+            <label className="text-[11px] font-poppins font-semibold text-[#c8d4cc]">
               Passphrase
             </label>
             {onForgotPassword && (
               <button
                 type="button"
                 onClick={onForgotPassword}
-                className="text-[10px] text-[#d8b568] hover:underline cursor-pointer"
+                className="text-[10px] text-[#d8b568] hover:underline cursor-pointer font-poppins"
               >
                 Forgot?
               </button>
@@ -102,7 +102,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••••••"
-              className="w-full pl-9 pr-3.5 py-2.5 text-xs rounded-xl bg-[#213127]/80 border border-[#374e40] text-[#faf3e7] placeholder-[#6f8777] focus:outline-none focus:border-[#d8b568] focus:ring-1 focus:ring-[#d8b568]/40 transition-all"
+              className="w-full pl-9 pr-3.5 py-2.5 text-xs rounded-xl bg-[#213127]/80 border border-[#374e40] text-[#faf3e7] placeholder-[#6f8777] focus:outline-none focus:border-[#d8b568] focus:ring-1 focus:ring-[#d8b568]/40 transition-all font-poppins"
             />
             <Lock className="w-3.5 h-3.5 text-[#738e7c] absolute left-3 top-3 pointer-events-none" />
           </div>
@@ -112,7 +112,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#2f4639] via-[#3a5847] to-[#2f4639] hover:from-[#375243] hover:to-[#375243] border border-[#5a816b] text-[#f7f0e3] font-serif font-bold text-xs tracking-wide shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer active:scale-95 disabled:opacity-50"
+          className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#2f4639] via-[#3a5847] to-[#2f4639] hover:from-[#375243] hover:to-[#375243] border border-[#5a816b] text-[#f7f0e3] font-poppins font-semibold text-xs tracking-wide shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer active:scale-95 disabled:opacity-50"
         >
           <span>Authenticate Session</span>
           <ArrowRight className="w-3.5 h-3.5 text-[#d8b568]" />
@@ -124,7 +124,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
             <button
               type="button"
               onClick={onSwitchToAdvanced}
-              className="text-[11px] text-[#a9bcae] hover:text-[#f4edd9] transition-colors cursor-pointer inline-flex items-center space-x-1"
+              className="text-[11px] text-[#a9bcae] hover:text-[#f4edd9] transition-colors cursor-pointer inline-flex items-center space-x-1 font-poppins"
             >
               <ShieldCheck className="w-3 h-3 text-[#d8b568]" />
               <span>Full Role-Based Portal (Student, Faculty, Admin)</span>

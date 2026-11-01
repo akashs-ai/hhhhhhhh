@@ -14,7 +14,6 @@ import React, { useRef, useState, useCallback, useMemo } from 'react';
 import { CampusCanvas } from './CampusCanvas';
 import { ExperienceLoader } from './ExperienceLoader';
 import { TextOverlay } from './TextOverlay';
-import { IntroOverlay } from './IntroOverlay';
 import { ScrollController } from './ScrollController';
 import { LoginPanel } from './LoginPanel';
 import { useImageSequence } from '../../hooks/useImageSequence';
@@ -126,10 +125,7 @@ export const CampusExperience: React.FC<CampusExperienceProps> = ({
             onEnterNow={() => scrollToProgress(0.05)}
           />
 
-          {/* Initial Title Overlay (Aerial View) */}
-          <IntroOverlay progress={currentProgress} />
-
-          {/* Scroll-Synchronized Narrative Typography */}
+          {/* Scroll-Synchronized Narrative Typography (Starts center, shifts top-center) */}
           <TextOverlay progress={currentProgress} />
 
           {/* Gate-Arrival Floating Login Panel (Appears near the Main Gate) */}

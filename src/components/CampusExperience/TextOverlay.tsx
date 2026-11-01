@@ -1,13 +1,13 @@
 /**
  * TextOverlay Component
- * Renders scroll-synchronized typography mapped across the continuous 242-frame journey.
+ * Scroll-synchronized cinematic typography.
  * 
- * Phases:
- * 1. Aerial View: CIT introduction [progress 0.0 - 0.20]
- * 2. Descent: Architectural & AI Solver narrative [0.25 - 0.45]
- * 3. Follow Camera: Walk through campus road [0.48 - 0.70]
- * 4. Greeting: Near entrance welcome [0.72 - 0.88]
- * 5. Main Gate: Final approach & transition [0.89 - 1.0]
+ * Features:
+ * - Starts at the exact center of the screen at progress 0
+ * - As scrolling starts (progress 0.0 -> 0.12), smoothly shifts to the top center
+ * - Zero black blurry background boxes or pill badges (clean, direct overlay)
+ * - Typography: TEKO for Headings & POPPINS for subtitles and small points
+ * - High-contrast cinematic drop shadows for pristine readability over canvas
  */
 
 import React, { useMemo } from 'react';
@@ -24,28 +24,45 @@ export const TextOverlay: React.FC<TextOverlayProps> = ({
   customMilestones = NARRATIVE_MILESTONES,
   className = '',
 }) => {
-  // Find currently active milestone and compute smooth fadeIn/fadeOut curve
+  // 1. Shift interpolation: progress 0.0 -> 0.12 transitions from center (50%) to top-center (12%)
+  const shiftRatio = Math.max(0, Math.min(1, progress / 0.12));
+  const topPercent = 50 - shiftRatio * 38; // 50% down to 12%
+  const translateYPercent = -50 + shiftRatio * 50; // -50% to 0%
+
+  // 2. Active milestone detection & smooth opacity curve
   const activeMilestone = useMemo(() => {
-    for (const milestone of customMilestones) {
+    // If progress is at the very beginning (0 to 0.20), guarantee aerial milestone is active
+    if (progress <= 0.20) {
+      const milestone = customMilestones[0];
+      // Fade out as camera completes descent (0.16 to 0.22)
+      let opacity = 1;
+      if (progress > 0.16) {
+        opacity = Math.max(0, (0.22 - progress) / 0.06);
+      }
+      return {
+        ...milestone,
+        opacity,
+      };
+    }
+
+    // For later milestones (descent, follow, greeting, gate)
+    for (let i = 1; i < customMilestones.length; i++) {
+      const milestone = customMilestones[i];
       if (progress >= milestone.startProgress && progress <= milestone.endProgress) {
         const span = milestone.endProgress - milestone.startProgress;
-        const local = (progress - milestone.startProgress) / span; // 0 to 1
+        const local = (progress - milestone.startProgress) / span;
 
-        // Smooth Bell curve: fade in first 20%, sustain middle 60%, fade out last 20%
+        // Smooth bell curve: fade in first 18%, hold middle 64%, fade out last 18%
         let opacity = 1;
-        if (local < 0.2) {
-          opacity = local / 0.2;
-        } else if (local > 0.8) {
-          opacity = (1 - local) / 0.2;
+        if (local < 0.18) {
+          opacity = local / 0.18;
+        } else if (local > 0.82) {
+          opacity = (1 - local) / 0.18;
         }
-
-        // Parallax translateY effect
-        const translateY = (local - 0.5) * -16; // subtle float upward
 
         return {
           ...milestone,
           opacity: Math.max(0, Math.min(1, opacity)),
-          translateY,
         };
       }
     }
@@ -56,25 +73,35 @@ export const TextOverlay: React.FC<TextOverlayProps> = ({
     return null;
   }
 
+  // Responsive font size scales: larger when in center, slightly more compact when at top-center
+  const headingSizeClass =
+    shiftRatio < 0.5
+      ? 'text-4xl sm:text-6xl md:text-7xl lg:text-8xl'
+      : 'text-3xl sm:text-5xl md:text-6xl lg:text-7xl';
+
   return (
     <div
-      className={`absolute inset-0 pointer-events-none flex flex-col justify-end sm:justify-center items-center pb-24 sm:pb-0 px-6 z-20 ${className}`}
+      className={`fixed left-1/2 -translate-x-1/2 pointer-events-none z-20 w-full max-w-4xl px-6 text-center ${className}`}
       style={{
+        top: `${topPercent}%`,
+        transform: `translate(-50%, ${translateYPercent}%)`,
         opacity: activeMilestone.opacity,
-        transform: `translateY(${activeMilestone.translateY}px)`,
-        transition: 'opacity 0.15s ease-out, transform 0.15s ease-out',
+        transition: 'opacity 0.15s ease-out, top 0.05s linear, transform 0.05s linear',
+        willChange: 'top, transform, opacity',
       }}
     >
-      <div className="max-w-2xl w-full text-center space-y-3.5 bg-black/35 backdrop-blur-md p-6 sm:p-8 rounded-3xl border border-white/10 shadow-2xl">
-        <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-[#354f41]/60 border border-[#8ea998]/30 text-[#e9decb] text-xs font-serif tracking-widest uppercase">
-          <span>Phase {activeMilestone.phase}</span>
-        </div>
-
-        <h1 className="text-2xl sm:text-4xl lg:text-5xl font-serif font-black text-[#faf6ee] tracking-tight drop-shadow-md">
+      <div className="space-y-1 sm:space-y-2">
+        {/* Main Heading in TEKO Font (Uppercase, Condensed, Majestic) */}
+        <h1
+          className={`font-teko font-bold uppercase tracking-wider text-[#faf6ee] leading-none cinematic-text-shadow ${headingSizeClass}`}
+        >
           {activeMilestone.title}
         </h1>
 
-        <p className="text-xs sm:text-base text-[#e5d9c2] font-sans font-medium max-w-lg mx-auto leading-relaxed drop-shadow-sm">
+        {/* Subtitle in POPPINS Font (Clean, Modern, Legible) */}
+        <p
+          className="font-poppins font-medium text-xs sm:text-sm md:text-base text-[#e5d9c2] max-w-xl mx-auto leading-relaxed tracking-wide cinematic-sub-shadow"
+        >
           {activeMilestone.subtitle}
         </p>
       </div>
