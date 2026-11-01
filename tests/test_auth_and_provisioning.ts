@@ -146,47 +146,55 @@ async function runAuthSuite() {
     assert(forgedToken.status === 401, 'Tampered/invalid Google token rejected with HTTP 401');
     assert(forgedToken.body.error?.code === 'INVALID_GOOGLE_TOKEN', 'Returns INVALID_GOOGLE_TOKEN code');
 
-    // 2.4 Development Mode: Google-authenticated Gmail accounts can access Student Demo Portal without existing enrollment
-    const devGmailAuth = await request('POST', '/api/auth/google-student', {
+    // 2.4 Universal Google Account Access: Any valid Google account is allowed regardless of domain
+    const personalGmailAuth = await request('POST', '/api/auth/google-student', {
       body: {
-        credential: 'test-google-token:developer.testing@gmail.com:Dev Student:https://example.com/avatar.jpg',
+        credential: 'test-google-token:alex.mercer@gmail.com:Alex Mercer:https://lh3.googleusercontent.com/alex-photo.jpg',
       },
     });
-    assert(devGmailAuth.status === 200, 'Dev mode allows Google-authenticated Gmail to access Student Demo (HTTP 200)');
-    assert(devGmailAuth.body.success === true, 'Response indicates success');
-    assert(devGmailAuth.body.user.role === 'student', 'Assigned role is strictly student');
-    assert(devGmailAuth.body.isDemo === true, 'Flagged as demo sandbox student session');
-    assert(devGmailAuth.body.user.email === 'developer.testing@gmail.com', 'Preserves authenticated Gmail identity');
-    const devStudentToken = devGmailAuth.body.token;
-
-    // 2.6 Dedicated Demo Student Login Button (/api/auth/demo-student) in Dev Mode
-    const oneClickDemo = await request('POST', '/api/auth/demo-student');
-    assert(oneClickDemo.status === 200, 'One-click demo student login succeeds in development mode (HTTP 200)');
-    assert(oneClickDemo.body.user.email === 'student.demo@gmail.com', 'Uses demo identity student.demo@gmail.com');
-    assert(oneClickDemo.body.user.name === 'Demo Student (Sandbox)', 'Correct display name for demo student');
-    assert(oneClickDemo.body.user.role === 'student', 'Demo user has role strictly student');
-    assert(oneClickDemo.body.isDemo === true, 'Response clearly marked as demo session');
+    assert(personalGmailAuth.status === 200, 'Universal access: personal Gmail signs in successfully (HTTP 200)');
+    assert(personalGmailAuth.body.success === true, 'Response indicates success');
+    assert(personalGmailAuth.body.user.role === 'student', 'Assigned role is strictly student');
+    assert(personalGmailAuth.body.user.email === 'alex.mercer@gmail.com', 'Preserves authenticated Google email');
+    assert(personalGmailAuth.body.user.name === 'Alex Mercer', 'Preserves authenticated Google name');
     assert(
-      typeof oneClickDemo.body.notice === 'string' && oneClickDemo.body.notice.includes('not a real or usable Gmail'),
-      'Includes explicit disclaimer that student.demo is for display/testing only'
+      personalGmailAuth.body.user.avatarUrl === 'https://lh3.googleusercontent.com/alex-photo.jpg',
+      'Profile avatar persisted from Google'
     );
-    const demoStudentToken = oneClickDemo.body.token;
+    const newStudentId = personalGmailAuth.body.user.id;
+    const personalStudentToken = personalGmailAuth.body.token;
 
-    // 2.7 Privilege Isolation: Demo Student cannot access administrative or faculty privileges
-    const demoAdminAttempt = await request('GET', '/api/users', {
-      headers: { Authorization: `Bearer ${demoStudentToken}` },
+    // 2.5 Account Deduplication on Re-Login: Retrieves existing profile without duplicates
+    const allUsersBeforeRelogin = Object.values(await storage.getAllUsers()).length;
+    const reloginAuth = await request('POST', '/api/auth/google-student', {
+      body: {
+        credential: 'test-google-token:alex.mercer@gmail.com:Alex Mercer:https://lh3.googleusercontent.com/alex-photo.jpg',
+      },
     });
-    assert(demoAdminAttempt.status === 403, 'Demo student strictly blocked from administrative user list (HTTP 403)');
+    const allUsersAfterRelogin = Object.values(await storage.getAllUsers()).length;
+    assert(reloginAuth.status === 200, 'Re-login with existing Google account succeeds (HTTP 200)');
+    assert(reloginAuth.body.user.id === newStudentId, 'Retrieves identical user profile ID on re-login');
+    assert(allUsersBeforeRelogin === allUsersAfterRelogin, 'Zero duplicate records created in storage on re-login');
 
-    const demoApproveAttempt = await request('POST', '/api/bookings/req-01/approve', {
-      headers: { Authorization: `Bearer ${demoStudentToken}` },
+    // 2.6 Privilege Isolation: Student accounts never have Professor or Admin privileges
+    const studentAdminAttempt = await request('GET', '/api/users', {
+      headers: { Authorization: `Bearer ${personalStudentToken}` },
     });
-    assert(demoApproveAttempt.status === 403, 'Demo student strictly blocked from booking approval action (HTTP 403)');
+    assert(studentAdminAttempt.status === 403, 'Student strictly blocked from administrative user list (HTTP 403)');
 
-    const demoGenerateAttempt = await request('POST', '/api/timetable/generate', {
-      headers: { Authorization: `Bearer ${demoStudentToken}` },
+    const studentApproveAttempt = await request('POST', '/api/bookings/req-01/approve', {
+      headers: { Authorization: `Bearer ${personalStudentToken}` },
     });
-    assert(demoGenerateAttempt.status === 403, 'Demo student strictly blocked from master timetable generation (HTTP 403)');
+    assert(studentApproveAttempt.status === 403, 'Student strictly blocked from booking approval action (HTTP 403)');
+
+    const studentGenerateAttempt = await request('POST', '/api/timetable/generate', {
+      headers: { Authorization: `Bearer ${personalStudentToken}` },
+    });
+    assert(studentGenerateAttempt.status === 403, 'Student strictly blocked from master timetable generation (HTTP 403)');
+
+    // 2.7 Mandatory Google Authentication: No unauthenticated demo bypass endpoint exists
+    const demoBypassAttempt = await request('POST', '/api/auth/demo-student');
+    assert(demoBypassAttempt.status === 404, 'Unauthenticated demo bypass is eliminated (HTTP 404)');
 
     // 2.8 Role Mismatch: Faculty or Admin trying to authenticate as Student via Google
     const facultyAsStudent = await request('POST', '/api/auth/google-student', {
@@ -199,57 +207,6 @@ async function runAuthSuite() {
       facultyAsStudent.body.error?.code === 'STUDENT_ROLE_MISMATCH',
       'Returns STUDENT_ROLE_MISMATCH error code'
     );
-
-    // 2.9 Strict Production Mode Verification: Enrollment checks are NEVER disabled in production
-    const savedNodeEnv = process.env.NODE_ENV;
-    const savedDemoAuth = process.env.ENABLE_DEMO_AUTH;
-    const savedAllowTest = process.env.ALLOW_TEST_TOKENS;
-    try {
-      process.env.NODE_ENV = 'production';
-      delete process.env.ENABLE_DEMO_AUTH;
-      process.env.ALLOW_TEST_TOKENS = 'true';
-
-      // In production, one-click demo login is completely disabled
-      const prodDemoAttempt = await request('POST', '/api/auth/demo-student');
-      assert(prodDemoAttempt.status === 403, 'Production strictly blocks demo student login (HTTP 403)');
-      assert(prodDemoAttempt.body.error?.code === 'DEMO_AUTH_DISABLED', 'Returns DEMO_AUTH_DISABLED code');
-
-      // In production, un-enrolled Gmail account is strictly rejected
-      const prodUnenrolledAttempt = await request('POST', '/api/auth/google-student', {
-        body: {
-          credential: 'test-google-token:random.outsider@gmail.com:John Doe',
-        },
-      });
-      assert(prodUnenrolledAttempt.status === 403, 'Production strictly blocks unauthorized Gmail (HTTP 403)');
-      assert(
-        prodUnenrolledAttempt.body.error?.code === 'STUDENT_NOT_AUTHORIZED',
-        'Production returns STUDENT_NOT_AUTHORIZED code'
-      );
-
-      // In production, pre-enrolled CIT student continues to authenticate successfully
-      const prodEnrolledAttempt = await request('POST', '/api/auth/google-student', {
-        body: {
-          credential: 'test-google-token:aarav.cse3@cit.ac.in:Aarav Patel',
-        },
-      });
-      assert(prodEnrolledAttempt.status === 200, 'Production accepts authorized enrolled student (HTTP 200)');
-    } finally {
-      process.env.NODE_ENV = savedNodeEnv;
-      if (savedDemoAuth !== undefined) process.env.ENABLE_DEMO_AUTH = savedDemoAuth;
-      else delete process.env.ENABLE_DEMO_AUTH;
-      if (savedAllowTest !== undefined) process.env.ALLOW_TEST_TOKENS = savedAllowTest;
-      else delete process.env.ALLOW_TEST_TOKENS;
-    }
-
-    // 2.10 Provisioning of New Authorized Enrolled Student from Registry
-    const newEnrolledStudent = await request('POST', '/api/auth/google-student', {
-      body: {
-        credential: 'test-google-token:2025cse1042@cit.ac.in:Soumyajit Mohapatra:https://cit.ac.in/avatars/soumyajit.jpg',
-      },
-    });
-    assert(newEnrolledStudent.status === 200, 'Newly enrolled student in authorized registry authenticated (HTTP 200)');
-    assert(newEnrolledStudent.body.user.studentGroupId === 'CSE-2A', 'Assigned correct cohort group (CSE-2A)');
-    assert(newEnrolledStudent.body.user.role === 'student', 'Assigned student role');
 
     // -----------------------------------------------------------------
     // SECTION 3: PROFESSOR EMAIL/PASSWORD AUTHENTICATION FLOW

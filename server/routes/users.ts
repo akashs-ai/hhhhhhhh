@@ -148,7 +148,9 @@ router.post('/auth/login', async (req: AuthenticatedRequest, res: Response) => {
   });
 });
 
-// POST /api/auth/google-student - Authorized Student Google OAuth authentication
+// POST /api/auth/google-student - Mandatory Google OAuth authentication for Students
+// Any valid Google account is allowed to log in regardless of email domain.
+// No institutional email verification, student enrollment verification, or pre-registration is required.
 router.post('/auth/google-student', async (req: AuthenticatedRequest, res: Response) => {
   try {
     const rawPayload = {
@@ -163,7 +165,7 @@ router.post('/auth/google-student', async (req: AuthenticatedRequest, res: Respo
         success: false,
         error: {
           code: 'GOOGLE_TOKEN_REQUIRED',
-          message: 'A verified Google OAuth credential or access token is required.',
+          message: 'Google OAuth authentication is mandatory. A verified Google OAuth credential or access token is required.',
         },
       });
       return;
@@ -173,12 +175,13 @@ router.post('/auth/google-student', async (req: AuthenticatedRequest, res: Respo
     const verifiedGoogle = await verifyGoogleAuth(rawPayload);
     const cleanEmail = verifiedGoogle.email.trim().toLowerCase();
 
-    // 2. Fetch existing user accounts from database
+    // 2. Fetch existing user accounts from database for deduplication
+    // If the same Google account logs in again, retrieve its existing profile instead of creating duplicate records
     const allUsers = Object.values(await storage.getAllUsers());
     let user = allUsers.find(
       (u) =>
-        u.email.toLowerCase() === cleanEmail ||
-        (u.google_id && u.google_id === verifiedGoogle.googleId)
+        (u.google_id && u.google_id === verifiedGoogle.googleId) ||
+        u.email.toLowerCase() === cleanEmail
     );
 
     // 3. Role enforcement: Reject if Google account belongs to faculty or admin
@@ -195,42 +198,20 @@ router.post('/auth/google-student', async (req: AuthenticatedRequest, res: Respo
       return;
     }
 
-    // 4. Student Authorization Check:
-    // Authorized if enrolled in authorized_students registry or belongs to institutional student domain
-    const authorizedStudent = await storage.getAuthorizedStudent(cleanEmail);
-    const isEnrolledStudent = Boolean(
-      authorizedStudent ||
-      cleanEmail.endsWith('@cit.ac.in') ||
-      (user && user.email.endsWith('@cit.ac.in'))
-    );
-
-    // Development/demo mode detection: enabled when not strictly production, or when ENABLE_DEMO_AUTH is true
-    const isDevOrDemo = process.env.NODE_ENV !== 'production' || process.env.ENABLE_DEMO_AUTH === 'true';
-
-    if (!isEnrolledStudent && !isDevOrDemo) {
-      res.status(403).json({
-        success: false,
-        error: {
-          code: 'STUDENT_NOT_AUTHORIZED',
-          message: `Access Denied: Google account '${cleanEmail}' is not recognized as an enrolled CIT student. Contact Academic Administration to register.`,
-        },
-      });
-      return;
-    }
-
-    // 5. Account provisioning or Profile Update in Neon PostgreSQL
+    // 4. Automatically create or update profile in Neon PostgreSQL / persistent storage
     if (!user) {
-      // Newly admitted / first-time login student
-      const studentId = `usr-student-${cleanEmail.split('@')[0].replace(/[^a-z0-9]/gi, '')}`;
-      const group = authorizedStudent?.student_group_id || 'CSE-2';
-      const dept = authorizedStudent?.department_code || 'CSE';
-      const displayName = isEnrolledStudent
-        ? (verifiedGoogle.name || authorizedStudent?.display_name || cleanEmail.split('@')[0])
-        : `${verifiedGoogle.name || cleanEmail.split('@')[0]} (Demo)`;
-      const initialToken = `token-${studentId}-${Date.now()}`;
+      // First-time login: create new student profile in Neon PostgreSQL
+      const candidateId = `usr-student-${verifiedGoogle.googleId ? verifiedGoogle.googleId.slice(-12) : cleanEmail.split('@')[0].replace(/[^a-z0-9]/gi, '')}`;
+      const finalId = allUsers.some((u) => u.id === candidateId)
+        ? `${candidateId}-${Date.now().toString().slice(-4)}`
+        : candidateId;
+      const group = 'CSE-2';
+      const dept = 'CSE';
+      const displayName = verifiedGoogle.name || cleanEmail.split('@')[0];
+      const initialToken = `token-${finalId}-${Date.now()}`;
 
       user = await storage.createUser({
-        id: studentId,
+        id: finalId,
         username: cleanEmail.split('@')[0],
         display_name: displayName,
         email: cleanEmail,
@@ -243,7 +224,7 @@ router.post('/auth/google-student', async (req: AuthenticatedRequest, res: Respo
         auth_tokens: [initialToken],
       });
     } else {
-      // Existing student: link Google ID, update profile photo, preserve timetable & group enrollments
+      // Existing Google account logging in again: retrieve existing profile and update latest Google info
       const updates: Partial<UserRecord> = {
         last_login_at: new Date().toISOString(),
       };
@@ -255,13 +236,13 @@ router.post('/auth/google-student', async (req: AuthenticatedRequest, res: Respo
           updates.avatar_url = verifiedGoogle.avatarUrl;
         }
       }
-      if (verifiedGoogle.name && (!user.display_name || user.display_name.includes('Student'))) {
+      if (verifiedGoogle.name && (!user.display_name || user.display_name.includes('Student') || user.display_name === cleanEmail.split('@')[0])) {
         updates.display_name = verifiedGoogle.name;
       }
       user = await storage.updateUser(user.id, updates);
     }
 
-    // 6. Check suspension status
+    // 5. Check suspension status
     if (user.status === 'suspended') {
       res.status(403).json({
         success: false,
@@ -270,7 +251,7 @@ router.post('/auth/google-student', async (req: AuthenticatedRequest, res: Respo
       return;
     }
 
-    // 7. Secure session token issuance
+    // 6. Secure session token issuance
     let token = user.auth_tokens && user.auth_tokens.length > 0 ? user.auth_tokens[0] : null;
     if (!token) {
       token = `token-${user.id}-${Date.now()}`;
@@ -280,36 +261,31 @@ router.post('/auth/google-student', async (req: AuthenticatedRequest, res: Respo
       });
     }
 
-    // 8. Institutional audit log
+    // 7. Institutional audit log
     await storage.logAudit({
       user_id: user.id,
       user_name: user.display_name,
       role: 'student',
-      action: isEnrolledStudent ? 'STUDENT_GOOGLE_LOGIN' : 'STUDENT_GOOGLE_LOGIN_DEV_DEMO',
+      action: 'STUDENT_GOOGLE_LOGIN',
       resource_type: 'auth',
       resource_id: user.id,
       details: {
         google_id: verifiedGoogle.googleId,
         email: cleanEmail,
-        is_enrolled: isEnrolledStudent,
-        dev_demo_mode: !isEnrolledStudent && isDevOrDemo,
         has_avatar: Boolean(verifiedGoogle.avatarUrl),
       },
       status: 'success',
     });
 
-    // 9. Return authenticated session with verified student profile
+    // 8. Return authenticated session with verified student profile
     res.json({
       success: true,
       token,
-      isDemo: !isEnrolledStudent && isDevOrDemo,
       user: {
         id: user.id,
         name: user.display_name,
         role: 'student',
-        roleLabel: isEnrolledStudent
-          ? `Student (${user.student_group_id || 'CSE-2'})`
-          : `Student (Demo / ${user.student_group_id || 'CSE-2'})`,
+        roleLabel: `Student (${user.student_group_id || 'CSE-2'})`,
         department: user.department,
         studentGroupId: user.student_group_id,
         email: user.email,
@@ -328,107 +304,11 @@ router.post('/auth/google-student', async (req: AuthenticatedRequest, res: Respo
   }
 });
 
-// POST /api/auth/demo-student - One-click Development/Demo Student Login (Dev/Demo Mode only)
-router.post('/auth/demo-student', async (req: AuthenticatedRequest, res: Response) => {
-  const isDevOrDemo = process.env.NODE_ENV !== 'production' || process.env.ENABLE_DEMO_AUTH === 'true';
-
-  if (!isDevOrDemo) {
-    res.status(403).json({
-      success: false,
-      error: {
-        code: 'DEMO_AUTH_DISABLED',
-        message: 'Demo student authentication is disabled in production environments. Institutional enrollment is strictly enforced.',
-      },
-    });
-    return;
-  }
-
-  const demoEmail = 'student.demo@gmail.com';
-  const demoId = 'usr-student-demo';
-  const demoName = 'Demo Student (Sandbox)';
-  const demoGroup = 'CSE-2';
-  const demoDept = 'CSE';
-  const demoAvatar = 'https://api.dicebear.com/7.x/avataaars/svg?seed=student.demo@gmail.com';
-
-  const allUsers = Object.values(await storage.getAllUsers());
-  let user = allUsers.find((u) => u.id === demoId || u.email.toLowerCase() === demoEmail);
-
-  if (!user) {
-    const sessionToken = `token-demo-${Date.now()}`;
-    user = await storage.createUser({
-      id: demoId,
-      username: 'student.demo',
-      display_name: demoName,
-      email: demoEmail,
-      role: 'student',
-      status: 'active',
-      department: demoDept,
-      student_group_id: demoGroup,
-      avatar_url: demoAvatar,
-      auth_tokens: [sessionToken],
-    });
-  } else {
-    // Ensure active status and update last login
-    const updates: Partial<UserRecord> = {
-      status: 'active',
-      role: 'student',
-      last_login_at: new Date().toISOString(),
-      display_name: demoName,
-      avatar_url: demoAvatar,
-    };
-    user = await storage.updateUser(user.id, updates);
-  }
-
-  let token = user.auth_tokens && user.auth_tokens.length > 0 ? user.auth_tokens[0] : null;
-  if (!token) {
-    token = `token-demo-${Date.now()}`;
-    await storage.updateUser(user.id, {
-      auth_tokens: [token],
-      last_login_at: new Date().toISOString(),
-    });
-  }
-
-  await storage.logAudit({
-    user_id: user.id,
-    user_name: user.display_name,
-    role: 'student',
-    action: 'STUDENT_DEMO_LOGIN',
-    resource_type: 'auth',
-    resource_id: user.id,
-    details: {
-      email: demoEmail,
-      is_demo_identity: true,
-      note: 'Demo student identity for display/testing only. Not a real Gmail account.',
-    },
-    status: 'success',
-  });
-
-  res.json({
-    success: true,
-    token,
-    isDemo: true,
-    notice: 'Demo student identity for display and testing purposes only. This is not a real or usable Gmail account.',
-    user: {
-      id: user.id,
-      name: user.display_name,
-      role: 'student',
-      roleLabel: 'Student (Demo / CSE-2)',
-      department: user.department,
-      studentGroupId: user.student_group_id,
-      email: user.email,
-      avatarUrl: user.avatar_url,
-    },
-  });
-});
-
-// GET /api/auth/config - Query public auth configuration and demo mode status
+// GET /api/auth/config - Query public auth configuration
 router.get('/auth/config', (req: AuthenticatedRequest, res: Response) => {
-  const isDevOrDemo = process.env.NODE_ENV !== 'production' || process.env.ENABLE_DEMO_AUTH === 'true';
   const clientId = (process.env.VITE_GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID || '').trim();
   res.json({
     success: true,
-    isDevelopment: isDevOrDemo,
-    demoAuthAllowed: isDevOrDemo,
     googleOAuthConfigured: Boolean(clientId),
     clientId: clientId || null,
   });

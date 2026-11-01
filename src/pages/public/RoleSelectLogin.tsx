@@ -14,8 +14,6 @@ import {
   KeyRound,
   X,
   Calendar,
-  FlaskConical,
-  Sparkles,
 } from 'lucide-react';
 import { UserItem } from '../../types';
 import { googleSignIn } from '../../services/googleAuth';
@@ -60,14 +58,10 @@ export const RoleSelectLogin: React.FC<RoleSelectLoginProps> = ({
   const [showStudentGooglePrompt, setShowStudentGooglePrompt] = useState(false);
   const [studentGoogleEmail, setStudentGoogleEmail] = useState('');
 
-  // Development/Demo Mode detection
+  // Google OAuth Configuration status
   const [authConfig, setAuthConfig] = useState<{
-    isDevelopment: boolean;
-    demoAuthAllowed: boolean;
     googleOAuthConfigured: boolean;
   }>({
-    isDevelopment: Boolean(import.meta.env.DEV || import.meta.env.MODE !== 'production'),
-    demoAuthAllowed: true, // Optimistically enabled for local development
     googleOAuthConfigured: Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID),
   });
 
@@ -77,8 +71,6 @@ export const RoleSelectLogin: React.FC<RoleSelectLoginProps> = ({
       .then((data) => {
         if (data.success) {
           setAuthConfig({
-            isDevelopment: Boolean(data.isDevelopment),
-            demoAuthAllowed: Boolean(data.demoAuthAllowed),
             googleOAuthConfigured: Boolean(data.googleOAuthConfigured),
           });
         }
@@ -188,7 +180,7 @@ export const RoleSelectLogin: React.FC<RoleSelectLoginProps> = ({
           throw new Error(oauthErr?.message || 'Google OAuth sign-in failed.');
         }
       } else {
-        // In development / demo environment without Google Client ID, open the verified Google Student prompt
+        // Fallback when Google Client ID is not configured: open the Google Student prompt
         setShowStudentGooglePrompt(true);
         setIsSubmitting(false);
         return;
@@ -204,7 +196,7 @@ export const RoleSelectLogin: React.FC<RoleSelectLoginProps> = ({
       if (!res.ok || !data.success) {
         throw new Error(
           data.error?.message ||
-            'Access Denied: Google account is not authorized as an enrolled CIT student.'
+            'Failed to authenticate via Google.'
         );
       }
 
@@ -228,49 +220,7 @@ export const RoleSelectLogin: React.FC<RoleSelectLoginProps> = ({
       setShowStudentGooglePrompt(false);
       onLoginSuccess(user);
     } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to authenticate via Google Workspace.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // 2b. Direct Development Demo Student Login (Sandbox Mode Only)
-  const handleDemoStudentLogin = async () => {
-    setIsSubmitting(true);
-    setErrorMessage(null);
-    setSuccessNotice(null);
-
-    try {
-      const res = await fetch('/api/auth/demo-student', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error?.message || 'Failed to authenticate demo student.');
-      }
-
-      if (rememberMe && data.token) {
-        localStorage.setItem('cit_auth_token', data.token);
-      }
-
-      const user: UserItem = {
-        id: data.user.id,
-        name: data.user.name,
-        role: data.user.role,
-        roleLabel: data.user.roleLabel,
-        department: data.user.department,
-        studentGroupId: data.user.studentGroupId,
-        email: data.user.email,
-        token: data.token,
-        avatar: data.user.avatarUrl,
-        avatarUrl: data.user.avatarUrl,
-      };
-
-      onLoginSuccess(user);
-    } catch (err: any) {
-      setErrorMessage(err.message || 'Error signing in as demo student.');
+      setErrorMessage(err.message || 'Failed to authenticate via Google.');
     } finally {
       setIsSubmitting(false);
     }
@@ -457,35 +407,20 @@ export const RoleSelectLogin: React.FC<RoleSelectLoginProps> = ({
           )}
 
           {/* ===============================================================
-              CATEGORY FLOW 1: STUDENT (Google OAuth & Demo Sandbox)
+              CATEGORY FLOW 1: STUDENT (Google OAuth Mandatory)
               =============================================================== */}
           {activeCategory === 'student' && (
             <div className="space-y-4 cit-box-blend">
-              {/* Development & Testing Mode Banner */}
-              {authConfig.demoAuthAllowed ? (
-                <div className="p-3.5 rounded-2xl bg-amber-50/90 border border-amber-200/90 text-amber-950 text-xs space-y-1.5 shadow-2xs">
-                  <div className="flex items-center space-x-2 text-amber-900 font-bold">
-                    <FlaskConical className="w-4 h-4 text-amber-600 shrink-0" />
-                    <span className="text-xs">Development & Testing Mode Active</span>
-                    <span className="text-[10px] bg-amber-200 text-amber-900 font-extrabold px-1.5 py-0.5 rounded-full uppercase tracking-wider">
-                      Sandbox
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-amber-800 leading-relaxed">
-                    Student enrollment restrictions are relaxed in development mode. You can sign in with personal Google accounts (e.g. @gmail.com) without pre-enrollment or launch a simulated demo session below.
-                  </p>
+              {/* Student Portal Information Banner */}
+              <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-100 text-slate-700">
+                <div className="flex items-center space-x-2 text-blue-900 font-bold text-xs mb-1">
+                  <GraduationCap className="w-4 h-4 text-blue-600" />
+                  <span>Student Portal Access</span>
                 </div>
-              ) : (
-                <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-100 text-slate-700">
-                  <div className="flex items-center space-x-2 text-blue-900 font-bold text-xs mb-1">
-                    <GraduationCap className="w-4 h-4 text-blue-600" />
-                    <span>Student Identity Verification</span>
-                  </div>
-                  <p className="text-[11px] text-slate-600 leading-relaxed">
-                    Students must sign in using their authorized institutional Google Workspace account. Only active, enrolled CIT students are granted access.
-                  </p>
-                </div>
-              )}
+                <p className="text-[11px] text-slate-600 leading-relaxed">
+                  Sign in securely with your Google account. Any valid Google account is accepted and granted direct access to the Student Portal.
+                </p>
+              </div>
 
               {/* Google Sign-in Button */}
               <button
@@ -497,7 +432,7 @@ export const RoleSelectLogin: React.FC<RoleSelectLoginProps> = ({
                 {isSubmitting ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
-                    <span>Verifying Student Account...</span>
+                    <span>Signing in with Google...</span>
                   </>
                 ) : (
                   <>
@@ -520,58 +455,25 @@ export const RoleSelectLogin: React.FC<RoleSelectLoginProps> = ({
                         d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
                       />
                     </svg>
-                    <span>Continue with Google Workspace</span>
+                    <span>Continue with Google</span>
                   </>
                 )}
               </button>
 
-              {/* Demo Student One-Click Login (Development / Demo Mode Only) */}
-              {authConfig.demoAuthAllowed && (
-                <div className="space-y-2 pt-1">
-                  <div className="relative flex items-center justify-center">
-                    <div className="border-t border-slate-200 w-full" />
-                    <span className="bg-white px-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 absolute">
-                      or simulated demo access
-                    </span>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={handleDemoStudentLogin}
-                    disabled={isSubmitting}
-                    className="w-full py-3 px-4 rounded-xl border-2 border-dashed border-amber-300 bg-amber-50/60 hover:bg-amber-100/70 text-amber-950 font-bold text-xs sm:text-sm shadow-2xs hover:border-amber-400 focus-visible:ring-2 focus-visible:ring-amber-500 transition-all flex items-center justify-center space-x-2.5 cursor-pointer"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin text-amber-600" />
-                        <span>Launching Demo Session...</span>
-                      </>
-                    ) : (
-                      <>
-                        <FlaskConical className="w-4 h-4 text-amber-600" />
-                        <span>Sign In as Demo Student (Sandbox)</span>
-                      </>
-                    )}
-                  </button>
-
-                  <p className="text-[10px] text-slate-500 text-center leading-normal px-2">
-                    * Uses demo identity <span className="font-mono text-slate-700 font-semibold">student.demo@gmail.com</span> for display and testing only. This is not a real or usable Gmail account.
-                  </p>
-                </div>
-              )}
-
               <div className="flex items-center justify-between pt-2 text-[11px] text-slate-500">
                 <span className="flex items-center space-x-1">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>{authConfig.demoAuthAllowed ? 'Demo Sandbox Mode' : 'Authorized CIT Domain Required'}</span>
+                  <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Google OAuth 2.0 Protected</span>
                 </span>
-                <button
-                  type="button"
-                  onClick={() => setShowStudentGooglePrompt(true)}
-                  className="text-blue-600 hover:text-blue-700 underline font-medium cursor-pointer"
-                >
-                  Verify Specific Google Email
-                </button>
+                {!authConfig.googleOAuthConfigured && (
+                  <button
+                    type="button"
+                    onClick={() => setShowStudentGooglePrompt(true)}
+                    className="text-blue-600 hover:text-blue-700 underline font-medium cursor-pointer"
+                  >
+                    Sign in with Google Token / Account
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -844,16 +746,16 @@ export const RoleSelectLogin: React.FC<RoleSelectLoginProps> = ({
               </div>
               <div>
                 <h3 id="student-oauth-prompt-title" className="text-base font-bold text-slate-900">
-                  Student Google Account Verification
+                  Google Account Sign In
                 </h3>
                 <p className="text-xs text-slate-500">
-                  Verify enrolled CIT student identity via Google OAuth.
+                  Sign in with any valid Google account to access the Student Portal.
                 </p>
               </div>
             </div>
 
             <p className="text-xs text-slate-600 leading-relaxed mb-4">
-              Enter your Google Workspace student email to verify enrollment records. Unauthorized or non-student Google accounts will be rejected by institutional policy.
+              Enter any valid Google account email. Your student profile will be automatically retrieved or created in Neon PostgreSQL upon authentication.
             </p>
 
             <div className="space-y-3">
@@ -866,17 +768,24 @@ export const RoleSelectLogin: React.FC<RoleSelectLoginProps> = ({
                   type="email"
                   value={studentGoogleEmail}
                   onChange={(e) => setStudentGoogleEmail(e.target.value)}
-                  placeholder="e.g. aarav.cse3@cit.ac.in or 2025CSE1042@cit.ac.in"
+                  placeholder="e.g. alex.student@gmail.com or aarav.cse3@cit.ac.in"
                   className="w-full px-3.5 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 bg-white text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
                 />
               </div>
 
               <div className="flex flex-wrap gap-1.5 pt-1">
-                <span className="text-[10px] text-slate-400 self-center">Pre-authorized test students:</span>
+                <span className="text-[10px] text-slate-400 self-center">Sample accounts:</span>
+                <button
+                  type="button"
+                  onClick={() => setStudentGoogleEmail('alex.student@gmail.com')}
+                  className="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full cursor-pointer"
+                >
+                  alex.student@gmail.com
+                </button>
                 <button
                   type="button"
                   onClick={() => setStudentGoogleEmail('aarav.cse3@cit.ac.in')}
-                  className="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full"
+                  className="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full cursor-pointer"
                 >
                   aarav.cse3@cit.ac.in
                 </button>
@@ -887,36 +796,29 @@ export const RoleSelectLogin: React.FC<RoleSelectLoginProps> = ({
                 >
                   priya.y1a@cit.ac.in
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setStudentGoogleEmail('student.demo@gmail.com')}
-                  className="text-[10px] bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-full cursor-pointer"
-                >
-                  student.demo@gmail.com (Demo)
-                </button>
               </div>
 
               <div className="flex space-x-2 pt-3">
                 <button
                   type="button"
                   onClick={() => setShowStudentGooglePrompt(false)}
-                  className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-xs"
+                  className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-xs cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleStudentGoogleAuth(studentGoogleEmail || 'aarav.cse3@cit.ac.in')}
+                  onClick={() => handleStudentGoogleAuth(studentGoogleEmail || 'alex.student@gmail.com')}
                   disabled={isSubmitting}
-                  className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center space-x-2"
+                  className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center space-x-2 cursor-pointer"
                 >
                   {isSubmitting ? (
                     <>
                       <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
-                      <span>Verifying...</span>
+                      <span>Signing in...</span>
                     </>
                   ) : (
-                    <span>Authenticate Student</span>
+                    <span>Sign In with Google</span>
                   )}
                 </button>
               </div>
