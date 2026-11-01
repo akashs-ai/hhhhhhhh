@@ -14,6 +14,7 @@ import {
   NotificationRecord,
 } from './storageInterface.js';
 import { PostgresStorage } from './postgresStorage.js';
+import { DEFAULT_FAQS, AssistantFaq } from './faqsData.js';
 
 export * from './storageInterface.js';
 
@@ -28,6 +29,7 @@ export class StorageManager implements IStorage {
   private usersFile: string;
   private waitlistFile: string;
   private notificationsFile: string;
+  private faqsFile: string;
 
   constructor() {
     this.baseDir = STORAGE_DIR;
@@ -40,6 +42,7 @@ export class StorageManager implements IStorage {
     this.usersFile = path.join(this.baseDir, 'users.json');
     this.waitlistFile = path.join(this.baseDir, 'waitlist.json');
     this.notificationsFile = path.join(this.baseDir, 'notifications.json');
+    this.faqsFile = path.join(this.baseDir, 'assistant_faqs.json');
 
     this.ensureInitialized();
   }
@@ -498,6 +501,11 @@ export class StorageManager implements IStorage {
       };
       this.writeJsonAtomic(this.usersFile, initialUsers);
     }
+
+    // 8. Assistant FAQs (Database-Powered Assistant Mode)
+    if (!fs.existsSync(this.faqsFile)) {
+      this.writeJsonAtomic(this.faqsFile, DEFAULT_FAQS);
+    }
   }
 
   // --- DATASET ---
@@ -896,6 +904,41 @@ export class StorageManager implements IStorage {
     all[id] = updatedUser;
     this.writeJsonAtomic(this.usersFile, all);
     return updatedUser;
+  }
+
+  // --- ASSISTANT FAQS ---
+  public async getAssistantFaqs(audience?: string): Promise<AssistantFaq[]> {
+    const all = this.readJson<AssistantFaq[]>(this.faqsFile, DEFAULT_FAQS);
+    let filtered = all.filter((f) => f.is_active);
+    if (audience && audience !== 'all') {
+      if (audience === 'student') {
+        filtered = filtered.filter((f) => f.audience === 'all' || f.audience === 'student');
+      } else if (audience === 'faculty') {
+        filtered = filtered.filter((f) => f.audience === 'all' || f.audience === 'faculty');
+      } else if (audience === 'department_coordinator' || audience === 'admin') {
+        filtered = filtered.filter((f) => ['all', 'faculty', 'department_coordinator', 'admin'].includes(f.audience));
+      }
+    } else if (audience === 'all') {
+      filtered = filtered.filter((f) => f.audience === 'all');
+    }
+    return filtered.sort((a, b) => a.display_order - b.display_order);
+  }
+
+  public async getAssistantFaqByKey(key: string): Promise<AssistantFaq | null> {
+    const all = this.readJson<AssistantFaq[]>(this.faqsFile, DEFAULT_FAQS);
+    const found = all.find((f) => f.question_key === key && f.is_active);
+    return found || null;
+  }
+
+  public async saveAssistantFaq(faq: AssistantFaq): Promise<void> {
+    const all = this.readJson<AssistantFaq[]>(this.faqsFile, DEFAULT_FAQS);
+    const idx = all.findIndex((f) => f.question_key === faq.question_key);
+    if (idx >= 0) {
+      all[idx] = { ...faq, updated_at: new Date().toISOString() };
+    } else {
+      all.push({ ...faq, created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
+    }
+    this.writeJsonAtomic(this.faqsFile, all);
   }
 }
 

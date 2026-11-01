@@ -1,4 +1,5 @@
 import { UserRole } from './auth.js';
+export * from './faqsData.js';
 
 export interface ScheduleVersion {
   id: string; // e.g. "v1", "v2-disruption"
@@ -294,5 +295,10 @@ export interface IStorage {
   createUser(userData: Omit<UserRecord, 'created_at' | 'updated_at'>): Promise<UserRecord>;
   updateUser(id: string, updates: Partial<UserRecord>): Promise<UserRecord>;
   validateReferentialIntegrity(user: Partial<UserRecord>): Promise<void>;
+
+  // Assistant FAQs (Database-Powered Assistant Mode)
+  getAssistantFaqs(audience?: string): Promise<import('./faqsData.js').AssistantFaq[]>;
+  getAssistantFaqByKey(key: string): Promise<import('./faqsData.js').AssistantFaq | null>;
+  saveAssistantFaq(faq: import('./faqsData.js').AssistantFaq): Promise<void>;
 }
 

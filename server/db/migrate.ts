@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { Pool } from 'pg';
 import { DATASET_PATH, ROOT_DIR, STORAGE_DIR } from '../config.js';
+import { DEFAULT_FAQS } from '../faqsData.js';
 
 // Authoritative institutional departments catalog from schema.sql
 export const AUTHORITATIVE_DEPTS = new Set([
@@ -813,6 +814,33 @@ export async function runMigration(options?: { dryRun?: boolean; connectionStrin
            last_sync_at = EXCLUDED.last_sync_at`
       );
     }
+
+    // 13. Seed Assistant FAQs
+    console.log('[Migrate] Seeding assistant FAQs...');
+    const faqRows = DEFAULT_FAQS.map((f) => [
+      f.id,
+      f.question_key,
+      f.category,
+      f.question,
+      f.answer,
+      f.audience,
+      f.is_active,
+      f.display_order,
+    ]);
+    await batchInsert(
+      client,
+      'assistant_faqs',
+      ['id', 'question_key', 'category', 'question', 'answer', 'audience', 'is_active', 'display_order'],
+      faqRows,
+      `ON CONFLICT (question_key) DO UPDATE SET
+         category = EXCLUDED.category,
+         question = EXCLUDED.question,
+         answer = EXCLUDED.answer,
+         audience = EXCLUDED.audience,
+         is_active = EXCLUDED.is_active,
+         display_order = EXCLUDED.display_order,
+         updated_at = NOW()`
+    );
 
     await client.query('COMMIT');
     console.log('[Migrate] Migration and operational data seeding completed successfully!');

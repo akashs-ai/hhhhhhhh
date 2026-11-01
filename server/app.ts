@@ -11,6 +11,7 @@ import calendarRouter from './routes/calendar.js';
 import auditRouter from './routes/audit.js';
 import usersRouter from './routes/users.js';
 import aiRouter from './routes/ai.js';
+import assistantRouter from './routes/assistant.js';
 import notificationsRouter from './routes/notifications.js';
 import reportsRouter from './routes/reports.js';
 import dashboardRouter from './routes/dashboard.js';
@@ -36,6 +37,7 @@ export function createExpressApp() {
   app.use('/api', auditRouter);
   app.use('/api', usersRouter);
   app.use('/api', aiRouter);
+  app.use('/api', assistantRouter);
   app.use('/api', notificationsRouter);
   app.use('/api', reportsRouter);
   app.use('/api', dashboardRouter);

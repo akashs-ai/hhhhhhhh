@@ -11,6 +11,7 @@ import {
   WaitlistEntry,
   NotificationRecord,
 } from './storageInterface.js';
+import { DEFAULT_FAQS, AssistantFaq } from './faqsData.js';
 
 export class PostgresStorage implements IStorage {
   private pool: Pool;
@@ -1288,6 +1289,134 @@ export class PostgresStorage implements IStorage {
       return (res.rowCount || 0) > 0;
     } catch {
       return false;
+    } finally {
+      client.release();
+    }
+  }
+
+  // --- ASSISTANT FAQS ---
+  private async ensureAssistantFaqsTable(client: PoolClient): Promise<void> {
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS assistant_faqs (
+        id VARCHAR(64) PRIMARY KEY,
+        question_key VARCHAR(128) NOT NULL UNIQUE,
+        category VARCHAR(64) NOT NULL,
+        question TEXT NOT NULL,
+        answer TEXT NOT NULL,
+        audience VARCHAR(32) NOT NULL DEFAULT 'all',
+        is_active BOOLEAN NOT NULL DEFAULT TRUE,
+        display_order INT NOT NULL DEFAULT 0,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_assistant_faqs_key ON assistant_faqs(question_key);
+      CREATE INDEX IF NOT EXISTS idx_assistant_faqs_active ON assistant_faqs(is_active, display_order);
+    `);
+
+    const countRes = await client.query('SELECT COUNT(*) FROM assistant_faqs');
+    if (parseInt(countRes.rows[0]?.count || '0', 10) === 0) {
+      for (const f of DEFAULT_FAQS) {
+        await client.query(
+          `INSERT INTO assistant_faqs (id, question_key, category, question, answer, audience, is_active, display_order, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+           ON CONFLICT (question_key) DO NOTHING`,
+          [f.id, f.question_key, f.category, f.question, f.answer, f.audience, f.is_active, f.display_order]
+        );
+      }
+    }
+  }
+
+  public async getAssistantFaqs(audience?: string): Promise<AssistantFaq[]> {
+    const client = await this.pool.connect();
+    try {
+      await this.ensureAssistantFaqsTable(client);
+      let query = 'SELECT * FROM assistant_faqs WHERE is_active = TRUE';
+      const params: any[] = [];
+
+      if (audience && audience !== 'all') {
+        if (audience === 'student') {
+          query += ' AND audience IN ($1, $2)';
+          params.push('all', 'student');
+        } else if (audience === 'faculty') {
+          query += ' AND audience IN ($1, $2)';
+          params.push('all', 'faculty');
+        } else if (audience === 'department_coordinator' || audience === 'admin') {
+          query += ' AND audience IN ($1, $2, $3, $4)';
+          params.push('all', 'faculty', 'department_coordinator', 'admin');
+        }
+      } else if (audience === 'all') {
+        query += ' AND audience = $1';
+        params.push('all');
+      }
+
+      query += ' ORDER BY display_order ASC';
+      const res = await client.query(query, params);
+      return res.rows.map((row: any) => ({
+        id: row.id,
+        question_key: row.question_key,
+        category: row.category,
+        question: row.question,
+        answer: row.answer,
+        audience: row.audience,
+        is_active: row.is_active,
+        display_order: row.display_order,
+        created_at: row.created_at instanceof Date ? row.created_at.toISOString() : String(row.created_at),
+        updated_at: row.updated_at instanceof Date ? row.updated_at.toISOString() : String(row.updated_at),
+      }));
+    } catch {
+      return DEFAULT_FAQS.filter((f) => f.is_active);
+    } finally {
+      client.release();
+    }
+  }
+
+  public async getAssistantFaqByKey(key: string): Promise<AssistantFaq | null> {
+    const client = await this.pool.connect();
+    try {
+      await this.ensureAssistantFaqsTable(client);
+      const res = await client.query(
+        'SELECT * FROM assistant_faqs WHERE question_key = $1 AND is_active = TRUE LIMIT 1',
+        [key]
+      );
+      if (res.rows.length === 0) return null;
+      const row = res.rows[0];
+      return {
+        id: row.id,
+        question_key: row.question_key,
+        category: row.category,
+        question: row.question,
+        answer: row.answer,
+        audience: row.audience,
+        is_active: row.is_active,
+        display_order: row.display_order,
+        created_at: row.created_at instanceof Date ? row.created_at.toISOString() : String(row.created_at),
+        updated_at: row.updated_at instanceof Date ? row.updated_at.toISOString() : String(row.updated_at),
+      };
+    } catch {
+      const fallback = DEFAULT_FAQS.find((f) => f.question_key === key && f.is_active);
+      return fallback || null;
+    } finally {
+      client.release();
+    }
+  }
+
+  public async saveAssistantFaq(faq: AssistantFaq): Promise<void> {
+    const client = await this.pool.connect();
+    try {
+      await this.ensureAssistantFaqsTable(client);
+      await client.query(
+        `INSERT INTO assistant_faqs (id, question_key, category, question, answer, audience, is_active, display_order, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+         ON CONFLICT (question_key) DO UPDATE SET
+            category = EXCLUDED.category,
+            question = EXCLUDED.question,
+            answer = EXCLUDED.answer,
+            audience = EXCLUDED.audience,
+            is_active = EXCLUDED.is_active,
+            display_order = EXCLUDED.display_order,
+            updated_at = NOW()`,
+        [faq.id, faq.question_key, faq.category, faq.question, faq.answer, faq.audience, faq.is_active, faq.display_order]
+      );
     } finally {
       client.release();
     }
