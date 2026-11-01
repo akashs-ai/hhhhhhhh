@@ -49,7 +49,9 @@ export const AdminVenueBooking: React.FC<AdminVenueBookingProps> = ({ currentUse
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [showBlockModal, setShowBlockModal] = useState(false);
   const [showApproveModal, setShowApproveModal] = useState<Booking | null>(null);
-  const [showRejectModal, setShowRejectModal] = useState<Booking | null>(null);
+  const [modalMode, setModalMode] = useState<'approve' | 'reject'>('approve');
+  const [modalError, setModalError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form states for Register Venue
   const [regForm, setRegForm] = useState({
@@ -193,12 +195,35 @@ export const AdminVenueBooking: React.FC<AdminVenueBookingProps> = ({ currentUse
     }
   };
 
-  // Handle Approve Requisition
-  const openApproveModal = (booking: Booking) => {
+  // Close modal with safety check
+  const handleCloseApproveModal = () => {
+    if (isSubmitting) return; // Prevent closing while in-flight API call is resolving
+    setShowApproveModal(null);
+    setModalError(null);
+    setModalMode('approve');
+  };
+
+  // Keyboard shortcut: Escape closes modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showApproveModal && !isSubmitting) {
+        handleCloseApproveModal();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showApproveModal, isSubmitting]);
+
+  // Open Approval / Rejection Modal
+  const openApproveModal = (booking: Booking, initialMode: 'approve' | 'reject' = 'approve') => {
     const defaultRoom = booking.allocated_room || booking.requested_room || venues[0]?.id || 'AUD';
     const defaultDay = booking.allocated_day || booking.windows?.[0]?.day || 'MON';
-    const defaultStart = booking.allocated_start_period || booking.windows?.[0]?.from_period || 1;
-    const defaultEnd = booking.allocated_end_period || booking.windows?.[0]?.to_period || 2;
+    let defaultStart = booking.allocated_start_period || booking.windows?.[0]?.from_period || 1;
+    let defaultEnd = booking.allocated_end_period || booking.windows?.[0]?.to_period || Math.min(9, defaultStart + 1);
+
+    // Clamp to valid periods [1..9]
+    if (defaultStart < 1 || defaultStart > 9) defaultStart = 1;
+    if (defaultEnd < defaultStart || defaultEnd > 9) defaultEnd = Math.min(9, defaultStart + 1);
 
     setApproveForm({
       room_id: defaultRoom,
@@ -207,45 +232,86 @@ export const AdminVenueBooking: React.FC<AdminVenueBookingProps> = ({ currentUse
       end_period: defaultEnd,
       reason: 'Approved by Department Head / Timetable Chair',
     });
+    setRejectReason('Capacity or schedule constraint');
+    setModalMode(initialMode);
+    setModalError(null);
+    setIsSubmitting(false);
     setShowApproveModal(booking);
   };
 
+  // Confirm Approval
   const handleConfirmApprove = async () => {
-    if (!showApproveModal) return;
+    if (!showApproveModal || isSubmitting) return;
+
+    const sp = Number(approveForm.start_period);
+    const ep = Number(approveForm.end_period);
+
+    if (sp > ep) {
+      setModalError('From Period cannot be later than To Period.');
+      return;
+    }
+
+    if (!approveForm.room_id) {
+      setModalError('Please select a venue for allocation.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setModalError(null);
+
     try {
-      setErrorMsg(null);
-      await venueService.decideBooking(currentUser.token, showApproveModal.id, {
+      const token = currentUser.token || (typeof window !== 'undefined' ? localStorage.getItem('cit_auth_token') : '') || currentUser.id;
+      await venueService.decideBooking(token, showApproveModal.id, {
         status: 'approved',
         room_id: approveForm.room_id,
         day: approveForm.day,
-        start_period: Number(approveForm.start_period),
-        end_period: Number(approveForm.end_period),
-        reason: approveForm.reason,
+        start_period: sp,
+        end_period: ep,
+        reason: approveForm.reason.trim() || 'Approved by Department Head / Timetable Chair',
       });
+
       setSuccessMsg(`Requisition ${showApproveModal.id} approved and allocated to ${approveForm.room_id}.`);
-      setTimeout(() => setSuccessMsg(null), 4000);
+      setTimeout(() => setSuccessMsg(null), 5000);
       setShowApproveModal(null);
+      setModalError(null);
       await loadData();
     } catch (err: any) {
-      setErrorMsg(err.message || 'Failed to approve requisition');
+      console.error('Approve requisition error:', err);
+      setModalError(err.message || 'Failed to approve requisition. Please check venue availability.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  // Handle Reject Requisition
+  // Confirm Rejection
   const handleConfirmReject = async () => {
-    if (!showRejectModal) return;
+    if (!showApproveModal || isSubmitting) return;
+
+    if (!rejectReason.trim()) {
+      setModalError('Please provide a reason for turning down this requisition.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setModalError(null);
+
     try {
-      setErrorMsg(null);
-      await venueService.decideBooking(currentUser.token, showRejectModal.id, {
+      const token = currentUser.token || (typeof window !== 'undefined' ? localStorage.getItem('cit_auth_token') : '') || currentUser.id;
+      await venueService.decideBooking(token, showApproveModal.id, {
         status: 'rejected',
-        reason: rejectReason,
+        reason: rejectReason.trim(),
       });
-      setSuccessMsg(`Requisition ${showRejectModal.id} has been rejected.`);
-      setTimeout(() => setSuccessMsg(null), 4000);
-      setShowRejectModal(null);
+
+      setSuccessMsg(`Requisition ${showApproveModal.id} has been rejected.`);
+      setTimeout(() => setSuccessMsg(null), 5000);
+      setShowApproveModal(null);
+      setModalError(null);
       await loadData();
     } catch (err: any) {
-      setErrorMsg(err.message || 'Failed to reject requisition');
+      console.error('Reject requisition error:', err);
+      setModalError(err.message || 'Failed to reject requisition.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -432,15 +498,15 @@ export const AdminVenueBooking: React.FC<AdminVenueBookingProps> = ({ currentUse
                         ) : (
                           <>
                             <button
-                              onClick={() => openApproveModal(req)}
-                              className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-2xs flex items-center space-x-1 transition-all"
+                              onClick={() => openApproveModal(req, 'approve')}
+                              className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-2xs flex items-center space-x-1 transition-all cursor-pointer"
                             >
                               <Check className="w-3.5 h-3.5" />
                               <span>Approve</span>
                             </button>
                             <button
-                              onClick={() => setShowRejectModal(req)}
-                              className="px-3 py-1 bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded-lg text-xs font-bold shadow-2xs flex items-center space-x-1 transition-all"
+                              onClick={() => openApproveModal(req, 'reject')}
+                              className="px-3 py-1 bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded-lg text-xs font-bold shadow-2xs flex items-center space-x-1 transition-all cursor-pointer"
                             >
                               <X className="w-3.5 h-3.5" />
                               <span>Reject</span>
@@ -760,157 +826,293 @@ export const AdminVenueBooking: React.FC<AdminVenueBookingProps> = ({ currentUse
         </div>
       )}
 
-      {/* MODAL 3: Approve Requisition */}
+      {/* MODAL 3: Unified Review, Allocate & Reject Requisition Modal */}
       {showApproveModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4 text-xs">
+        <div
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4"
+          onClick={handleCloseApproveModal}
+        >
+          <div
+            className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4 text-xs"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
-                <h3 className="font-bold text-slate-900 text-base">Approve & Allocate Requisition</h3>
-                <p className="text-slate-500">Ref: {showApproveModal.id} • {showApproveModal.title}</p>
+                <div className="flex items-center space-x-2">
+                  <h3 className="font-bold text-slate-900 text-base">
+                    {modalMode === 'approve' ? 'Approve & Allocate Requisition' : 'Reject Venue Requisition'}
+                  </h3>
+                  <span
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                      modalMode === 'approve'
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                        : 'bg-red-50 text-red-700 border border-red-200'
+                    }`}
+                  >
+                    {modalMode.toUpperCase()}
+                  </span>
+                </div>
+                <p className="text-slate-500 mt-0.5">
+                  Ref: <strong className="text-slate-700">{showApproveModal.id}</strong> • {showApproveModal.title}
+                </p>
+                <div className="text-[11px] text-slate-500 mt-0.5">
+                  Requester: <strong className="text-slate-700">{showApproveModal.requester}</strong> ({showApproveModal.role.toUpperCase()}) • Attendance: {showApproveModal.attendance} attendees
+                </div>
               </div>
               <button
-                onClick={() => setShowApproveModal(null)}
-                className="w-7 h-7 rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center font-bold"
+                onClick={handleCloseApproveModal}
+                disabled={isSubmitting}
+                className="w-7 h-7 rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center font-bold disabled:opacity-50 cursor-pointer"
+                aria-label="Close dialog"
               >
                 ✕
               </button>
             </div>
 
-            <div className="space-y-3">
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">Allocated Venue</label>
-                <select
-                  value={approveForm.room_id}
-                  onChange={(e) => setApproveForm({ ...approveForm, room_id: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:outline-blue-600"
-                >
-                  {venues.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      {v.name} ({v.id}) - Cap: {v.capacity}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            {/* Mode Switcher Tabs */}
+            <div className="flex items-center p-1 bg-slate-100 rounded-xl">
+              <button
+                type="button"
+                onClick={() => {
+                  setModalMode('approve');
+                  setModalError(null);
+                }}
+                disabled={isSubmitting}
+                className={`flex-1 py-1.5 rounded-lg font-bold text-xs flex items-center justify-center space-x-1.5 transition-all cursor-pointer ${
+                  modalMode === 'approve'
+                    ? 'bg-white text-emerald-700 shadow-xs'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>Approve & Allocate</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setModalMode('reject');
+                  setModalError(null);
+                }}
+                disabled={isSubmitting}
+                className={`flex-1 py-1.5 rounded-lg font-bold text-xs flex items-center justify-center space-x-1.5 transition-all cursor-pointer ${
+                  modalMode === 'reject'
+                    ? 'bg-white text-red-700 shadow-xs'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                <XCircle className="w-3.5 h-3.5" />
+                <span>Reject Requisition</span>
+              </button>
+            </div>
 
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Day</label>
-                  <select
-                    value={approveForm.day}
-                    onChange={(e) => setApproveForm({ ...approveForm, day: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:outline-blue-600"
-                  >
-                    <option value="MON">Monday</option>
-                    <option value="TUE">Tuesday</option>
-                    <option value="WED">Wednesday</option>
-                    <option value="THU">Thursday</option>
-                    <option value="FRI">Friday</option>
-                    <option value="SAT">Saturday</option>
-                  </select>
+            {/* In-Modal Error Banner */}
+            {modalError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-800 text-xs flex items-start space-x-2">
+                <AlertTriangle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <span className="font-bold">Decision Error: </span>
+                  <span>{modalError}</span>
                 </div>
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">From Period</label>
-                  <select
-                    value={approveForm.start_period}
-                    onChange={(e) => setApproveForm({ ...approveForm, start_period: Number(e.target.value) })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-blue-600"
-                  >
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((p) => (
-                      <option key={p} value={p}>Period {p}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">To Period</label>
-                  <select
-                    value={approveForm.end_period}
-                    onChange={(e) => setApproveForm({ ...approveForm, end_period: Number(e.target.value) })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-blue-600"
-                  >
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((p) => (
-                      <option key={p} value={p}>Period {p}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">Approval Note / Resolution</label>
-                <input
-                  type="text"
-                  value={approveForm.reason}
-                  onChange={(e) => setApproveForm({ ...approveForm, reason: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-blue-600"
-                />
-              </div>
-
-              <div className="pt-2 flex items-center justify-end space-x-2 border-t border-slate-100">
                 <button
-                  type="button"
-                  onClick={() => setShowApproveModal(null)}
-                  className="px-4 py-2 border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50"
+                  onClick={() => setModalError(null)}
+                  className="text-red-500 hover:text-red-700 font-bold ml-1 cursor-pointer"
                 >
-                  Cancel
+                  ✕
                 </button>
+              </div>
+            )}
+
+            {/* Self-Approval Warning */}
+            {(showApproveModal.created_by === currentUser.id ||
+              (currentUser.role === 'admin' && showApproveModal.created_by === 'usr-admin')) && (
+              <div className="p-3 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs flex items-start space-x-2">
+                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <strong className="block font-bold">Self-Approval Blocked by Institutional Policy</strong>
+                  You are recorded as the author of this request. Independent review by another administrator or coordinator is required.
+                </div>
+              </div>
+            )}
+
+            {/* Form Content */}
+            {modalMode === 'approve' ? (
+              <div className="space-y-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Allocated Venue</label>
+                  <select
+                    value={approveForm.room_id}
+                    onChange={(e) => setApproveForm({ ...approveForm, room_id: e.target.value })}
+                    disabled={isSubmitting}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:outline-blue-600 disabled:opacity-50 cursor-pointer"
+                  >
+                    {venues.map((v) => (
+                      <option key={v.id} value={v.id}>
+                        {v.name} ({v.id}) — Cap: {v.capacity} ({v.building})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Day</label>
+                    <select
+                      value={approveForm.day}
+                      onChange={(e) => setApproveForm({ ...approveForm, day: e.target.value })}
+                      disabled={isSubmitting}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:outline-blue-600 disabled:opacity-50 cursor-pointer"
+                    >
+                      <option value="MON">Monday</option>
+                      <option value="TUE">Tuesday</option>
+                      <option value="WED">Wednesday</option>
+                      <option value="THU">Thursday</option>
+                      <option value="FRI">Friday</option>
+                      <option value="SAT">Saturday</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">From Period</label>
+                    <select
+                      value={approveForm.start_period}
+                      onChange={(e) => setApproveForm({ ...approveForm, start_period: Number(e.target.value) })}
+                      disabled={isSubmitting}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-blue-600 disabled:opacity-50 cursor-pointer"
+                    >
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((p) => (
+                        <option key={p} value={p}>
+                          Period {p} ({p + 7}:30)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">To Period</label>
+                    <select
+                      value={approveForm.end_period}
+                      onChange={(e) => setApproveForm({ ...approveForm, end_period: Number(e.target.value) })}
+                      disabled={isSubmitting}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-blue-600 disabled:opacity-50 cursor-pointer"
+                    >
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((p) => (
+                        <option key={p} value={p}>
+                          Period {p} ({p + 8}:30)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {approveForm.start_period > approveForm.end_period && (
+                  <p className="text-red-600 text-[11px] font-semibold">
+                    Warning: "From Period" cannot be greater than "To Period".
+                  </p>
+                )}
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Approval Note / Stipulation</label>
+                  <input
+                    type="text"
+                    value={approveForm.reason}
+                    onChange={(e) => setApproveForm({ ...approveForm, reason: e.target.value })}
+                    disabled={isSubmitting}
+                    placeholder="e.g. Approved with standard audiovisual equipment"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-blue-600 disabled:opacity-50"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Reason for Rejection</label>
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {[
+                      'Capacity constraint',
+                      'Venue already committed to academic timetable',
+                      'Outside permitted operational hours',
+                      'Requires higher administrative sanction',
+                    ].map((r) => (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => setRejectReason(r)}
+                        className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px] font-medium cursor-pointer"
+                      >
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+                  <textarea
+                    rows={3}
+                    value={rejectReason}
+                    onChange={(e) => setRejectReason(e.target.value)}
+                    disabled={isSubmitting}
+                    placeholder="Enter justification for turning down this requisition..."
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-red-600 disabled:opacity-50"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Action Footer */}
+            <div className="pt-3 flex items-center justify-end space-x-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={handleCloseApproveModal}
+                disabled={isSubmitting}
+                className="px-4 py-2 border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
+              >
+                Cancel
+              </button>
+              {modalMode === 'approve' ? (
                 <button
                   type="button"
                   onClick={handleConfirmApprove}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-sm"
+                  disabled={
+                    isSubmitting ||
+                    approveForm.start_period > approveForm.end_period ||
+                    showApproveModal.created_by === currentUser.id ||
+                    (currentUser.role === 'admin' && showApproveModal.created_by === 'usr-admin')
+                  }
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-sm disabled:opacity-50 cursor-pointer flex items-center space-x-1.5"
                 >
-                  Approve Requisition
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Allocating Venue...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>Approve Requisition</span>
+                    </>
+                  )}
                 </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL 4: Reject Requisition */}
-      {showRejectModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 text-xs">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div>
-                <h3 className="font-bold text-slate-900 text-base">Reject Requisition</h3>
-                <p className="text-slate-500">Ref: {showRejectModal.id} • {showRejectModal.title}</p>
-              </div>
-              <button
-                onClick={() => setShowRejectModal(null)}
-                className="w-7 h-7 rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center font-bold"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">Reason for Rejection</label>
-                <textarea
-                  rows={3}
-                  required
-                  value={rejectReason}
-                  onChange={(e) => setRejectReason(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-red-600"
-                />
-              </div>
-
-              <div className="pt-2 flex items-center justify-end space-x-2 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setShowRejectModal(null)}
-                  className="px-4 py-2 border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50"
-                >
-                  Cancel
-                </button>
+              ) : (
                 <button
                   type="button"
                   onClick={handleConfirmReject}
-                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold shadow-sm"
+                  disabled={
+                    isSubmitting ||
+                    !rejectReason.trim() ||
+                    showApproveModal.created_by === currentUser.id ||
+                    (currentUser.role === 'admin' && showApproveModal.created_by === 'usr-admin')
+                  }
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold shadow-sm disabled:opacity-50 cursor-pointer flex items-center space-x-1.5"
                 >
-                  Reject Requisition
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Recording Rejection...</span>
+                    </>
+                  ) : (
+                    <>
+                      <X className="w-4 h-4" />
+                      <span>Confirm Rejection</span>
+                    </>
+                  )}
                 </button>
-              </div>
+              )}
             </div>
           </div>
         </div>

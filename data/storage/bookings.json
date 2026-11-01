@@ -1021,8 +1021,15 @@
     "requested_room": null,
     "mandatory_for_groups": [],
     "raw_text": "",
-    "status": "pending",
-    "created_by": "usr-club-drama"
+    "status": "approved",
+    "created_by": "usr-club-drama",
+    "decision_reason": "Approved test",
+    "decided_by": "usr-admin",
+    "decided_at": "2026-11-01T00:46:39.627Z",
+    "allocated_room": "AUD",
+    "allocated_day": "MON",
+    "allocated_start_period": 1,
+    "allocated_end_period": 2
   },
   "BR-5518": {
     "id": "BR-5518",
@@ -7322,6 +7329,294 @@
   "REQ-AI-TEST-1793493666424": {
     "id": "REQ-AI-TEST-1793493666424",
     "submitted_at": "2026-11-01T00:41:06.424Z",
+    "requester": "Prof. Alan Turing",
+    "role": "faculty",
+    "requested_category": "academic",
+    "effective_category": "academic",
+    "title": "AI Robotics Workshop Makeup Session",
+    "attendance": 45,
+    "duration_periods": 2,
+    "windows": [
+      {
+        "day": "THU",
+        "from_period": 3,
+        "to_period": 4
+      }
+    ],
+    "room_types": [
+      "lecture_hall"
+    ],
+    "needs": [
+      "projector"
+    ],
+    "mandatory_for_groups": [
+      "CSE-3"
+    ],
+    "status": "pending",
+    "created_by": "usr-faculty-f19"
+  },
+  "BR-5485": {
+    "id": "BR-5485",
+    "submitted_at": "2026-11-01T00:53:05.485Z",
+    "requester": "Kabir Varma (Dramatics Society)",
+    "role": "club",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Shakespeare Night Practice",
+    "attendance": 35,
+    "duration_periods": 2,
+    "windows": [
+      {
+        "day": "THU",
+        "from_period": 10,
+        "to_period": 12
+      }
+    ],
+    "room_types": [
+      "seminar_hall",
+      "classroom"
+    ],
+    "needs": [
+      "stage"
+    ],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-club-drama"
+  },
+  "BR-6192": {
+    "id": "BR-6192",
+    "submitted_at": "2026-11-01T00:53:06.192Z",
+    "requester": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Dean Academics Special Assembly",
+    "attendance": 250,
+    "duration_periods": 2,
+    "windows": [
+      {
+        "day": "FRI",
+        "from_period": 10,
+        "to_period": 12
+      }
+    ],
+    "room_types": [
+      "auditorium"
+    ],
+    "needs": [
+      "mic"
+    ],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-admin"
+  },
+  "BR-4744": {
+    "id": "BR-4744",
+    "submitted_at": "2026-11-01T00:53:14.744Z",
+    "requester": "Aarav Patel (Student)",
+    "role": "club",
+    "requested_category": "institute_event",
+    "effective_category": "club_event",
+    "title": "Privilege Escalation Test",
+    "attendance": 50,
+    "duration_periods": 2,
+    "windows": [
+      {
+        "day": "MON",
+        "from_period": 10,
+        "to_period": 12
+      }
+    ],
+    "room_types": [
+      "seminar_hall",
+      "lecture_hall",
+      "classroom"
+    ],
+    "needs": [],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-student-cse3"
+  },
+  "BR-4810": {
+    "id": "BR-4810",
+    "submitted_at": "2026-11-01T00:53:14.810Z",
+    "requester": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Dean Review Meeting",
+    "attendance": 20,
+    "duration_periods": 1,
+    "windows": [
+      {
+        "day": "MON",
+        "from_period": 10,
+        "to_period": 11
+      }
+    ],
+    "room_types": [
+      "classroom"
+    ],
+    "needs": [],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-admin"
+  },
+  "REQ-AI-TEST-1793494409470": {
+    "id": "REQ-AI-TEST-1793494409470",
+    "submitted_at": "2026-11-01T00:53:29.470Z",
+    "requester": "Prof. Alan Turing",
+    "role": "faculty",
+    "requested_category": "academic",
+    "effective_category": "academic",
+    "title": "AI Robotics Workshop Makeup Session",
+    "attendance": 45,
+    "duration_periods": 2,
+    "windows": [
+      {
+        "day": "THU",
+        "from_period": 3,
+        "to_period": 4
+      }
+    ],
+    "room_types": [
+      "lecture_hall"
+    ],
+    "needs": [
+      "projector"
+    ],
+    "mandatory_for_groups": [
+      "CSE-3"
+    ],
+    "status": "pending",
+    "created_by": "usr-faculty-f19"
+  },
+  "BR-7508": {
+    "id": "BR-7508",
+    "submitted_at": "2026-11-01T00:54:57.508Z",
+    "requester": "Kabir Varma (Dramatics Society)",
+    "role": "club",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Shakespeare Night Practice",
+    "attendance": 35,
+    "duration_periods": 2,
+    "windows": [
+      {
+        "day": "THU",
+        "from_period": 10,
+        "to_period": 12
+      }
+    ],
+    "room_types": [
+      "seminar_hall",
+      "classroom"
+    ],
+    "needs": [
+      "stage"
+    ],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-club-drama"
+  },
+  "BR-8163": {
+    "id": "BR-8163",
+    "submitted_at": "2026-11-01T00:54:58.163Z",
+    "requester": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Dean Academics Special Assembly",
+    "attendance": 250,
+    "duration_periods": 2,
+    "windows": [
+      {
+        "day": "FRI",
+        "from_period": 10,
+        "to_period": 12
+      }
+    ],
+    "room_types": [
+      "auditorium"
+    ],
+    "needs": [
+      "mic"
+    ],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-admin"
+  },
+  "BR-5546": {
+    "id": "BR-5546",
+    "submitted_at": "2026-11-01T00:55:05.546Z",
+    "requester": "Aarav Patel (Student)",
+    "role": "club",
+    "requested_category": "institute_event",
+    "effective_category": "club_event",
+    "title": "Privilege Escalation Test",
+    "attendance": 50,
+    "duration_periods": 2,
+    "windows": [
+      {
+        "day": "MON",
+        "from_period": 10,
+        "to_period": 12
+      }
+    ],
+    "room_types": [
+      "seminar_hall",
+      "lecture_hall",
+      "classroom"
+    ],
+    "needs": [],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-student-cse3"
+  },
+  "BR-5617": {
+    "id": "BR-5617",
+    "submitted_at": "2026-11-01T00:55:05.617Z",
+    "requester": "Dr. S. K. Nayak (Dean Academics)",
+    "role": "admin",
+    "requested_category": "club_event",
+    "effective_category": "club_event",
+    "title": "Dean Review Meeting",
+    "attendance": 20,
+    "duration_periods": 1,
+    "windows": [
+      {
+        "day": "MON",
+        "from_period": 10,
+        "to_period": 11
+      }
+    ],
+    "room_types": [
+      "classroom"
+    ],
+    "needs": [],
+    "requested_room": null,
+    "mandatory_for_groups": [],
+    "raw_text": "",
+    "status": "pending",
+    "created_by": "usr-admin"
+  },
+  "REQ-AI-TEST-1793494519846": {
+    "id": "REQ-AI-TEST-1793494519846",
+    "submitted_at": "2026-11-01T00:55:19.846Z",
     "requester": "Prof. Alan Turing",
     "role": "faculty",
     "requested_category": "academic",

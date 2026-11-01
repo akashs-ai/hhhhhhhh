@@ -271,12 +271,17 @@ export const venueService = {
       end_period?: number;
     }
   ): Promise<Booking> {
+    const effectiveToken = token || (typeof window !== 'undefined' ? localStorage.getItem('cit_auth_token') : '') || '';
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (effectiveToken) {
+      headers['Authorization'] = `Bearer ${effectiveToken}`;
+    }
+
     const res = await fetch(`/api/bookings/${encodeURIComponent(bookingId)}/decision`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
+      headers,
       body: JSON.stringify(decision),
     });
     const json = await res.json();
