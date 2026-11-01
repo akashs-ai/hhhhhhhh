@@ -140,7 +140,9 @@ router.get('/exams', requireAuth, async (req: AuthenticatedRequest, res: Respons
   const coursesMeta = new Map<string, any>((dataset.courses || []).map((c: any) => [c.id, c]));
   const roomsMeta = new Map<string, any>((dataset.rooms || []).map((r: any) => [r.id, r]));
 
-  const rosterPublished = schedule.exam_roster?.status === 'published';
+  const rosterPublished = schedule.exam_roster
+    ? schedule.exam_roster.status === 'published'
+    : (schedule.status === 'approved' && Boolean(schedule.exams && schedule.exams.length > 0));
 
   // Enrich all exams
   const allEnriched = schedule.exams.map((item) =>
@@ -171,9 +173,28 @@ router.get('/exams', requireAuth, async (req: AuthenticatedRequest, res: Respons
 
     // 2. Filter to student's enrolled cohort group if defined
     if (currentUser.studentGroupId) {
-      scopedExams = scopedExams.filter((e) =>
-        e.groups.some((g: string) => g === currentUser.studentGroupId || g.startsWith(currentUser.studentGroupId!.slice(0, 3)))
+      const studentGroup = currentUser.studentGroupId;
+      const baseGroup = studentGroup.replace(/([0-9])[A-Z]$/, '$1');
+      const matchedExams = scopedExams.filter((e) =>
+        e.groups.some(
+          (g: string) =>
+            g === studentGroup ||
+            g === baseGroup ||
+            g.startsWith(studentGroup) ||
+            studentGroup.startsWith(g)
+        )
       );
+      if (matchedExams.length > 0) {
+        scopedExams = matchedExams;
+      } else {
+        // Fallback: if student group has no specific exams, check department
+        const deptExams = scopedExams.filter(
+          (e) => normalizeDeptCode(e.department) === normalizeDeptCode(currentUser.department)
+        );
+        if (deptExams.length > 0) {
+          scopedExams = deptExams;
+        }
+      }
     }
   } else if (userRole === 'faculty') {
     // PROFESSOR / FACULTY:

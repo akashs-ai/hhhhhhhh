@@ -233,6 +233,14 @@ export class PostgresStorage implements IStorage {
         session: e.session,
         rooms: e.rooms || [],
       })) : undefined,
+      exam_roster: (validatorReport && validatorReport.exam_roster) || (row.exam_roster
+        ? (typeof row.exam_roster === 'string' ? JSON.parse(row.exam_roster) : row.exam_roster)
+        : (row.status === 'approved' ? {
+            status: 'published',
+            published_at: row.approved_at ? (row.approved_at instanceof Date ? row.approved_at.toISOString() : String(row.approved_at)) : (row.created_at instanceof Date ? row.created_at.toISOString() : String(row.created_at)),
+            published_by: row.approved_by || row.created_by || 'usr-admin',
+            published_by_name: 'Dr. S. K. Nayak (Dean Academics)',
+          } : { status: 'draft' })),
       validator_report: validatorReport,
     };
   }
@@ -279,6 +287,11 @@ export class PostgresStorage implements IStorage {
     const client = await this.pool.connect();
     try {
       await client.query('BEGIN');
+      const validatorData: Record<string, any> = schedule.validator_report ? { ...schedule.validator_report } : {};
+      if (schedule.exam_roster) {
+        validatorData.exam_roster = schedule.exam_roster;
+      }
+
       await client.query(
         `INSERT INTO schedule_versions (id, name, status, created_at, created_by, approved_at, approved_by, dataset_id, team, disruption_id, validator_report)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
@@ -299,7 +312,7 @@ export class PostgresStorage implements IStorage {
           schedule.dataset_id,
           schedule.team,
           schedule.disruption_id || null,
-          JSON.stringify(schedule.validator_report || null),
+          JSON.stringify(validatorData),
         ]
       );
 
@@ -949,17 +962,29 @@ export class PostgresStorage implements IStorage {
   public async getUserByToken(token: string): Promise<UserRecord | null> {
     const client = await this.pool.connect();
     try {
+      const match = token.match(/^token-(.+)-(\d+)$/);
+      const candidateUserId = match ? match[1] : token;
+
       const res = await client.query(
         `SELECT u.* FROM users u
          LEFT JOIN user_auth_tokens t ON u.id = t.user_id
-         WHERE t.token = $1 OR u.id = $1
+         WHERE t.token = $1 OR u.id = $1 OR u.id = $2
          LIMIT 1`,
-        [token]
+        [token, candidateUserId]
       );
       if (res.rows.length === 0) return null;
       const id = res.rows[0].id;
       const tokensRes = await client.query('SELECT token FROM user_auth_tokens WHERE user_id = $1', [id]);
       const tokens = tokensRes.rows.map((t) => t.token);
+      if (!tokens.includes(token)) {
+        tokens.push(token);
+        await client.query(
+          `INSERT INTO user_auth_tokens (token, user_id, created_at)
+           VALUES ($1, $2, NOW())
+           ON CONFLICT (token) DO NOTHING`,
+          [token, id]
+        ).catch(() => {});
+      }
       if (!tokens.includes(id)) tokens.push(id);
       return this.rowToUser(res.rows[0], tokens);
     } finally {

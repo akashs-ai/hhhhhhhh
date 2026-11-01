@@ -91,9 +91,26 @@ export const StudentExamScheduler: React.FC<StudentExamSchedulerProps> = ({ curr
       </div>
 
       {error && (
-        <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-900 flex items-center space-x-2">
-          <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
-          <span>{error}</span>
+        <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-900 flex items-center justify-between gap-3 shadow-2xs">
+          <div className="flex items-center space-x-2.5">
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+            <span>
+              {error.toLowerCase().includes('session') || error.toLowerCase().includes('auth') || error.toLowerCase().includes('credential') || error.toLowerCase().includes('token')
+                ? 'Your session has expired or is invalid. Please sign in again to view your examination timetable.'
+                : error}
+            </span>
+          </div>
+          <button
+            onClick={() => {
+              localStorage.removeItem('cit_auth_token');
+              localStorage.removeItem('cit_auth_user');
+              window.location.href = '/#login';
+              window.location.reload();
+            }}
+            className="px-3 py-1.5 bg-white hover:bg-rose-100 text-rose-700 font-semibold border border-rose-300 rounded-xl text-xs transition-colors shrink-0 cursor-pointer shadow-2xs"
+          >
+            Sign In Again
+          </button>
         </div>
       )}
 

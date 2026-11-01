@@ -121,6 +121,15 @@ router.post('/auth/login', async (req: AuthenticatedRequest, res: Response) => {
     status: 'success',
   });
 
+  // Set session cookie for seamless browser continuity
+  res.cookie('cit_auth_token', token, {
+    path: '/',
+    httpOnly: false,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 30 * 24 * 60 * 60 * 1000,
+  });
+
   res.json({
     success: true,
     token,
@@ -178,7 +187,7 @@ router.post('/auth/google-student', async (req: AuthenticatedRequest, res: Respo
     // 2. Fetch existing user accounts from database for deduplication
     // If the same Google account logs in again, retrieve its existing profile instead of creating duplicate records
     const allUsers = Object.values(await storage.getAllUsers());
-    let user = allUsers.find(
+    let user: UserRecord | undefined = allUsers.find(
       (u) =>
         (u.google_id && u.google_id === verifiedGoogle.googleId) ||
         u.email.toLowerCase() === cleanEmail
@@ -210,19 +219,30 @@ router.post('/auth/google-student', async (req: AuthenticatedRequest, res: Respo
       const displayName = verifiedGoogle.name || cleanEmail.split('@')[0];
       const initialToken = `token-${finalId}-${Date.now()}`;
 
-      user = await storage.createUser({
-        id: finalId,
-        username: cleanEmail.split('@')[0],
-        display_name: displayName,
-        email: cleanEmail,
-        role: 'student',
-        status: 'active',
-        department: dept,
-        student_group_id: group,
-        google_id: verifiedGoogle.googleId,
-        avatar_url: verifiedGoogle.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(cleanEmail)}`,
-        auth_tokens: [initialToken],
-      });
+      try {
+        user = await storage.createUser({
+          id: finalId,
+          username: cleanEmail.split('@')[0],
+          display_name: displayName,
+          email: cleanEmail,
+          role: 'student',
+          status: 'active',
+          department: dept,
+          student_group_id: group,
+          google_id: verifiedGoogle.googleId,
+          avatar_url: verifiedGoogle.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(cleanEmail)}`,
+          auth_tokens: [initialToken],
+        });
+      } catch (_createErr) {
+        // If profile exists or conflict arose, safely retrieve or update
+        const found = (await storage.getUserById(finalId)) || (await storage.getUserByUsername(cleanEmail.split('@')[0]));
+        if (found) {
+          user = await storage.updateUser(found.id, {
+            auth_tokens: Array.from(new Set([...(found.auth_tokens || []), initialToken])),
+            last_login_at: new Date().toISOString(),
+          });
+        }
+      }
     } else {
       // Existing Google account logging in again: retrieve existing profile and update latest Google info
       const updates: Partial<UserRecord> = {
@@ -240,6 +260,10 @@ router.post('/auth/google-student', async (req: AuthenticatedRequest, res: Respo
         updates.display_name = verifiedGoogle.name;
       }
       user = await storage.updateUser(user.id, updates);
+    }
+
+    if (!user) {
+      throw new Error('Failed to create or retrieve student profile.');
     }
 
     // 5. Check suspension status
@@ -277,7 +301,16 @@ router.post('/auth/google-student', async (req: AuthenticatedRequest, res: Respo
       status: 'success',
     });
 
-    // 8. Return authenticated session with verified student profile
+    // 8. Set session cookie for persistent browser state across serverless routes
+    res.cookie('cit_auth_token', token, {
+      path: '/',
+      httpOnly: false,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+
+    // 9. Return authenticated session with verified student profile
     res.json({
       success: true,
       token,
@@ -423,6 +456,7 @@ router.post('/auth/logout', async (req: AuthenticatedRequest, res: Response) => 
       status: 'success',
     });
   }
+  res.clearCookie('cit_auth_token', { path: '/' });
   res.json({ success: true, message: 'Logged out successfully.' });
 });
 

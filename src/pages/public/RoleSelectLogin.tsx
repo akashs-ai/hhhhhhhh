@@ -119,7 +119,7 @@ export const RoleSelectLogin: React.FC<RoleSelectLoginProps> = ({
         );
       }
 
-      if (rememberMe && data.token) {
+      if (data.token) {
         localStorage.setItem('cit_auth_token', data.token);
       }
 
@@ -194,7 +194,7 @@ export const RoleSelectLogin: React.FC<RoleSelectLoginProps> = ({
         );
       }
 
-      if (rememberMe && data.token) {
+      if (data.token) {
         localStorage.setItem('cit_auth_token', data.token);
       }
 

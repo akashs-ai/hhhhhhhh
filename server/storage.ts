@@ -902,7 +902,21 @@ export class StorageManager implements IStorage {
 export const jsonStorage = new StorageManager();
 
 export function createStorage(): IStorage {
-  const driver = (process.env.STORAGE_DRIVER || 'json').toLowerCase();
+  let driver = (process.env.STORAGE_DRIVER || '').toLowerCase();
+  const dbUrl =
+    process.env.DATABASE_URL ||
+    process.env.POSTGRES_URL ||
+    process.env.NEON_DATABASE_URL ||
+    process.env.STAGING_DATABASE_URL;
+
+  // Auto-detect Neon PostgreSQL if connection URL is configured but STORAGE_DRIVER was omitted in Vercel
+  if (!driver) {
+    if (dbUrl) {
+      driver = 'postgres';
+    } else {
+      driver = 'json';
+    }
+  }
 
   if (driver !== 'json' && driver !== 'postgres') {
     throw new Error(
@@ -911,13 +925,13 @@ export function createStorage(): IStorage {
   }
 
   if (driver === 'postgres') {
-    if (!process.env.DATABASE_URL) {
-      if (process.env.NODE_ENV === 'production') {
+    if (!dbUrl) {
+      if (process.env.NODE_ENV === 'production' && process.env.STORAGE_DRIVER === 'postgres') {
         throw new Error(
           '[Storage Safety] Production error: STORAGE_DRIVER=postgres requires DATABASE_URL to be defined. Refusing silent fallback to ephemeral storage.'
         );
       }
-      console.warn('[Storage] STORAGE_DRIVER=postgres requested but DATABASE_URL is not provided. Falling back safely to JSON storage.');
+      console.warn('[Storage] PostgreSQL driver requested or inferred, but no DATABASE_URL provided. Falling back safely to JSON storage.');
       return jsonStorage;
     }
     console.log('[Storage] Initializing PostgreSQL storage adapter (STORAGE_DRIVER=postgres)...');
