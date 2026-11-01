@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   ArrowRight,
   Sparkles,
@@ -14,6 +14,7 @@ import {
   ChevronRight,
   ExternalLink,
   Bot,
+  Compass,
 } from 'lucide-react';
 import { CampusExperience } from '../../components/CampusExperience/CampusExperience';
 
@@ -23,59 +24,88 @@ interface LandingPageProps {
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn }) => {
+  const [viewState, setViewState] = useState<'tour' | 'hero'>('tour');
+  const [isEnteringHero, setIsEnteringHero] = useState(false);
+
+  const handleTourComplete = () => {
+    setIsEnteringHero(true);
+    setViewState('hero');
+    setTimeout(() => {
+      setIsEnteringHero(false);
+    }, 500);
+  };
+
   return (
-    <CampusExperience
-      onSkipToLogin={onSignIn}
-      onLoginSubmit={() => onSignIn()}
-    >
-      <div className="min-h-screen bg-slate-50 text-slate-800 font-sans flex flex-col">
-      {/* Top Header */}
-      <header className="bg-white/95 backdrop-blur-md border-b border-slate-200 sticky top-0 z-40 px-6 lg:px-16 py-3.5 flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black text-lg shadow-sm">
-            C
-          </div>
-          <div>
-            <div className="flex items-center space-x-2">
-              <span className="font-bold text-slate-900 tracking-tight">CITSchedule</span>
-              <span className="text-[11px] font-semibold text-blue-700 bg-blue-50 border border-blue-200/60 px-2 py-0.5 rounded-full">
-                Chilika Institute of Technology
-              </span>
+    <>
+      {/* 1. Cinematic Campus Parallax Experience */}
+      {viewState === 'tour' && (
+        <CampusExperience
+          onReachHero={handleTourComplete}
+          onSkipToLogin={onSignIn}
+        />
+      )}
+
+      {/* 2. Hero Landing Page Section */}
+      <div
+        className={`min-h-screen bg-slate-50 text-slate-800 font-sans flex flex-col transition-opacity duration-500 ease-out ${
+          viewState === 'tour' ? 'hidden' : isEnteringHero ? 'opacity-0' : 'opacity-100'
+        }`}
+      >
+        {/* Top Header */}
+        <header className="bg-white/95 backdrop-blur-md border-b border-slate-200 sticky top-0 z-40 px-6 lg:px-16 py-3.5 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black text-lg shadow-sm">
+              C
+            </div>
+            <div>
+              <div className="flex items-center space-x-2">
+                <span className="font-bold text-slate-900 tracking-tight">CITSchedule</span>
+                <span className="text-[11px] font-semibold text-blue-700 bg-blue-50 border border-blue-200/60 px-2 py-0.5 rounded-full">
+                  Chilika Institute of Technology
+                </span>
+              </div>
             </div>
           </div>
-        </div>
 
-        <nav className="hidden md:flex items-center space-x-8 text-xs font-semibold text-slate-600">
-          <a href="#home" className="text-blue-600 hover:text-blue-700 transition-colors">
-            Home
-          </a>
-          <a href="#features" className="hover:text-slate-900 transition-colors">
-            Features
-          </a>
-          <a href="#personas" className="hover:text-slate-900 transition-colors">
-            Stakeholders
-          </a>
-          <a href="#solver" className="hover:text-slate-900 transition-colors">
-            Solver Engine
-          </a>
-        </nav>
+          <nav className="hidden md:flex items-center space-x-8 text-xs font-semibold text-slate-600">
+            <a href="#home" className="text-blue-600 hover:text-blue-700 transition-colors">
+              Home
+            </a>
+            <a href="#features" className="hover:text-slate-900 transition-colors">
+              Features
+            </a>
+            <a href="#personas" className="hover:text-slate-900 transition-colors">
+              Stakeholders
+            </a>
+            <a href="#solver" className="hover:text-slate-900 transition-colors">
+              Solver Engine
+            </a>
+            <button
+              type="button"
+              onClick={() => setViewState('tour')}
+              className="inline-flex items-center space-x-1.5 text-slate-600 hover:text-blue-600 font-semibold cursor-pointer transition-colors"
+            >
+              <Compass className="w-3.5 h-3.5 text-blue-600" />
+              <span>Campus Tour</span>
+            </button>
+          </nav>
 
-        <div className="flex items-center space-x-3">
-          <button
-            onClick={onSignIn}
-            className="text-xs font-semibold text-slate-700 hover:text-blue-600 px-3 py-2 rounded-lg transition-colors"
-          >
-            Sign In
-          </button>
-          <button
-            onClick={onGetStarted}
-            className="text-xs font-semibold bg-blue-600 text-white px-4 py-2 rounded-lg shadow-sm hover:bg-blue-700 active:scale-95 transition-all flex items-center space-x-1.5"
-          >
-            <span>Get Started</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      </header>
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={onSignIn}
+              className="text-xs font-semibold text-slate-700 hover:text-blue-600 px-3 py-2 rounded-lg transition-colors cursor-pointer"
+            >
+              Sign In
+            </button>
+            <button
+              onClick={onGetStarted}
+              className="text-xs font-semibold bg-blue-600 text-white px-4 py-2 rounded-lg shadow-sm hover:bg-blue-700 active:scale-95 transition-all flex items-center space-x-1.5 cursor-pointer"
+            >
+              <span>Get Started</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </header>
 
       {/* Hero Section */}
       <section id="home" className="px-6 lg:px-16 pt-12 pb-16 max-w-7xl mx-auto w-full">
@@ -489,6 +519,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onSignIn
         </div>
       </footer>
     </div>
-  </CampusExperience>
+  </>
   );
 };
