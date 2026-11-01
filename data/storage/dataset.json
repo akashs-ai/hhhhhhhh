@@ -5735,6 +5735,16 @@
       "groups": [
         "CSE-3"
       ]
+    },
+    {
+      "id": "CS_AUTO_1793495697592",
+      "course_id": "CS-777",
+      "kind": "theory",
+      "duration": 2,
+      "faculty_id": "F01",
+      "groups": [
+        "CSE-3"
+      ]
     }
   ],
   "booking_requests": [

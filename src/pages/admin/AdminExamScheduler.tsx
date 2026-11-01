@@ -119,6 +119,7 @@ export const AdminExamScheduler: React.FC<AdminExamSchedulerProps> = ({ currentU
       setActionNotice({ type: 'success', message: res.message });
       setIsPublishModalOpen(false);
       await loadExams();
+      if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('cit:data-mutated'));
     } catch (err: any) {
       setActionNotice({ type: 'error', message: err.message || 'Roster publication failed.' });
       setIsPublishModalOpen(false);
@@ -162,6 +163,7 @@ export const AdminExamScheduler: React.FC<AdminExamSchedulerProps> = ({ currentU
       });
       setIsScheduleModalOpen(false);
       await loadExams();
+      if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('cit:data-mutated'));
     } catch (err: any) {
       setFormError(err.message || 'Failed to schedule exam.');
     } finally {

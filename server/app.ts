@@ -13,6 +13,7 @@ import usersRouter from './routes/users.js';
 import aiRouter from './routes/ai.js';
 import notificationsRouter from './routes/notifications.js';
 import reportsRouter from './routes/reports.js';
+import dashboardRouter from './routes/dashboard.js';
 
 export function createExpressApp() {
   const app = express();
@@ -37,6 +38,7 @@ export function createExpressApp() {
   app.use('/api', aiRouter);
   app.use('/api', notificationsRouter);
   app.use('/api', reportsRouter);
+  app.use('/api', dashboardRouter);
 
   // 404 handler for undefined API routes
   app.all('/api/*', (req: Request, res: Response) => {

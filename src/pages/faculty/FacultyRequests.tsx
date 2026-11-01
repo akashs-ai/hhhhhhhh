@@ -145,6 +145,7 @@ export const FacultyRequests: React.FC<FacultyRequestsProps> = ({ currentUser })
       setShowNewModal(false);
       setSelectedTicketId(resJson.data?.id);
       window.dispatchEvent(new CustomEvent('cit_schedule_changed'));
+      window.dispatchEvent(new CustomEvent('cit:data-mutated'));
       await fetchBookings();
     } catch (err: any) {
       setSubmitError(err.message);
@@ -169,6 +170,7 @@ export const FacultyRequests: React.FC<FacultyRequestsProps> = ({ currentUser })
         throw new Error(data.error?.message || 'Failed to withdraw');
       }
       window.dispatchEvent(new CustomEvent('cit_schedule_changed'));
+      window.dispatchEvent(new CustomEvent('cit:data-mutated'));
       await fetchBookings();
     } catch (err: any) {
       alert('Withdrawal error: ' + err.message);

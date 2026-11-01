@@ -275,6 +275,7 @@ export const AdminVenueBooking: React.FC<AdminVenueBookingProps> = ({ currentUse
       setShowApproveModal(null);
       setModalError(null);
       await loadData();
+      if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('cit:data-mutated'));
     } catch (err: any) {
       console.error('Approve requisition error:', err);
       setModalError(err.message || 'Failed to approve requisition. Please check venue availability.');
@@ -307,6 +308,7 @@ export const AdminVenueBooking: React.FC<AdminVenueBookingProps> = ({ currentUse
       setShowApproveModal(null);
       setModalError(null);
       await loadData();
+      if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('cit:data-mutated'));
     } catch (err: any) {
       console.error('Reject requisition error:', err);
       setModalError(err.message || 'Failed to reject requisition.');

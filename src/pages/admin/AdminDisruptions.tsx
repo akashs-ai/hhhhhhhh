@@ -154,6 +154,7 @@ export const AdminDisruptions: React.FC<AdminDisruptionsProps> = ({ currentUser,
         text: `Emergency campus closure protocol activated. Impacted ${res.impacted_summary?.sessions_count || 0} sessions. Broadcasted to academic portals.`,
       });
       await loadDisruptions();
+      if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('cit:data-mutated'));
     } catch (err: any) {
       setActionMessage({ type: 'error', text: err.message || 'Emergency closure protocol failed.' });
     } finally {
@@ -170,6 +171,7 @@ export const AdminDisruptions: React.FC<AdminDisruptionsProps> = ({ currentUser,
         text: `Docket ${caseId} endorsed and published. Master timetable synchronized.`,
       });
       await loadDisruptions();
+      if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('cit:data-mutated'));
     } catch (err: any) {
       setActionMessage({ type: 'error', text: err.message || `Failed to endorse ${caseId}` });
     } finally {
@@ -198,6 +200,7 @@ export const AdminDisruptions: React.FC<AdminDisruptionsProps> = ({ currentUser,
         text: `Disruption ${targetCaseId} rejected. Baseline timetable preserved.`,
       });
       await loadDisruptions();
+      if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('cit:data-mutated'));
     } catch (err: any) {
       setActionMessage({ type: 'error', text: err.message || 'Rejection failed.' });
     } finally {

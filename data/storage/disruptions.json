@@ -1888,9 +1888,9 @@
       }
     ],
     "decided_by": "usr-admin",
-    "decided_at": "2026-11-01T00:55:14.600Z",
+    "decided_at": "2026-11-01T01:15:14.067Z",
     "approved_by": "usr-admin",
-    "approved_at": "2026-11-01T00:55:14.600Z"
+    "approved_at": "2026-11-01T01:15:14.067Z"
   },
   "REQ-DIS-8819": {
     "id": "REQ-DIS-8819",
@@ -1941,7 +1941,7 @@
         ]
       }
     ],
-    "decided_at": "2026-11-01T00:55:14.541Z",
+    "decided_at": "2026-11-01T01:15:13.988Z",
     "rejection_reason": "Portable HVAC units deployed; facility fault resolved on-site.",
     "decided_by": "usr-admin"
   },
@@ -7424,6 +7424,671 @@
     "id": "REQ-DIS-COLLIDE-1793494514646",
     "title": "Colliding Lab Session Proposal",
     "submitted_at": "2026-11-01T00:55:14.646Z",
+    "submitted_by": "usr-coord-ece",
+    "status": "pending",
+    "type": "room_reallocation",
+    "course_id": "COLLIDE101",
+    "replacement_slot": {
+      "day": "WED",
+      "start_period": 6,
+      "end_period": 7,
+      "room_id": "B-203"
+    },
+    "changes": []
+  },
+  "disruption-1793495691519": {
+    "id": "disruption-1793495691519",
+    "title": "Emergency Lab Maintenance",
+    "description": "CS-LAB-1 electrical testing on Tuesday P6-P8",
+    "submitted_at": "2026-11-01T01:14:52.177Z",
+    "submitted_by": "usr-coord-cse",
+    "status": "proposed",
+    "changes": [
+      {
+        "type": "room_unavailable",
+        "room_id": "CS-LAB-1",
+        "days": [
+          "TUE"
+        ],
+        "periods": [
+          6,
+          7,
+          8
+        ],
+        "reason": "Electrical testing"
+      }
+    ],
+    "proposed_schedule_version_id": "v_prop_dis_1793495692149",
+    "stability_metrics": {
+      "sessions_moved": 0,
+      "time_changed": 0,
+      "room_only_changed": 0,
+      "moved_ids": []
+    },
+    "validator_report": {
+      "dataset_id": "cit-public-v1",
+      "schedule_dataset_id": "cit-public-v1",
+      "team": "CIT Arch Team",
+      "soft_penalties": {
+        "S1": 0,
+        "S2": 145,
+        "S3": 12,
+        "S4": 12,
+        "S5": 1,
+        "S6": 0
+      },
+      "soft_total": 170,
+      "stability": {
+        "sessions_moved": 0,
+        "time_changed": 0,
+        "room_only_changed": 0,
+        "moved_ids": []
+      },
+      "hard_violations": [],
+      "hard_violation_count": 0,
+      "hard_by_rule": {},
+      "warnings": []
+    }
+  },
+  "CLOSURE-MVX51HME": {
+    "id": "CLOSURE-MVX51HME",
+    "title": "Emergency Campus Closure: Severe Cyclonic Storm & Inundation Warning",
+    "description": "Institutional protocol: CANCEL across scope: campus. Target days: WED, THU. Impacted 68 academic sessions, 9 venue reservations.",
+    "submitted_at": "2026-11-01T01:15:13.910Z",
+    "submitted_by": "usr-admin",
+    "status": "approved",
+    "type": "emergency_closure",
+    "severity": "urgent",
+    "department": "All Departments / Campus Authority",
+    "reason": "Severe Cyclonic Storm & Inundation Warning",
+    "approved_by": "usr-admin",
+    "approved_at": "2026-11-01T01:15:13.910Z",
+    "changes": [
+      {
+        "type": "emergency_cancellation",
+        "session_id": "CE201-L3",
+        "day": "THU",
+        "start_period": 5,
+        "room_id": "CR-203",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "CE202-L1",
+        "day": "WED",
+        "start_period": 3,
+        "room_id": "CR-101",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "CE203-L1",
+        "day": "WED",
+        "start_period": 4,
+        "room_id": "LH-4",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "CE204-L1",
+        "day": "WED",
+        "start_period": 2,
+        "room_id": "CR-104",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "CE204-L2",
+        "day": "THU",
+        "start_period": 1,
+        "room_id": "LH-6",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "CE291-P1",
+        "day": "THU",
+        "start_period": 2,
+        "room_id": "CIVIL-LAB",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "CE302-L1",
+        "day": "WED",
+        "start_period": 1,
+        "room_id": "CR-202",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "CE302-L2",
+        "day": "THU",
+        "start_period": 2,
+        "room_id": "CR-204",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "CE391-P1",
+        "day": "THU",
+        "start_period": 6,
+        "room_id": "CIVIL-LAB",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "CS101-C-L1",
+        "day": "WED",
+        "start_period": 2,
+        "room_id": "CR-101",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "CS101-C-L2",
+        "day": "THU",
+        "start_period": 8,
+        "room_id": "LH-2",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "CS191-A-P1",
+        "day": "WED",
+        "start_period": 2,
+        "room_id": "CS-LAB-1",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "CS191-B-P1",
+        "day": "THU",
+        "start_period": 6,
+        "room_id": "CS-LAB-2",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "CS191-D-P1",
+        "day": "WED",
+        "start_period": 2,
+        "room_id": "CS-LAB-2",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "CS201-L3",
+        "day": "WED",
+        "start_period": 3,
+        "room_id": "CR-203",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "CS202-T1",
+        "day": "WED",
+        "start_period": 1,
+        "room_id": "CR-203",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "CS204-L1",
+        "day": "THU",
+        "start_period": 3,
+        "room_id": "CR-101",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "CS204-L3",
+        "day": "THU",
+        "start_period": 7,
+        "room_id": "CR-104",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "CS292-P1",
+        "day": "WED",
+        "start_period": 6,
+        "room_id": "ELEC-LAB-1",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "CS301-L2",
+        "day": "THU",
+        "start_period": 5,
+        "room_id": "CR-201",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "CS303-L1",
+        "day": "WED",
+        "start_period": 4,
+        "room_id": "CR-103",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "CS303-L3",
+        "day": "THU",
+        "start_period": 8,
+        "room_id": "LH-3",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "EC201-L1",
+        "day": "THU",
+        "start_period": 1,
+        "room_id": "CR-105",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "EC201-L3",
+        "day": "WED",
+        "start_period": 1,
+        "room_id": "CR-204",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "EC202-L1",
+        "day": "WED",
+        "start_period": 4,
+        "room_id": "CR-105",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "EC203-L1",
+        "day": "WED",
+        "start_period": 5,
+        "room_id": "CR-201",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "EC204-L2",
+        "day": "WED",
+        "start_period": 7,
+        "room_id": "LH-6",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "EC204-L3",
+        "day": "THU",
+        "start_period": 7,
+        "room_id": "CR-101",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "EC292-P1",
+        "day": "THU",
+        "start_period": 2,
+        "room_id": "CS-LAB-1",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "EC301-L2",
+        "day": "THU",
+        "start_period": 7,
+        "room_id": "CR-202",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "EC302-L3",
+        "day": "WED",
+        "start_period": 2,
+        "room_id": "LH-6",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "EC303-L1",
+        "day": "THU",
+        "start_period": 8,
+        "room_id": "CR-103",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "EC303-L3",
+        "day": "WED",
+        "start_period": 8,
+        "room_id": "LH-6",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "EE201-L3",
+        "day": "THU",
+        "start_period": 5,
+        "room_id": "CR-202",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "EE202-L2",
+        "day": "WED",
+        "start_period": 8,
+        "room_id": "LH-5",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "EE203-L1",
+        "day": "WED",
+        "start_period": 4,
+        "room_id": "CR-201",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "EE204-L1",
+        "day": "THU",
+        "start_period": 7,
+        "room_id": "CR-205",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "EE204-L2",
+        "day": "WED",
+        "start_period": 2,
+        "room_id": "CR-102",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "EE301-L1",
+        "day": "THU",
+        "start_period": 6,
+        "room_id": "CR-201",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "EE302-L1",
+        "day": "THU",
+        "start_period": 3,
+        "room_id": "CR-202",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "HS101-B-L2",
+        "day": "WED",
+        "start_period": 3,
+        "room_id": "LH-6",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "HS101-D-L2",
+        "day": "THU",
+        "start_period": 3,
+        "room_id": "CR-102",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "HS201-H1-L1",
+        "day": "WED",
+        "start_period": 2,
+        "room_id": "LH-2",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "MA101-AB-L3",
+        "day": "WED",
+        "start_period": 8,
+        "room_id": "LH-2",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "MA101-CD-L1",
+        "day": "THU",
+        "start_period": 4,
+        "room_id": "LH-1",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "MA101-CD-L3",
+        "day": "WED",
+        "start_period": 7,
+        "room_id": "LH-2",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "ME201-L3",
+        "day": "THU",
+        "start_period": 5,
+        "room_id": "CR-105",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "ME202-L2",
+        "day": "THU",
+        "start_period": 4,
+        "room_id": "CR-105",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "ME203-L1",
+        "day": "WED",
+        "start_period": 7,
+        "room_id": "CR-105",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "ME204-L1",
+        "day": "THU",
+        "start_period": 2,
+        "room_id": "CR-101",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "ME292-P1",
+        "day": "WED",
+        "start_period": 2,
+        "room_id": "MECH-WS",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "ME301-L1",
+        "day": "THU",
+        "start_period": 1,
+        "room_id": "CR-205",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "ME301-L2",
+        "day": "WED",
+        "start_period": 5,
+        "room_id": "CR-101",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "ME302-L1",
+        "day": "WED",
+        "start_period": 1,
+        "room_id": "LH-3",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "ME302-L2",
+        "day": "THU",
+        "start_period": 2,
+        "room_id": "LH-5",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "ME303-L3",
+        "day": "THU",
+        "start_period": 4,
+        "room_id": "CR-102",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "OE301-L3",
+        "day": "WED",
+        "start_period": 6,
+        "room_id": "LH-1",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "OE302-L3",
+        "day": "WED",
+        "start_period": 6,
+        "room_id": "LH-4",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "OE303-L3",
+        "day": "WED",
+        "start_period": 6,
+        "room_id": "CR-201",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "PH101-A-L1",
+        "day": "THU",
+        "start_period": 5,
+        "room_id": "LH-3",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "PH101-B-L3",
+        "day": "WED",
+        "start_period": 4,
+        "room_id": "LH-5",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "PH101-C-L2",
+        "day": "WED",
+        "start_period": 6,
+        "room_id": "LH-5",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "PH101-C-L3",
+        "day": "THU",
+        "start_period": 6,
+        "room_id": "LH-3",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "PH101-D-L2",
+        "day": "THU",
+        "start_period": 2,
+        "room_id": "LH-3",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "PH101-D-L3",
+        "day": "WED",
+        "start_period": 1,
+        "room_id": "CR-101",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "WS101-B-P1",
+        "day": "THU",
+        "start_period": 2,
+        "room_id": "MECH-WS",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "WS101-D-P1",
+        "day": "THU",
+        "start_period": 6,
+        "room_id": "MECH-WS",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      },
+      {
+        "type": "emergency_cancellation",
+        "session_id": "CS304-L1",
+        "day": "WED",
+        "start_period": 6,
+        "room_id": "B-203",
+        "reason": "Severe Cyclonic Storm & Inundation Warning"
+      }
+    ]
+  },
+  "REQ-DIS-2222": {
+    "id": "REQ-DIS-2222",
+    "title": "Prof. S. Ramanujan (Faculty) — Faculty Unavailability (CS201)",
+    "description": "Unavailability reported for course CS201 on THU period 3. Reason: Doctor Appointment",
+    "submitted_at": "2026-11-01T01:15:13.930Z",
+    "submitted_by": "usr-faculty-f19",
+    "status": "revision_requested",
+    "type": "faculty_unavailability",
+    "severity": "urgent",
+    "course_id": "CS201",
+    "reason": "Doctor Appointment",
+    "original_slot": {
+      "day": "THU",
+      "start_period": 3,
+      "end_period": 4,
+      "room_id": "TBD",
+      "faculty_id": "F19",
+      "faculty_name": "Prof. S. Ramanujan (Faculty)",
+      "reason": "Doctor Appointment"
+    },
+    "changes": [
+      {
+        "type": "faculty_unavailability",
+        "course_id": "CS201",
+        "day": "THU",
+        "periods": [
+          3
+        ],
+        "reason": "Doctor Appointment"
+      }
+    ],
+    "revision_notes": "Please propose alternate slot on Friday period 5-6.",
+    "decided_by": "usr-coord-cse",
+    "decided_at": "2026-11-01T01:15:13.954Z"
+  },
+  "REQ-DIS-COLLIDE-1793495714134": {
+    "id": "REQ-DIS-COLLIDE-1793495714134",
+    "title": "Colliding Lab Session Proposal",
+    "submitted_at": "2026-11-01T01:15:14.134Z",
     "submitted_by": "usr-coord-ece",
     "status": "pending",
     "type": "room_reallocation",

@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { premiumEase } from './components/ui/motion';
 import { UserItem, TimetableSession, Booking, ExamItem, DisruptionItem } from './types';
 import { INITIAL_USERS } from './data/demoData';
 import { Navbar } from './components/Navbar';
@@ -140,6 +142,23 @@ export default function App() {
     refreshBackendData();
   }, [currentUser]);
 
+  // Real-time synchronization: listen for application mutations
+  useEffect(() => {
+    const handleMutation = () => {
+      refreshBackendData();
+    };
+    window.addEventListener('cit:data-mutated', handleMutation);
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        refreshBackendData();
+      }
+    }, 45000);
+    return () => {
+      window.removeEventListener('cit:data-mutated', handleMutation);
+      clearInterval(interval);
+    };
+  }, [currentUser]);
+
   // Handle User Switching
   const handleSelectUser = (user: UserItem) => {
     setCurrentUser(user);
@@ -264,6 +283,15 @@ export default function App() {
     // --- COORDINATOR & STUDENT ROLES (Shared Frontend Design, Distinct Permissions) ---
     switch (currentTab) {
       case 'dashboard':
+        if (role === 'department_coordinator') {
+          return (
+            <AdminDashboard
+              currentUser={currentUser}
+              onNavigateTab={(tab) => setCurrentTab(tab)}
+              onTriggerGenerate={() => setCurrentTab('timetable')}
+            />
+          );
+        }
         return (
           <StudentDashboard
             currentUser={currentUser}
@@ -325,7 +353,18 @@ export default function App() {
           />
 
           <main className="flex-1 overflow-y-auto">
-            {renderRolePage()}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={`${currentUser.id}-${currentUser.role}-${currentTab}`}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.22, ease: premiumEase }}
+                className="min-h-full"
+              >
+                {renderRolePage()}
+              </motion.div>
+            </AnimatePresence>
           </main>
         </div>
       </div>
